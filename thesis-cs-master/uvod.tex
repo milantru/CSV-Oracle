@@ -1,10 +1,40 @@
 \chapter*{Úvod}
 \addcontentsline{toc}{chapter}{Úvod}
 
-\section{Motivácia}
+\section{Cieľ práce}
 
-Robíme app pre SW inžinierov (čiže nie laik, ale niekto kto vie čo sú CSV dáta atď.), aby zistili, či sú pre nich dané (CSV) dáta vhodné, či sa nachádza v nich to čo chcú, či vedia s nimi spraviť to čo chcú a aby im ten program pomohol pochopiť tie dáta.
+Cieľom diplomovej práce je navrhnúť a implementovať systém pre softvérových inžinierov, ktorý po nahraní CSV datasetu pomôže jeho lepšiemu pochopeniu a zároveň poskytne podporu pri rozhodovaní, či je daný dataset vhodný na ďalšie použitie. Systém umožní zhodnotiť, či dataset obsahuje relevantné údaje a či ho možno použiť na splnenie zámeru softvérového inžiniera (napr. vytvorenie softvéru).
+
+Priebeh (flow) programu:
+\begin{itemize}
+\item Užívateľ nahrá CSV dataset
+\item Pustí sa naň data profiling
+\item Z výsledku data profilingu si vezmeme potrebné info.
+\item Použijeme predpripravené prompty spolu s výsledkom data profilngu na vympromptovanie ľubovoľného LLM a získame tak info o datasete
+\item Info o datasete zobrazíme užívateľovi a umožníme mu pýtať sa ďalej na otázky ohľadom datasetu
+\item Pri chatovaní sa môžu objaviť nové informácie o datasete, tie sa majú rozpoznať a zobraziť pri už existujúcich (môžu sa prepísať/zhrnúť, aby spolu dávali zmysel, a aby neboli napr. 2 rovnaké vety)
+\end{itemize}
+
+\subsection{Pridaná hodnota}
+
+Prečo využivať OracleCSV, nestačí ChatGPT? Teoreticky áno, stačilo by keby užívateľ využil ChatGPT a dostal by podobný výsledok. Pridaná hodnota OracleCSV spočíta v tom, že v prvej fázy systém pomocou predpripravených promptov získa bohaté info o datasete. Užívateľ si ich nemusí vymýšľať sám a ani nemusí vedieť ako sa robí data profiling, čiže dochádza k úspore času i úsilia. Ďalej užívateľovi umožníme rozprávať sa o dasete, pričom si ńebude musieť robiť poznámky, pretože systém mu ich (dokonca zosuamrizované) spíše zaňho.
 
 \section{High-value datasety}
 
 Otvorené dáta sú XYZ, sú zdarma, môžeme využívať. Existujú datasety, ktoré boli označené, že majú "vysokú hodnotu", volajú sa high-value datasety. Asi využijeme práve nejaký high-value dataset. Plus niekedy teraz v roku 2024 myslím, že vychádza zákon, že štáty EU musia vytvárať také datasety.
+
+\section{Predpoklad anglicky hovoriaceho užívateľa}
+
+Ako zistíme jazyk užívateľa? Predstava: Vykonajú sa predvytvorené prompty, získané info sa zobrazí v angličtine? Jazyk vieme získať z inputu, konkrétne z "Additional info" alebo "User view". Ale "Additional info" nemusí byť v jazyku užívateľa (možno ani view?). Návrhy:
+\begin{itemize}
+\item Užívateľ ako input zadá jazyk (príp. sa vezme z jazyku stránky ak viacjazyčná, ale to asi nebude, lebo to neni náš cieľ)
+\item Prvý sa ozve užívateľ a z toho vydedukujeme jeho jazyk (Ako by užívateľ začal? Čo ak z view sa dá zistiť užívateľova otázka/odpoveď)
+\item Začneme defaultne v angličtine (teda aj zistené info promptami bude vypísané v angličtine) a jazyk zmeníme:
+\begin{itemize}
+\item ak si to užívateľ vyžiada
+\item vždy keď detekujeme zmenu jazyka (príde mi čudné ak by to systém stále text prekladal, čo ak by kvôli neustálym prekladom vznikli chyby?)
+\end{itemize}
+\item Obmedzíme sa len na angličtinu (momentálne je v inštrukciách, že užívateľ hovorí anglicky)
+\end{itemize}
+
+    
