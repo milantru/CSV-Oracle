@@ -37,4 +37,18 @@ Ako zistíme jazyk užívateľa? Predstava: Vykonajú sa predvytvorené prompty,
 \item Obmedzíme sa len na angličtinu (momentálne je v inštrukciách, že užívateľ hovorí anglicky)
 \end{itemize}
 
-    
+\section{Výber knižnice pre data profiling}
+
+Pre data profiling si volim Python, kvôli množstvu knižníc a kvôli možnosti rýchlo a pohodlne napísať potrebný kód. Medzi najpouzivanejsie Python kniznice patria podla \href{https://medium.com/@seckindinc/data-profiling-with-python-36497d3a1261}{tohto blogu}:
+
+\begin{itemize}
+\item Great expectations -- umoznuje validaciu a data profiling (vid \href{https://legacy.017.docs.greatexpectations.io/docs/0.15.50/}{tu}), hlavnym aspektom, ktory kniznica zavadza su expectations. Ide o tvrdenia o nasich datach (\href{https://legacy.017.docs.greatexpectations.io/docs/0.15.50/#expectations}{vid viac tu}). Nas by zaujimala funkcionalita automatickeho data profilingu (vid \href{https://legacy.017.docs.greatexpectations.io/docs/0.15.50/#automated-data-profiling}{tu}), ktory automaticky vygeneruje sadu tzv. expectations. My by sme okrem ineho potrebovali zistovat korelacie medzi stlpcami, ale nikde medzi expectations nevidim corelacie (vid \href{https://legacy.017.docs.greatexpectations.io/docs/0.15.50/#automated-data-profiling}{tu}). Sice sa daju aj vlastne expectatiosn vyrobit, ale ide o pracu navyse. Okrem sa zda ze pouzivanie tejto kniznice (oproti iným) ma pre nas use case zbytocne strmu learning curve (podoprene vyrokom v Cons \href{https://paul-fry.medium.com/data-profiling-using-great-expectations-17776f140cdc#59d3}{tu}).
+
+\item \href{https://github.com/lux-org/lux}{Lux} -- ide o knižnicu, ktorá uľahčuje rýchle a jednoduché skúmanie údajov automatizáciou procesu vizualizácie a analýzy údajov. Jednoduchým vypísaním `DataFramu` v Jupyter notebooku Lux odporučí súbor vizualizácií, ktoré zvýrazňujú zaujímavé trendy a vzory v súbore údajov. Knižnica sa svojími vizualizáciami hodí skôr na exploráciu dát. Naším cieľom nie sú vizualizácie, ale získanie štrukturovaných informácií, ktorými môžeme zlepšiť kvalitu promptovania. Zdá sa, že knižnica neposkytuje možnosť vypísať analýzu v json formáte. 
+
+\item \href{https://github.com/capitalone/DataProfiler}{DataProfiler} -- knižnica určená na jednoduchú analýzu údajov, monitorovanie a zisťovanie citlivých údajov. Pomocou nej môžeme vytvoriť štrukturovaný report v jsone, ktorý by obsahoval požadované dáta (napr. koreláciu).
+
+\item \href{https://docs.profiling.ydata.ai/latest/}{YData Profiling} (stary nazov Pandas Profiling) -- popredná knižnica na profilovanie údajov, ktorá automatizuje a štandardizuje vytváranie podrobných správ so štatistikami a vizualizáciami. Pomocou nej vieme podobne ako v prípade knižnice DataProfiler vytvoriť štrukturované dáta s dostatočnými informáciami. Knižnica sa ľahko využíva (píšu aj na stránke), navyše vie vygenerovať aj HTML output.
+\end{itemize}
+
+Z analýzy knižníc vyplýva, že na naše účely sa hodia knižnice Data Profiler a YData Profiling. YData Profiling oproti Data Profileru dokáže vygenerovať aj HTML report, ktorý by sme teoreticky mohli užívateľovi ponúknuť na stiahnutie alebo mu ho vizualizovať na separátnej stránke. Pre naše účely si preto vyberáme YData Profiling.
