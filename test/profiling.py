@@ -1,13 +1,34 @@
-# ======================= ydata-profiler =======================
-
+import argparse
+import os
 import pandas as pd
 from ydata_profiling import ProfileReport
 import json
 
+
+parser = argparse.ArgumentParser(description="Script to generate a data profiling report and prompts.")
+# TODO check args (path to dataset default? encoding ok? addit. info and user view default to "")
+parser.add_argument("-p", "--path_to_dataset", type=str, default=r"datasets\navigator2022.csv", help="Path to the dataset file")
+parser.add_argument("-s", "--separator", type=str, default=";", help="Separator used in the dataset")
+parser.add_argument("-e", "--encoding", type=str, default="ISO-8859-1", help="Encoding used in the dataset")
+parser.add_argument("-g", "--generate_html", type=bool, default=False, help="Flag for enabling HTML report generation")
+parser.add_argument("-a", "--additional_info", type=str,
+    default='''\
+Geographical overview of thermal waste treatment facilities
+
+Yearly updated geographical navigator: The geographic navigator presents overall annual information about facilities for the incineration and co-incineration of waste, which are obtained from summary operating records. These are the following: identification number (IČ), name of the facility, address of the operator, address of the facility, putting into operation, types of waste incinerated, nominal capacity, amount of waste incinerated in tonnes per year, number and brief description of incineration lines, enumeration of equipment for reducing emissions, annual emissions of all pollutants reported.
+
+The Czech Hydrometeorological Institute processes and continuously updates the database of equipment for thermal treatment of waste in cooperation with ČIŽP. Pursuant to Article 55 of Directive 2010/75/EU, which regulates access to information and public participation, we are making available a list of all thermal waste treatment facilities.\
+''', 
+    help="Path to the dataset file")
+parser.add_argument("-u", "--user_view", type=str,
+    default="I want to use this dataset to create a software which will visualise on the map where are the facilities for the incineration located and which type of waste can be incinerated there.", 
+    help="Path to the dataset file")
+
+
 def to_percentage(num):
     return round(num * 100, 2)
     
-def add_sample_data_to_knowledge(dataset_knowledge, report, n=3, sep=","):
+def create_sample_data(report, n=3, sep=","):
     head, tail = report["sample"]
     # NOTE tail is not checked because it is expected that 
     # if there is no head, there wont be neither tail 
@@ -19,8 +40,9 @@ def add_sample_data_to_knowledge(dataset_knowledge, report, n=3, sep=","):
     tail_rows = [sep.join([str(value) for value in row.values()]) for row in tail["data"][-n:]]
 
     all_rows = [column_names] + head_rows + ["..."] + tail_rows
-    
-    dataset_knowledge["Sample data"] = "\n".join(all_rows)
+    sample_data = "\n".join(all_rows)
+
+    return sample_data
 
 def process_column_data(column_data):
     # TODO What if more types?
@@ -94,24 +116,11 @@ def add_general_table_info_to_knowledge(dataset_knowledge, report):
     dataset_knowledge["Missing cells count"] = table_data["n_cells_missing"]
     dataset_knowledge["Missing cells count in %"] = to_percentage(table_data["p_cells_missing"])
 
-def create_dataset_knowledge(report):
-    dataset_knowledge = {} # NOTE We will gradually add new knowledge about the dataset (new properties)
+def create_dataset_knowledge(args, report):
+    dataset_knowledge = {} # We will gradually add new knowledge about the dataset (new properties)
     
-    # TODO Probably will be added via args (param)
-    dataset_knowledge["Additional info"] = '''\
-Geographical overview of thermal waste treatment facilities
-
-Yearly updated geographical navigator: The geographic navigator presents overall annual information about facilities for the incineration and co-incineration of waste, which are obtained from summary operating records. These are the following: identification number (IČ), name of the facility, address of the operator, address of the facility, putting into operation, types of waste incinerated, nominal capacity, amount of waste incinerated in tonnes per year, number and brief description of incineration lines, enumeration of equipment for reducing emissions, annual emissions of all pollutants reported.
-
-The Czech Hydrometeorological Institute processes and continuously updates the database of equipment for thermal treatment of waste in cooperation with ČIŽP. Pursuant to Article 55 of Directive 2010/75/EU, which regulates access to information and public participation, we are making available a list of all thermal waste treatment facilities.\
-'''
-    
-    # TODO Probably will be added via args (param)
-    dataset_knowledge["User view"] = "I want to use this dataset to create a software which will visualise on the map where are the facilities for the incineration located and which type of waste can be incinerated there."
-
     add_general_table_info_to_knowledge(dataset_knowledge, report)
     add_columns_info_to_knowledge(dataset_knowledge, report)
-    add_sample_data_to_knowledge(dataset_knowledge, report) # TODO Might pass separator from args? (If provided by user input.)
     
     return dataset_knowledge
 
@@ -156,23 +165,25 @@ Output from the data profiling of the dataset:
 
 def create_data_prompt(schema, sample_data, additional_info, user_view, data_profiling_output):
     prompt_with_input = ""
+
     if schema: prompt_with_input += f'''Dataset schema:\n"""\n{schema}\n"""\n\n'''
     prompt_with_input += f'''Sample of the dataset:\n"""\n{sample_data}\n"""\n\n'''
     if additional_info: prompt_with_input += f'''Additional info about the dataset:\n"""\n{additional_info}\n"""\n\n'''    
     if user_view: prompt_with_input += f'''User view for this dataset:\n"""\n{user_view}\n"""\n\n'''
     if data_profiling_output: prompt_with_input += f'''Output from the data profiling of the dataset:\n"""\n{data_profiling_output}\n"""\n\n'''
     prompt_with_input += "If you understand this input, just type OK."
+    
     return prompt_with_input 
 
-def create_prompts(dataset_knowledge):
+def create_prompts(args, sample_data, dataset_knowledge):
     prompts = [
         create_instructions_prompt(),
         create_data_prompt(
             schema=None, # TODO try this also with schema
-            sample_data=dataset_knowledge["Sample data"],
-            additional_info=dataset_knowledge["Additional info"],
-            user_view=dataset_knowledge["User view"],
-            data_profiling_output=dataset_knowledge # TODO right now dataset_knowledge contains addit. info and user view, so llm would see it twice! Do sth about it.
+            sample_data=sample_data,
+            additional_info=args.additional_info,
+            user_view=args.user_view,
+            data_profiling_output=dataset_knowledge
         ),
         "Summarize what the dataset represents and explain what context or domain the data comes from. Be concise.",
         "What kind of entity or entities does the table row represent? Make the answer concise.",
@@ -197,7 +208,7 @@ def create_prompts(dataset_knowledge):
         # column_prompt_schema = 'Why does this constraint exist? Explain the reasoning behind the given constraint or rule in the schema.'
         # prompts.append(column_prompt_schema)
 
-    if "User view" in dataset_knowledge["User view"]: # TODO User view is till in dataset_knowledge?
+    if args.user_view:
         user_view_prompt = '''If user view for the dataset is provided and you can deduce the user's question as well as the answer from the this view, write the answer as if you were writing it to the user. Otherwise write "Hello! How can I help you with this dataset?".''' 
         prompts.append(user_view_prompt)
 
@@ -206,27 +217,31 @@ def create_prompts(dataset_knowledge):
 
     return prompts
 
-def create_data_profiling_report():
-    df = pd.read_csv(r"C:\Users\milan\Desktop\CSV-Oracle\test\datasets\navigator2022.csv", sep=";", encoding='ISO-8859-1')
+def create_data_profiling_report(args):
+    df = pd.read_csv(args.path_to_dataset, sep=args.separator, encoding=args.encoding)
 
-    type_schema = None # {"Survived": "categorical", "Embarked": "categorical"}
+    type_schema = None # {"Survived": "categorical", "Embarked": "categorical"} # TODO Schema?
     profile = ProfileReport(df, title="CSV Oracle profiling report using ydata profiling", type_schema=type_schema)
-    profile.to_file(r"reports\report.html")
+    if args.generate_html:
+        profile.to_file(r"reports\report.html")
 
     json_string = profile.to_json()
     report = json.loads(json_string)
     
     return report
 
-def main():
-    report = create_data_profiling_report()
+def main(args):
+    report = create_data_profiling_report(args)
 
-    dataset_knowledge = create_dataset_knowledge(report)
+    dataset_knowledge = create_dataset_knowledge(args, report)
+    sample_data = create_sample_data(report, sep=args.separator)
 
-    prompts = create_prompts(dataset_knowledge)
+    prompts = create_prompts(args, sample_data, dataset_knowledge)
 
+    # TODO Remove writing prompts to file
     with open("PROMPTS.md", "w", encoding="utf-8") as file:
         file.write("```\n" + "\n```\n\n```\n".join(prompts) + "\n```\n")
 
 if __name__ == "__main__":
-    main()
+    args = parser.parse_args()
+    main(args)
