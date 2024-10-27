@@ -30,7 +30,7 @@ def to_percentage(num):
     
 def create_sample_data(report, n=3, sep=","):
     head, tail = report["sample"]
-    # NOTE tail is not checked because it is expected that 
+    # tail is not checked because it is expected that 
     # if there is no head, there wont be neither tail 
     if len(head["data"]) == 0:
         return [], [], []
@@ -48,7 +48,7 @@ def process_column_data(column_data):
     # TODO What if more types?
     processed_column_data = {}
 
-    # NOTE Generic (also Unsupported)
+    # Generic (also Unsupported)
     if "type" in column_data: processed_column_data["Deduced type"] = column_data["type"]
     if "n_distinct" in column_data: processed_column_data["Distinct values count"] = column_data["n_distinct"]
     if "p_distinct" in column_data: processed_column_data["Distinct values count in %"] = to_percentage(column_data["p_distinct"])
@@ -57,7 +57,7 @@ def process_column_data(column_data):
     if "n_missing" in column_data: processed_column_data["Missing values count"] = column_data["n_missing"]
     if "p_missing" in column_data: processed_column_data["Missing values count in %"] = to_percentage(column_data["p_missing"])
 
-    # NOTE Numeric
+    # Numeric
     if "n_negative" in column_data: processed_column_data["Negative values count"] = column_data["n_negative"]
     if "p_negative" in column_data: processed_column_data["Negative values count in %"] = to_percentage(column_data["p_negative"])
     if "n_zeros" in column_data: processed_column_data["Zeros count"] = column_data["n_zeros"]
@@ -72,14 +72,14 @@ def process_column_data(column_data):
     if "skewness" in column_data: processed_column_data["Skewness"] = column_data["skewness"]
     if "sum" in column_data: processed_column_data["Sum"] = column_data["sum"]
     
-    # NOTE Text
+    # Text
     if "min_length" in column_data: processed_column_data["Min length"] = column_data["min_length"]
     if "max_length" in column_data: processed_column_data["Max length"] = column_data["max_length"]
     if "mean_length" in column_data: processed_column_data["Mean length"] = column_data["mean_length"]
     if "median_length" in column_data: processed_column_data["Median length"] = column_data["median_length"]
         
-    # NOTE Categorical
-    # NOTE Seems no cateogrical data needed
+    # Categorical
+    # Seems no categorical data is needed
     return processed_column_data
 
 def add_columns_info_to_knowledge(dataset_knowledge, report):
@@ -179,7 +179,7 @@ def create_prompts(args, sample_data, dataset_knowledge):
     prompts = [
         create_instructions_prompt(),
         create_data_prompt(
-            schema=None, # TODO try this also with schema
+            schema=None, # TODO (schema) try this also with schema
             sample_data=sample_data,
             additional_info=args.additional_info,
             user_view=args.user_view,
@@ -204,7 +204,7 @@ def create_prompts(args, sample_data, dataset_knowledge):
                 column_prompt_corr = f'Provide a likely explanation for why the column {col_name} is correlated with column {correlated_col_name}. Answer only with the explanation, no other text. If you have no explanation, just write "I have no explanation".'
                 prompts.append(column_prompt_corr)
 
-        # TODO for each column, if schema provided TODO chcelo by to schemu...
+        # TODO (schema) for each column, if schema provided; chcelo by to schemu...
         # column_prompt_schema = 'Why does this constraint exist? Explain the reasoning behind the given constraint or rule in the schema.'
         # prompts.append(column_prompt_schema)
 
@@ -220,7 +220,7 @@ def create_prompts(args, sample_data, dataset_knowledge):
 def create_data_profiling_report(args):
     df = pd.read_csv(args.path_to_dataset, sep=args.separator, encoding=args.encoding)
 
-    type_schema = None # {"Survived": "categorical", "Embarked": "categorical"} # TODO Schema?
+    type_schema = None # {"Survived": "categorical", "Embarked": "categorical"} # TODO (schema) Schema?
     profile = ProfileReport(df, title="CSV Oracle profiling report using ydata profiling", type_schema=type_schema)
     if args.generate_html:
         profile.to_file(r"reports\report.html")
