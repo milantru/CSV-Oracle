@@ -230,30 +230,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# ======================= Data Profiler =======================
-
-# import json
-# from dataprofiler import Data, Profiler, ProfilerOptions
-
-# # Load file (CSV should be automatically identified)
-# data = Data("navigator2022.csv")
-
-# profile_options = ProfilerOptions()
-# profile_options.set({
-#     # "histogram_and_quantiles.is_enabled": False,
-#     # "median_abs_deviation.is_enabled": False,
-#     # "median.is_enabled": False,
-#     # "mode.is_enabled": False,
-#     "data_labeler.is_enabled": False,
-#     "correlation.is_enabled": True
-# })
-
-# profile = Profiler(data, options=profile_options)
-
-# # Generate a report and use json to prettify.
-# report  = profile.report(report_options={"output_format": "pretty"})
-
-# # Save the report to a JSON file
-# with open("data_profiler_report.json", "w") as file:
-#     json.dump(report, file, indent=4)
