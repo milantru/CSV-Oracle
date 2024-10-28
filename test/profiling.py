@@ -6,7 +6,7 @@ import json
 
 parser = argparse.ArgumentParser(description="Script to generate a data profiling report and prompts.")
 # TODO check args (path to dataset default? encoding ok? addit. info and user view default to "")
-parser.add_argument("-p", "--path_to_dataset", type=str, default=r"datasets\navigator2022.csv", help="Path to the dataset file")
+parser.add_argument("-p", "--path_to_dataset", type=str, default=r"datasets\bevoelkerungsstruktur_2023_bewegung_gesamt.csv", help="Path to the dataset file")
 parser.add_argument("-s", "--separator", type=str, default=";", help="Separator used in the dataset")
 parser.add_argument("-e", "--encoding", type=str, default="ISO-8859-1", help="Encoding used in the dataset")
 parser.add_argument("-g", "--generate_html", type=bool, default=False, help="Flag for enabling HTML report generation")
@@ -128,51 +128,70 @@ def create_dataset_knowledge(args, report):
 
 def create_instructions_prompt():
     return '''\
-Instructions:
-- You are an assistant for the software engineers.
-- Your job is to help the software engineers to understand the data they provide and assess its suitability for their project needs.
-- In the next message you will receive an input in this format:
-Dataset schema:
-"""
-{Dataset schema}
-"""
+# INSTRUCTIONS
+## IDENTITY
 
-Sample of the dataset:
-"""
-{Sample of the dataset}
-"""
+- You are part of an application called **CSV Oracle**, designed to assist software engineers in understanding their data.
+  
+- Your role is to act as an assistant, helping software engineers comprehend the dataset they provide and assess its suitability for their projects.
 
-Additional info about the dataset:
-"""
-{Additional info about the dataset}
-"""
+- There are two phases: **SYSTEM PROMPT PHASE** and **USER PROMPT PHASE**.
 
-User view for this dataset:
-"""
-{User view for this dataset}
-"""
+## SYSTEM PROMPT PHASE
 
-Output from the data profiling of the dataset:
-"""
-{Output from the data profiling of the dataset}
-"""
+1. In this phase, you will receive pre-made prompts from the system.
+2. You will first be provided with a sample data and possibly schema, additional information about the dataset, user view, or output from data profiling.
+3. You will then answer questions about the dataset, aiming to extract as much information as possible. Each answer will be considered a **FRAGMENT**.
 
-- Some parts of the input are optional and might be left out.
-- After receiving the mentioned input, you may analyze it. Afterwards you will be prompted by premade system prompts (not user prompts) to answer questions about the dataset. Your answers will be processed and displayed to the user.
-- You will be notified when the premade system prompts end and the user prompts will begin by message "PREMADE SYSTEM PROMPTS HAS ENDED, USER PROMPTS START NOW". After that you will be speaking to the user and you will answer user's questions regarding the dataset and the user's view (if provided).
-- It is expected that the dataset does not belong to the user and thus the language of the dataset may differ from the language of the user.
-- It is expected that the user speaks English. Because of that you will answer question about the dataset in English.
-- If you understand your job, just type OK.\
+## USER PROMPT PHASE
+
+1. In this phase, you will communicate directly with the user, answering their questions about the dataset and the problems they want to solve.
+2. Your responses may or may not introduce new information about the dataset, i.e., **FRAGMENT**.
+
+## Fragmentation Guidelines
+
+- When responding, if your answer contains information about the dataset, **FRAGMENT**, prepend the appropriate prefix based on the action and section it pertains to:
+  
+  **Format**: `[FRAGMENT|{action}|{section}|{subsection}]`
+  
+  - **{action}** can be:
+    - `ADD`: for adding new information.
+    - `REWRITE`: for rewriting existing information.
+  
+  - **{section}** specifies the main section. Possible values include:
+    - `GENERAL`
+    - `COLUMN`
+    - `OTHER`
+  
+  - **{subsection}** specifies the detailed part of the section. Possible values include:
+    - `OVERVIEW`
+    - `ROW`
+    - `{column_name}`
+
+## Examples
+
+- `[FRAGMENT|ADD|GENERAL|OVERVIEW]`: Adds information to the Overview subsection in the General section.
+- `[FRAGMENT|ADD|COLUMN|{column_name}]`: Adds information to the subsection `{column_name}`, named after the specific column.
+- `[FRAGMENT|REWRITE|GENERAL|ROW]`: Rewrites something in the Row subsection of the General section.
+- `[FRAGMENT|ADD|OTHER|OVERVIEW]`: Adds information that does not fit into GENERAL or COLUMN sections, categorized under OTHER.
+
+## Additional Notes
+
+- The language of the dataset may differ from that of the user, who is expected to speak English. You will answer questions about the dataset in English by default.
+
+- The SYSTEM PROMPT PHASE concludes when you receive the message: **"SYSTEM PROMPT PHASE has ended, USER PROMPT PHASE starts now."** After this message, the USER PROMPT PHASE begins and continues for the remainder of the conversation. The user cannot revert to the SYSTEM PROMPT PHASE.
+
+If you understand, please respond with **"OK."**
 '''
 
 def create_data_prompt(schema, sample_data, additional_info, user_view, data_profiling_output):
     prompt_with_input = ""
 
-    if schema: prompt_with_input += f'''Dataset schema:\n"""\n{schema}\n"""\n\n'''
-    prompt_with_input += f'''Sample of the dataset:\n"""\n{sample_data}\n"""\n\n'''
-    if additional_info: prompt_with_input += f'''Additional info about the dataset:\n"""\n{additional_info}\n"""\n\n'''    
-    if user_view: prompt_with_input += f'''User view for this dataset:\n"""\n{user_view}\n"""\n\n'''
-    if data_profiling_output: prompt_with_input += f'''Output from the data profiling of the dataset:\n"""\n{data_profiling_output}\n"""\n\n'''
+    if schema: prompt_with_input += f'''Schema:\n"""\n{schema}\n"""\n\n'''
+    prompt_with_input += f'''Sample data:\n"""\n{sample_data}\n"""\n\n'''
+    if additional_info: prompt_with_input += f'''Additional information about the dataset:\n"""\n{additional_info}\n"""\n\n'''    
+    if user_view: prompt_with_input += f'''User view:\n"""\n{user_view}\n"""\n\n'''
+    if data_profiling_output: prompt_with_input += f'''Output from data profiling:\n"""\n{data_profiling_output}\n"""\n\n'''
     prompt_with_input += "If you understand this input, just type OK."
     
     return prompt_with_input 
@@ -198,12 +217,12 @@ def create_prompts(args, sample_data, dataset_knowledge):
         # "Missing values count" is expected to always be in col_info, but we check its existience anyway 
         # because of defensive programming. And we do so in case of other properties as well.
         if "Missing values count" in col_info and col_info["Missing values count"] > 0:
-            column_prompt_missing_values = f'Provide a likely explanation as to why the values are missing in column {col_name}. Answer only with the explanation, no other text. If you have no explanation, just write "I have no explanation".'
+            column_prompt_missing_values = f'Provide an explanation as to why the values are missing in the column {col_name}. Answer only with the explanation, no other text. If you have no explanation, just write "I have no explanation".'
             prompts.append(column_prompt_missing_values)
         
         if "Is correlated with columns" in col_info and len(col_info["Is correlated with columns"]) > 0:
             for correlated_col_name in col_info["Is correlated with columns"]:
-                column_prompt_corr = f'Provide a likely explanation for why the column {col_name} is correlated with column {correlated_col_name}. Answer only with the explanation, no other text. If you have no explanation, just write "I have no explanation".'
+                column_prompt_corr = f'Provide an explanation for why the column {col_name} is correlated with the column {correlated_col_name}. Answer only with the explanation, no other text. If you have no explanation, just write "I have no explanation".'
                 prompts.append(column_prompt_corr)
 
         # TODO (schema) for each column, if schema provided; chcelo by to schemu...
@@ -211,10 +230,10 @@ def create_prompts(args, sample_data, dataset_knowledge):
         # prompts.append(column_prompt_schema)
 
     if args.user_view:
-        user_view_prompt = '''If user view for the dataset is provided and you can deduce the user's question as well as the answer from the this view, write the answer as if you were writing it to the user. Otherwise write "Hello! How can I help you with this dataset?".''' 
+        user_view_prompt = '''If the user view for the dataset is provided and you can deduce the user question as well as the answer from the user view, write the answer as if you were writing it to the user. Otherwise just write "Hello! How can I help you with this dataset?".''' 
         prompts.append(user_view_prompt)
 
-    end_prompt = 'PREMADE SYSTEM PROMPTS HAS ENDED, USER PROMPTS START NOW\n\nIf you understand, just write OK.'
+    end_prompt = 'SYSTEM PROMPT PHASE has ended, USER PROMPT PHASE starts now.\n\nIf you understand, just write OK.'
     prompts.append(end_prompt)
 
     return prompts
