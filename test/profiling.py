@@ -91,18 +91,21 @@ def add_columns_info_to_knowledge(dataset_knowledge, report):
 
     # Then for each column, get all columns that correlate with it.
     corr_threshold = 0.5
-    cols_correlations = report["correlations"]["auto"] # TODO Is auto OK?
-    for i in range(len(cols_correlations)):
-        col_i_correlations = cols_correlations[i]
-        cols_correlated_with_col_i = []
-        col_i_name = None
-        for j, (col_j_name, corr_value) in enumerate(col_i_correlations.items()):
-            if i == j:
-                col_i_name = col_j_name
-                continue
-            if corr_value > corr_threshold:
-                cols_correlated_with_col_i.append(col_j_name)
-        processed_columns_data[col_i_name]["Is correlated with columns"] = cols_correlated_with_col_i
+    # This if is here because for some reason sometimes there are no correlations. 
+    # Probably insufficient data.
+    if "auto" in report["correlations"]:
+        cols_correlations = report["correlations"]["auto"]
+        for i in range(len(cols_correlations)):
+            col_i_correlations = cols_correlations[i]
+            cols_correlated_with_col_i = []
+            col_i_name = None
+            for j, (col_j_name, corr_value) in enumerate(col_i_correlations.items()):
+                if i == j:
+                    col_i_name = col_j_name
+                    continue
+                if corr_value > corr_threshold:
+                    cols_correlated_with_col_i.append(col_j_name)
+            processed_columns_data[col_i_name]["Is correlated with columns"] = cols_correlated_with_col_i
     
     # Finally, update knowledge
     dataset_knowledge["Columns"] = processed_columns_data
