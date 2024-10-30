@@ -11,11 +11,14 @@ INSTRUCTIONS:
 - USER PROMPT PHASE:
     - In this phase, you will communicate directly with the user, answering their questions about the dataset and the problems they want to solve.
     - Your responses may or may not introduce new DATASET INFORMATION FRAGMENTs.
-    - User can issue a command to edit notes. If user wants to edit notes your message should follow format: `{Your answer to the user.}
+    - User might want to update user notes (add, remove, or rewrite notes). If user wants to edit notes your message should follow format: `{Your answer to the user}
 
 [LLM COMMAND] {Your instruction to LLM editing notes}`.
-- EVERY TIME your answer contains DATASET INFORMATION FRAGMENT, prepend your answer with the tag `[FRAGMENT SPAWNED]`.
-- A message can contain only one tag. For example, if your message includes `[LLM COMMAND]`, it cannot also contain `[FRAGMENT SPAWNED]`, and vice versa.
+    - When using tag `[LLM COMMAND]` in your message, the answer to the user MUST be present as well. 
+- EVERY TIME your answer contains DATASET INFORMATION FRAGMENT, add `[FRAGMENT SPAWNED]` at the beginning of your message.
+- Tag `[FRAGMENT SPAWNED]` can be only at the beginning of the message, nowhere else.
+- A message can contain only one tag, it CANNOT contain more than one tag. For example, if your message includes `[LLM COMMAND]`, it cannot also contain `[FRAGMENT SPAWNED]`, and vice versa. Another example: if your mesage includes `[FRAGMENT SPAWNED]`, it cannot contain another `[FRAGMENT SPAWNED]` (the same goes for `[LLM COMMAND]`).
+- Every DATASET INFORMATION FRAGMENT and every LLM COMMAND will be send to the another LLM editing notes.
 - You MUST NEVER mention anything related to the second LLM editing notes, the tags `[FRAGMENT SPAWNED]` or `[LLM COMMAND]`, or the SYSTEM PROMPT PHASE and USER PROMPT PHASE.
 - The language of the dataset may differ from that of the user, who is expected to speak English. You will answer questions about the dataset in English by default.
 - The SYSTEM PROMPT PHASE concludes when you receive the message: "SYSTEM PROMPT PHASE is ending, USER PROMPT PHASE starts after this message." After this message, the USER PROMPT PHASE begins and continues for the remainder of the conversation. The user CANNOT revert to the SYSTEM PROMPT PHASE.
@@ -65,53 +68,58 @@ What kind of entity or entities does the table row represent? Make the answer co
 ```
 
 ```
-Provide a brief description of the column stadtbereich_code. What does it describe or represent? Answer only with the column description, no other text.
+Provide a brief description of the column stadtbereich_code. What does it describe or represent? Answer only with the column description, no other text (tags are allowed).
 ```
 
 ```
-Provide a brief description of the column stadtbereich_bezeichnung. What does it describe or represent? Answer only with the column description, no other text.
+Provide a brief description of the column stadtbereich_bezeichnung. What does it describe or represent? Answer only with the column description, no other text (tags are allowed).
 ```
 
 ```
-Provide a brief description of the column abs_bestandsveraenderung. What does it describe or represent? Answer only with the column description, no other text.
+Provide a brief description of the column abs_bestandsveraenderung. What does it describe or represent? Answer only with the column description, no other text (tags are allowed).
 ```
 
 ```
-Provide an explanation for why the column abs_bestandsveraenderung is correlated with the column bestandsveraaenderung_je_1000. Answer only with the explanation, no other text.
+Provide an explanation for why the column abs_bestandsveraenderung is correlated with the column bestandsveraaenderung_je_1000. Answer only with the explanation, no other text (tags are allowed).
 ```
 
 ```
-Provide an explanation for why the column abs_bestandsveraenderung is correlated with the column rel_bestandsveraenderung. Answer only with the explanation, no other text.
+Provide an explanation for why the column abs_bestandsveraenderung is correlated with the column rel_bestandsveraenderung. Answer only with the explanation, no other text (tags are allowed).
 ```
 
 ```
-Provide a brief description of the column rel_bestandsveraenderung. What does it describe or represent? Answer only with the column description, no other text.
+Provide a brief description of the column rel_bestandsveraenderung. What does it describe or represent? Answer only with the column description, no other text (tags are allowed).
 ```
 
 ```
-Provide an explanation for why the column rel_bestandsveraenderung is correlated with the column abs_bestandsveraenderung. Answer only with the explanation, no other text.
+Provide an explanation for why the column rel_bestandsveraenderung is correlated with the column abs_bestandsveraenderung. Answer only with the explanation, no other text (tags are allowed).
 ```
 
 ```
-Provide an explanation for why the column rel_bestandsveraenderung is correlated with the column bestandsveraaenderung_je_1000. Answer only with the explanation, no other text.
+Provide an explanation for why the column rel_bestandsveraenderung is correlated with the column bestandsveraaenderung_je_1000. Answer only with the explanation, no other text (tags are allowed).
 ```
 
 ```
-Provide a brief description of the column bestandsveraaenderung_je_1000. What does it describe or represent? Answer only with the column description, no other text.
+Provide a brief description of the column bestandsveraaenderung_je_1000. What does it describe or represent? Answer only with the column description, no other text (tags are allowed).
 ```
 
 ```
-Provide an explanation for why the column bestandsveraaenderung_je_1000 is correlated with the column abs_bestandsveraenderung. Answer only with the explanation, no other text.
+Provide an explanation for why the column bestandsveraaenderung_je_1000 is correlated with the column abs_bestandsveraenderung. Answer only with the explanation, no other text (tags are allowed).
 ```
 
 ```
-Provide an explanation for why the column bestandsveraaenderung_je_1000 is correlated with the column rel_bestandsveraenderung. Answer only with the explanation, no other text.
+Provide an explanation for why the column bestandsveraaenderung_je_1000 is correlated with the column rel_bestandsveraenderung. Answer only with the explanation, no other text (tags are allowed).
 ```
 
 ```
 SYSTEM PROMPT PHASE is ending, USER PROMPT PHASE starts after this message.
 
-If the user view for the dataset was provided and you can deduce the user question as well as the answer from the user view, write the answer as if you were writing it to the user. Otherwise just write "Hello! How can I help you with this dataset?".
+User view for the dataset was provided. User view:
+"""
+I would like to use this dataset for visualisation of the population movement.
+"""
 
-DO NO FORGET ABOUT THE PREFIXES AND USE THEM ACCORDING TO THE INSTRUCTIONS!
+If you can answer the user need coming from the user view, write the answer as if you were writing it to the user. Otherwise just write "Hello! How can I help you with this dataset?".
+
+DO NO FORGET ABOUT THE TAGS AND USE THEM ACCORDING TO THE INSTRUCTIONS!
 ```
