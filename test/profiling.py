@@ -6,22 +6,12 @@ import json
 
 parser = argparse.ArgumentParser(description="Script to generate a data profiling report and prompts.")
 # TODO check args (path to dataset default? encoding ok? addit. info and user view default to "")
-parser.add_argument("-p", "--path_to_dataset", type=str, default=r"datasets\bevoelkerungsstruktur_2023_bewegung_gesamt.csv", help="Path to the dataset file")
+parser.add_argument("-p", "--path_to_dataset", type=str, required=True, help="Path to the dataset file")
 parser.add_argument("-s", "--separator", type=str, default=";", help="Separator used in the dataset")
-parser.add_argument("-e", "--encoding", type=str, default="ISO-8859-1", help="Encoding used in the dataset")
+parser.add_argument("-e", "--encoding", type=str, default="utf-8", help="Encoding used in the dataset")
 parser.add_argument("-g", "--generate_html", type=bool, default=False, help="Flag for enabling HTML report generation")
-parser.add_argument("-a", "--additional_info", type=str,
-    default='''\
-Geographical overview of thermal waste treatment facilities
-
-Yearly updated geographical navigator: The geographic navigator presents overall annual information about facilities for the incineration and co-incineration of waste, which are obtained from summary operating records. These are the following: identification number (IČ), name of the facility, address of the operator, address of the facility, putting into operation, types of waste incinerated, nominal capacity, amount of waste incinerated in tonnes per year, number and brief description of incineration lines, enumeration of equipment for reducing emissions, annual emissions of all pollutants reported.
-
-The Czech Hydrometeorological Institute processes and continuously updates the database of equipment for thermal treatment of waste in cooperation with ČIŽP. Pursuant to Article 55 of Directive 2010/75/EU, which regulates access to information and public participation, we are making available a list of all thermal waste treatment facilities.\
-''', 
-    help="Path to the dataset file")
-parser.add_argument("-u", "--user_view", type=str,
-    default="I want to use this dataset to create a software which will visualise on the map where are the facilities for the incineration located and which type of waste can be incinerated there.", 
-    help="Path to the dataset file")
+parser.add_argument("-a", "--additional_info", type=str, default="", help="Path to the dataset file")
+parser.add_argument("-u", "--user_view", type=str, default="", help="Path to the dataset file")
 
 
 def to_percentage(num):
