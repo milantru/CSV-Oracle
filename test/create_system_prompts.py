@@ -67,6 +67,11 @@ def process_column_data(column_data):
         
     # Categorical
     # Seems no categorical data is needed
+
+    # DateTime
+    # Comments like Numerical, Text, etc. are for guidance only, 
+    # for example DateTime also contains "min" and "max", as the Numerical does, 
+    # but the code is not written here for these properties to avoid code duplicity
     return processed_column_data
 
 def add_columns_info_to_knowledge(dataset_knowledge, report):
@@ -177,6 +182,9 @@ def create_data_profiling_report(args, csv_file_path):
     if args.generate_html:
         csv_filename = csv_file_path.stem
         profile.to_file(rf"reports\report_for_{csv_filename}.html")
+
+    #TODO tmp json, DELETE following line
+    profile.to_file(rf"reports\report_for_{csv_file_path.stem}.json")
 
     json_string = profile.to_json()
     report = json.loads(json_string)
