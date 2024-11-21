@@ -96,7 +96,7 @@ def add_columns_info_to_knowledge(dataset_knowledge, report):
                     col_i_name = col_j_name
                     continue
                 if corr_value > corr_threshold:
-                    cols_correlated_with_col_i.append(f"{col_j_name} (correlation value: {corr_value})")
+                    cols_correlated_with_col_i.append(f"{col_j_name} (correlation value: {round(corr_value, 2)})")
             processed_columns_data[col_i_name]["Is correlated with columns"] = cols_correlated_with_col_i
     
     # Finally, update knowledge
@@ -154,20 +154,20 @@ def create_data_prompt(csv_file_name, schema, sample_data, additional_info, user
 
 def add_column_prompts(prompts, csv_file_name, columns_knowledge):
     for col_name, col_info in columns_knowledge.items():
-        column_prompt = f'Provide a brief description of the column {col_name} from table {csv_file_name}. What does it describe or represent? Answer only with the column description, no other text (tags are allowed).'
+        column_prompt = f'Provide a brief description of the column {col_name} from table {csv_file_name}. What does it describe or represent? Answer only with the column description, no other text.'
         prompts.append(column_prompt)
 
         # "Missing values count" is expected to always be in col_info, but we check its existience anyway 
         # because of defensive programming. And we do so in case of other properties as well.
         if ("Missing values count" in col_info and col_info["Missing values count"] > 0) \
         and ("Missing values count in %" in col_info and col_info["Missing values count in %"] > 0):
-            column_prompt_missing_values = f'The column {col_name} from table {csv_file_name} has {col_info["Missing values count"]} missing values ({col_info["Missing values count in %"]} %). Provide an explanation why the values are missing. Answer only with the explanation, no other text (tags are allowed).'
+            column_prompt_missing_values = f'The column {col_name} from table {csv_file_name} has {col_info["Missing values count"]} missing values ({col_info["Missing values count in %"]} %). Provide an explanation why the values are missing. Answer only with the explanation, no other text.'
             prompts.append(column_prompt_missing_values)
         
         if "Is correlated with columns" in col_info and len(col_info["Is correlated with columns"]) > 0:
             for correlated_col_name in col_info["Is correlated with columns"]:
                 # correlated_col_name includes, apart from the col name, the corr value
-                column_prompt_corr = f'Provide an explanation for why the column {col_name} from table {csv_file_name} is correlated with the column {correlated_col_name}. Answer only with the explanation, no other text (tags are allowed).'
+                column_prompt_corr = f'Provide an explanation for why the column {col_name} from table {csv_file_name} is correlated with the column {correlated_col_name}. Answer only with the explanation, no other text.'
                 prompts.append(column_prompt_corr)
 
         # TODO (schema) for each column, if schema provided; chcelo by to schemu...
