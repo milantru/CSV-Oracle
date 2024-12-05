@@ -56,3 +56,35 @@ Z analýzy knižníc vyplýva, že na naše účely sa hodia knižnice Data Prof
 \subsection{Obmedzenia}
 
 Vybrali sme si teda knižnicu YData Profiling. \href{https://docs.profiling.ydata.ai/latest/getting-started/concepts/#data-types}{Podľa dokumentácie} existuje 9 typov (resp. 10 ak rozlišujeme \verb|Date| a \verb|DateTime|). My nebudeme pokrývať všetky typy, napr. Image neuvažujeme. Predpokladáme dáta numerické, textové, kategorické a aj dátumy. Fungovanie s inými typmi sa nevylučuje, ale neboli vyskúšané.
+
+\section{Spracovanie textového stĺpca}
+
+Data profiling nám poskytuje množstvo informáciím Medzi nimi nám pre textové stĺpce poskytuje informáciu aké hodnoty a v akom počte sa v stĺpci vyskytujú. Na základe týchto informácií by mohlo LLM lepšie určiť význam stĺpca. Problémom je, že takáto informácia môže byť teoreticky príliŠ veľká na to, aby sme ju mohli poskytnúť jazykovému modelu (nevojde sa do context window). Avšak existujú rôzne lingvistické metódy, ktoré by nám mohli pomôcť. ChatGPT navrhol tieto možnosti:
+
+\begin{enumerate}
+\item Term Frequency–Inverse Document Frequency (TF-IDF)
+Explanation: TF-IDF is a statistical measure used to evaluate how important a word is to a document in a collection. In your case, it can be used to find the most characteristic words in your text column, helping to highlight what the column is generally about.
+How it helps: By identifying the highest-scoring terms (with high TF-IDF values), you can summarize the most relevant words in the column. You could then take a subset of the top terms and their counts to feed into a language model, making it easier for the model to generate a summary.
+\item Topic Modeling (e.g., LDA)
+Explanation: Topic modeling algorithms, like Latent Dirichlet Allocation (LDA), can identify topics within a collection of documents. Each “topic” is essentially a group of words that frequently occur together.
+How it helps: By extracting a small number of main topics from the column, you can summarize the types of content that are most prevalent. The model would output a set of topics, each with related words, giving you insight into what the column represents. You can further analyze the top few topics to form a meaningful description of the column.
+\item Word Embedding Clustering
+Explanation: Word embeddings, such as those from Word2Vec, GloVe, or more recent embeddings like BERT, represent words as vectors based on their context in a large text corpus. By clustering these embeddings, you can group similar values together.
+How it helps: After clustering similar terms, you can look at representative words from each cluster to get a sense of the main themes. This technique works well when there is a lot of variation in the values, as it helps reduce the data down to clusters that capture the core concepts.
+\item Named Entity Recognition (NER)
+Explanation: Named Entity Recognition is an NLP technique for identifying entities in text, such as names, organizations, dates, locations, etc.
+How it helps: By running NER on your values, you could detect patterns or the types of entities present in the column, which could inform you about its content. For example, if NER reveals that many values are place names or organization names, this could indicate that the column may represent locations or affiliations.
+\item Frequent Pattern Mining
+Explanation: Techniques like Apriori or FP-Growth algorithms are typically used for association rule learning but can also be applied to text data.
+How it helps: These techniques can identify patterns or frequent word combinations within your values. By finding recurring word sequences or frequent co-occurrences, you can highlight core elements in the column that might signify its meaning.
+\item Text Summarization with Extractive Methods
+Explanation: Extractive summarization techniques (e.g., TextRank) can help in summarizing key parts of a text by extracting the most representative phrases.
+How it helps: By running a summarization algorithm on a sample of the values in your column, you can get concise phrases that capture the essence of the column’s content. This can reduce the length and complexity of the data fed into an LLM for further summarization or interpretation.
+\item Similarity Measures for Value Grouping (Cosine Similarity, Levenshtein Distance)
+Explanation: Using similarity measures, you can group text values based on how similar they are, which is particularly useful for categorizing variations of the same term.
+How it helps: Grouped values can be represented by a central or most common value, reducing the number of unique items. This allows you to create a shorter list of representative values to understand what types of information the column holds.
+\end{enumerate}
+
+Teoreticky môžeme techniky aj kombinovať, ale keďže toto nie je hlavným cieľom práce, tak sa obmedzíme na využitie iba jednej techniky.
+
+NER by som vyradil, pretože naco je by nám bolo identifikovanie entít, veď to by pre LLM nemalo byť problém. Modely ako napr. BERT by som tiež nevyužíval, lebo nevieme aký jazyk bude v stĺpci. Síce existujú multilinguálne modely, ale pokrývajú úplne vŠetky jazyky? Asi nie, čo?
