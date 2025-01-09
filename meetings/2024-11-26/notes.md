@@ -26,7 +26,7 @@
 
 ## Čo potrebujeme spraviť
 
-1. Načítaj .csv súbory aj s ich .json profilingom a vytvor s nich dokumenty/indexy (indexy sú jsony, dajú sa uložiť persistentne).
+1. Načítaj .csv súbory aj s ich .json profilingom a vytvor z nich dokumenty/indexy (indexy sú jsony, dajú sa uložiť persistentne).
 2. Pomocou LLM1 a indexov sa môžeme pýtať predpripravené prompty. Nemusíme mať memory ako pre chat, ale potrebujeme odchytiť otázku a odpoveď a v určitom formáte ich predať LLM pre vytvorenie json poznámok. V pamäti si držíme poslednú verziu .json poznámok
 3. Končí fáza s predvytvorenými promptami, nasleduje chat s užívateľom. .json poznámky sa asi môžu persistentne uložiť (je to 1. verzia poznámok), tento json sa môže znovu načítať a použiť ako ďalší document/index pre LLM1.
 4. Keď užívateľ chatuje s LLM1 (chat, takže potrebujeme Memory), tak sa môžu vygenerovať inštrukcie (pomocou instr tagov). Tie potrebujeme odchytiť a ich obsah predať LLM2.
