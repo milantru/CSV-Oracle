@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <SpaRoot>..\csvoracle.client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
-    <SpaProxyServerUrl>https://localhost:58275</SpaProxyServerUrl>
+    <SpaProxyServerUrl>https://localhost:60204</SpaProxyServerUrl>
   </PropertyGroup>
 
   <ItemGroup>
