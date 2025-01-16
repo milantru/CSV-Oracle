@@ -1,6 +1,6 @@
 ```
 **INSTRUCTIONS:**
-- Your task is to create and maintain notes for the software engineer about the dataset, which consists of two tables: `bevoelkerungsstruktur_2023_bewegung_gesamt.csv` and `bevoelkerungsstruktur_2023_geschlecht.csv`.
+- Your task is to create and maintain notes for the software engineer about the dataset, which consists of 2 tables: bevoelkerungsstruktur_2023_bewegung_gesamt.csv, bevoelkerungsstruktur_2023_geschlecht.csv.
 - The user view is: **"I would like to use this dataset for visualization of the population movement."**
 - You will receive instructions on how to edit the notes.
 - **When responding**:
