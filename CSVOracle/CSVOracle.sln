@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35707.178 d17.12
+VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSVOracle.Server", "CSVOracle.Server\CSVOracle.Server.csproj", "{A410601C-2D46-4484-A4FC-2CBACCA35775}"
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "csvoracle.client", "csvoracle.client\csvoracle.client.esproj", "{DAC4B89B-9672-4B90-B681-3786B1FF4800}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "CSVOracle.PythonScripts", "CSVOracle.PythonScripts\CSVOracle.PythonScripts.pyproj", "{95BF2754-AE3F-45E1-9B72-13DCFE2B7439}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSVOracle.Data", "CSVOracle.Data\CSVOracle.Data.csproj", "{0C70ADCB-3D28-41E5-B73F-8CC240FFF86F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{DAC4B89B-9672-4B90-B681-3786B1FF4800}.Release|Any CPU.Deploy.0 = Release|Any CPU
 		{95BF2754-AE3F-45E1-9B72-13DCFE2B7439}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{95BF2754-AE3F-45E1-9B72-13DCFE2B7439}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C70ADCB-3D28-41E5-B73F-8CC240FFF86F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C70ADCB-3D28-41E5-B73F-8CC240FFF86F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C70ADCB-3D28-41E5-B73F-8CC240FFF86F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C70ADCB-3D28-41E5-B73F-8CC240FFF86F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
