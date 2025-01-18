@@ -31,6 +31,11 @@ namespace CSVOracle.Data.Repositories
 			await CsvOracleDbContext.SaveChangesAsync();
 		}
 
+		public async Task<User?> GetUserByEmailAsync(string email)
+		{
+			return await CsvOracleDbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+		}
+
 		private void UpdateUserDatasets(User storedUser, User user)
 		{
 			var existingDatasetsIds = new List<int>();
