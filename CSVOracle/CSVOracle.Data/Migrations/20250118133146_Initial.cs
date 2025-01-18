@@ -16,7 +16,7 @@ namespace CSVOracle.Data.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(254)", maxLength: 254, nullable: false),
                     Password = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
@@ -78,8 +78,8 @@ namespace CSVOracle.Data.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<int>(type: "int", nullable: false),
-                    UserView = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserView = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     MessagesJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CurrentDatasetKnowledgeJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DatasetId = table.Column<int>(type: "int", nullable: false)
