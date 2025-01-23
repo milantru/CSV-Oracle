@@ -8,7 +8,7 @@ namespace CSVOracle.Data.Interfaces
 {
 	public interface IRepository<TEntity> where TEntity : class, IEntity
 	{
-		public Task<TEntity?> GetAsync(int id);
+		public Task<TEntity> GetAsync(int id);
 		public Task<IEnumerable<TEntity>> GetAsync(Func<TEntity, bool> predicate);
 		public Task<IEnumerable<TEntity>> GetAsync();
 		public Task AddAsync(TEntity entity);

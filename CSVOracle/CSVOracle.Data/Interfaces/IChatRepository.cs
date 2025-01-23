@@ -9,6 +9,6 @@ namespace CSVOracle.Data.Interfaces
 {
 	public interface IChatRepository : IRepository<Chat>
 	{
-
+		
 	}
 }
