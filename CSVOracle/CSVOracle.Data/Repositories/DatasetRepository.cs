@@ -1,4 +1,5 @@
-﻿using CSVOracle.Data.Interfaces;
+﻿using CSVOracle.Data.Enums;
+using CSVOracle.Data.Interfaces;
 using CSVOracle.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -23,7 +24,7 @@ namespace CSVOracle.Data.Repositories
 		{
 			var storedDataset = await CsvOracleDbContext.Datasets.FirstAsync(d => d.Id == dataset.Id);
 
-			storedDataset.State = dataset.State;
+			storedDataset.Status = dataset.Status;
 			storedDataset.Separator = dataset.Separator;
 			storedDataset.Encoding = dataset.Encoding;
 			storedDataset.AdditionalInfoIndexJson = dataset.AdditionalInfoIndexJson;
@@ -43,6 +44,25 @@ namespace CSVOracle.Data.Repositories
 			UpdateDatasetChats(storedDataset, dataset);
 
 			await CsvOracleDbContext.SaveChangesAsync();
+		}
+
+		public override async Task<Dataset> GetAsync(int datasetId)
+		{
+			return await CsvOracleDbContext.Datasets.AsNoTracking()
+				.Include(d => d.DatasetFiles)
+				.Include(d => d.User)
+				.Include(d => d.Chats)
+				.FirstAsync(d => d.Id == datasetId);
+		}
+
+		public async Task<List<Dataset>> GetDatasetsByUserIdAsync(int userId)
+		{
+			return await CsvOracleDbContext.Datasets.AsNoTracking()
+				.Include(d => d.DatasetFiles)
+				.Include(d => d.User)
+				.Include(d => d.Chats)
+				.Where(d => d.User.Id == userId)
+				.ToListAsync();
 		}
 
 		private void UpdateDatasetChats(Dataset storedDataset, Dataset dataset)

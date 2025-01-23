@@ -32,5 +32,12 @@ namespace CSVOracle.Data.Repositories
 
 			await CsvOracleDbContext.SaveChangesAsync();
 		}
+
+		public override async Task<Chat> GetAsync(int chatId)
+		{
+			return await CsvOracleDbContext.Chats.AsNoTracking()
+				.Include(c => c.Dataset)
+				.FirstAsync(c => c.Id == chatId);
+		}
 	}
 }

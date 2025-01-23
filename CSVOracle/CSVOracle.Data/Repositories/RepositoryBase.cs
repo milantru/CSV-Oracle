@@ -28,9 +28,9 @@ namespace CSVOracle.Data.Repositories
 			await dbContext.SaveChangesAsync();
 		}
 
-		public async Task<TEntity?> GetAsync(int id)
+		public virtual async Task<TEntity> GetAsync(int id)
 		{
-			var entity = await dbContext.Set<TEntity>().AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
+			var entity = await dbContext.Set<TEntity>().AsNoTracking().FirstAsync(e => e.Id == id);
 
 			return entity;
 		}
