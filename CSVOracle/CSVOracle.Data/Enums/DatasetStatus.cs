@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CSVOracle.Data.Enums
 {
-	public enum DatasetState
+	public enum DatasetStatus
 	{
 		Created,
 		Queued,

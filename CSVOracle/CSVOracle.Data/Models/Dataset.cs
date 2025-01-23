@@ -13,11 +13,13 @@ namespace CSVOracle.Data.Models
 	{
 		public int Id { get; set; }
 
-		public DatasetState State { get; set; }
+		public DatasetStatus Status { get; set; }
 
 		public char? Separator { get; set; }
 
 		public string? Encoding { get; set; }
+
+		public string? AdditionalInfo { get; set; }
 
 		public string? AdditionalInfoIndexJson { get; set; }
 
