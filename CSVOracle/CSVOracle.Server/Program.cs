@@ -2,6 +2,7 @@ using CSVOracle.Data;
 using CSVOracle.Data.Interfaces;
 using CSVOracle.Data.Repositories;
 using CSVOracle.Server.Services;
+using CSVOracle.Server.Services.BackgroundServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -64,6 +65,10 @@ builder.Services.AddScoped<IDatasetRepository, DatasetRepository>();
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<TokenHelperService>();
+
+builder.Services.AddSingleton<PythonExecutorService>();
+
+builder.Services.AddHostedService<DatasetProcessorService>();
 
 var app = builder.Build();
 
