@@ -1,20 +1,21 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./pages/home/Home";
-import Datasets from "./pages/datasets/Datasets";
-import Chat from "./pages/chat/chat";
-import NotFound from "./pages/not-found/NotFound";
+import { BrowserRouter as Router } from "react-router-dom";
+import { AuthProvider } from "./shared/auth/Auth";
+import { ToastContainer } from "react-toastify";
+import CsvOracleRoutes from "./shared/routes/CsvOracleRoutes";
+import Panel from "./shared/components/Panel";
 
 function App() {
-    return (
-        <Router>
-            <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/datasets" element={<Datasets />} />
-                <Route path="/chat" element={<Chat />} />
-                <Route path="*" element={<NotFound />} />
-            </Routes>
-        </Router>
-    );
+	return (
+		<>
+			<Router>
+				<AuthProvider>
+					<Panel />
+					<CsvOracleRoutes />
+					<ToastContainer />
+				</AuthProvider>
+			</Router>
+		</>
+	);
 }
 
 export default App;
