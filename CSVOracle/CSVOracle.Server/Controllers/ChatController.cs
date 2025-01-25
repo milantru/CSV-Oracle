@@ -16,13 +16,13 @@ namespace CSVOracle.Server.Controllers
 		private readonly ILogger<ChatController> logger;
 		private readonly IChatRepository chatRepository;
 		private readonly IDatasetRepository datasetRepository;
-		private readonly TokenHelper tokenHelper;
+		private readonly TokenHelperService tokenHelper;
 
 		public ChatController(
 			ILogger<ChatController> logger,
 			IChatRepository chatRepository,
 			IDatasetRepository datasetRepository,
-			TokenHelper tokenHelper
+			TokenHelperService tokenHelper
 		)
 		{
 			this.logger = logger;

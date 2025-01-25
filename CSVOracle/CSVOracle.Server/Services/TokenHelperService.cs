@@ -8,13 +8,13 @@ using System.Text;
 
 namespace CSVOracle.Server.Services
 {
-	public class TokenHelper
+	public class TokenHelperService
 	{
 		private const string authorizationHeaderPrefix = "bearer ";
 		private readonly string tokenPhrase;
 		private readonly IUserRepository userRepository;
 
-		public TokenHelper(IConfiguration config, IUserRepository userRepository)
+		public TokenHelperService(IConfiguration config, IUserRepository userRepository)
 		{
 			this.tokenPhrase = config.GetRequiredSection("AppSettings:Token").Value!;
 			this.userRepository = userRepository;

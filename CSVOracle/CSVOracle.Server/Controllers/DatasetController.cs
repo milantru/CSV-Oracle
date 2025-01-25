@@ -21,13 +21,13 @@ namespace CSVOracle.Server.Controllers
 		private readonly ILogger<DatasetController> logger;
 		private readonly string dataFolderPath;
 		private readonly IDatasetRepository datasetRepository;
-		private readonly TokenHelper tokenHelper;
+		private readonly TokenHelperService tokenHelper;
 
 		public DatasetController(
 			ILogger<DatasetController> logger,
 			IConfiguration config,
 			IDatasetRepository datasetRepository, 
-			TokenHelper tokenHelper
+			TokenHelperService tokenHelper
 		)
 		{
 			this.logger = logger;

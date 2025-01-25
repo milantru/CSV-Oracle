@@ -63,7 +63,7 @@ builder.Services.AddDbContext<CSVOracleDbContext>(options =>
 builder.Services.AddScoped<IDatasetRepository, DatasetRepository>();
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<TokenHelper>();
+builder.Services.AddScoped<TokenHelperService>();
 
 var app = builder.Build();
 

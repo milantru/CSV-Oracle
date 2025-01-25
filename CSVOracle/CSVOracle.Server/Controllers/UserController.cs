@@ -19,13 +19,13 @@ namespace CSVOracle.Server.Controllers
 		private readonly ILogger<UserController> logger;
 		private readonly IConfiguration config;
 		private readonly IUserRepository userRepository;
-		private readonly TokenHelper tokenHelper;
+		private readonly TokenHelperService tokenHelper;
 
 		public UserController(
 			ILogger<UserController> logger, 
 			IConfiguration config, 
 			IUserRepository userRepository,
-			TokenHelper tokenHelper
+			TokenHelperService tokenHelper
 		)
 		{
 			this.logger = logger;
