@@ -9,6 +9,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text;
 using System.Text.Json.Serialization;
+using CSVOracle.Server.Services.BackgroundServices;
 
 namespace CSVOracle.Server.Controllers
 {
@@ -129,8 +130,7 @@ namespace CSVOracle.Server.Controllers
 			dataset.Status = DatasetStatus.Queued;
 			await this.datasetRepository.UpdateAsync(dataset);
 
-			// TODO Insert dataset id to pipeline queue
-
+			DatasetProcessorService.EnqueueDatasetId(dataset.Id);
 
 			this.logger.LogInformation("Dataset has been enqueued for processing successfully.");
 			return Ok(dataset.Id);
