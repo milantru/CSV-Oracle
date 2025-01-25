@@ -11,7 +11,7 @@ namespace CSVOracle.Data.Interfaces
 		public Task<TEntity> GetAsync(int id);
 		public Task<IEnumerable<TEntity>> GetAsync(Func<TEntity, bool> predicate);
 		public Task<IEnumerable<TEntity>> GetAsync();
-		public Task AddAsync(TEntity entity);
+		public Task<TEntity> AddAsync(TEntity entity);
 		public abstract Task UpdateAsync(TEntity entity);
 		public Task RemoveAsync(TEntity entity);
 	}
