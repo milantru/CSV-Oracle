@@ -1,4 +1,5 @@
 ﻿using CSVOracle.Data.Interfaces;
+using CSVOracle.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -21,11 +22,16 @@ namespace CSVOracle.Data.Repositories
 			this.dbContext = dbContext;
 		}
 
-		public async Task AddAsync(TEntity entity)
+		public virtual async Task<TEntity> AddAsync(TEntity entity)
 		{
 			dbContext.Set<TEntity>().Add(entity);
 
 			await dbContext.SaveChangesAsync();
+
+			/* After Add method, the entity is being tracked. We do not want to return tracked entity,
+			 * so the new query is executed. After SaveChanges method call the entity will have valid id
+			 * (EF Core will take care of that). */
+			return await dbContext.Set<TEntity>().AsNoTracking().FirstAsync(e => e.Id == entity.Id);
 		}
 
 		public virtual async Task<TEntity> GetAsync(int id)

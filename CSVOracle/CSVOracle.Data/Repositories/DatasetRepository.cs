@@ -20,6 +20,15 @@ namespace CSVOracle.Data.Repositories
 			
 		}
 
+		public override Task<Dataset> AddAsync(Dataset entity)
+		{
+			/* We attach the user because we don't want to create a new user in the database, 
+			 * we want to use the existing one. */
+			CsvOracleDbContext.Attach(entity.User);
+
+			return base.AddAsync(entity);
+		}
+
 		public override async Task UpdateAsync(Dataset dataset)
 		{
 			var storedDataset = await CsvOracleDbContext.Datasets.FirstAsync(d => d.Id == dataset.Id);
