@@ -30,9 +30,10 @@ namespace CSVOracle.Data.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    State = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     Separator = table.Column<string>(type: "nvarchar(1)", nullable: true),
                     Encoding = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AdditionalInfo = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AdditionalInfoIndexJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     InitialDatasetKnowledgeJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     FirstChatMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),

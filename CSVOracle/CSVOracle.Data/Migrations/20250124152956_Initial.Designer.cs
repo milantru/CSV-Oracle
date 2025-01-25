@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CSVOracle.Data.Migrations
 {
     [DbContext(typeof(CSVOracleDbContext))]
-    [Migration("20250118133146_Initial")]
+    [Migration("20250124152956_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -65,6 +65,9 @@ namespace CSVOracle.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AdditionalInfo")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("AdditionalInfoIndexJson")
                         .HasColumnType("nvarchar(max)");
 
@@ -86,7 +89,7 @@ namespace CSVOracle.Data.Migrations
                     b.Property<string>("Separator")
                         .HasColumnType("nvarchar(1)");
 
-                    b.Property<int>("State")
+                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<int>("UserId")
