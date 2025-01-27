@@ -20,13 +20,24 @@ namespace CSVOracle.Data.Repositories
 			
 		}
 
-		public override Task<Dataset> AddAsync(Dataset entity)
+		public override async Task<Dataset> AddAsync(Dataset dataset)
 		{
+			CsvOracleDbContext.AddRange(dataset.DatasetFiles);
 			/* We attach the user because we don't want to create a new user in the database, 
 			 * we want to use the existing one. */
-			CsvOracleDbContext.Attach(entity.User);
+			CsvOracleDbContext.Attach(dataset.User);
 
-			return base.AddAsync(entity);
+			CsvOracleDbContext.Add(dataset);
+
+			await CsvOracleDbContext.SaveChangesAsync();
+
+			/* After Add method, the entity is being tracked. We do not want to return tracked entity,
+			 * so the new query is executed with AsNoTracking. After SaveChanges method call the entity 
+			 * will have valid id (EF Core will take care of that). */
+			return await CsvOracleDbContext.Datasets.AsNoTracking()
+				.Include(d => d.User)
+				.Include(d => d.DatasetFiles)
+				.FirstAsync(e => e.Id == dataset.Id);
 		}
 
 		public override async Task UpdateAsync(Dataset dataset)
@@ -41,12 +52,9 @@ namespace CSVOracle.Data.Repositories
 			storedDataset.NotesLlmInstructions = dataset.NotesLlmInstructions;
 			storedDataset.ChatLlmInstructions = dataset.ChatLlmInstructions;
 
-			// User is not updated because once the dataset is assigned to the user, it is final.
+			// User is not updated because once the dataset is assigned to the user (when creating dataset), it is final.
 
-			/* We update dataset files just simply by assigning (and not the way how we update chats)
-			 * because by the app design we will upload only new files and we upload them just once, 
-			 * all at the same time, and then the files will not be updated ever. */
-			storedDataset.DatasetFiles = dataset.DatasetFiles;
+			// DatasetFiles are not updated because we add them just once, when the dataset is created.
 
 			// Attention! The contents of the chats are NOT updated.
 			UpdateDatasetChats(storedDataset, dataset);
