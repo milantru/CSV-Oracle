@@ -22,19 +22,21 @@ namespace CSVOracle.Data.Models
 		public string? AdditionalInfo { get; set; }
 
 		public string? AdditionalInfoIndexJson { get; set; }
+		
+		public string? CsvFilesIndexJson { get; set; }
+
+		public string? DataProfilingReportsIndexJson { get; set; }
 
 		public List<DatasetFile> DatasetFiles { get; set; } = new();
 
 		public string? InitialDatasetKnowledgeJson { get; set; }
-
-		public string? FirstChatMessage { get; set; }
 
 		public string? NotesLlmInstructions { get; set; }
 
 		public string? ChatLlmInstructions { get; set; }
 
 		[Required]
-		public User User { get; set; } = new();
+		public User User { get; set; } = null!;
 
 		public List<Chat> Chats { get; set; } = new();
 	}

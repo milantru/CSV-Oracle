@@ -35,8 +35,9 @@ namespace CSVOracle.Data.Migrations
                     Encoding = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AdditionalInfo = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AdditionalInfoIndexJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CsvFilesIndexJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DataProfilingReportsIndexJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     InitialDatasetKnowledgeJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FirstChatMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     NotesLlmInstructions = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ChatLlmInstructions = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserId = table.Column<int>(type: "int", nullable: false)
@@ -58,8 +59,7 @@ namespace CSVOracle.Data.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    CsvFileIndexJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DataProfilingIndexJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DatasetId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -81,6 +81,7 @@ namespace CSVOracle.Data.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserView = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FirstChatMessage = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     MessagesJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CurrentDatasetKnowledgeJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DatasetId = table.Column<int>(type: "int", nullable: false)

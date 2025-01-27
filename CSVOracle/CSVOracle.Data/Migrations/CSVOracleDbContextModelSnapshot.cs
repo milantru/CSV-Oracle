@@ -36,6 +36,10 @@ namespace CSVOracle.Data.Migrations
                     b.Property<int>("DatasetId")
                         .HasColumnType("int");
 
+                    b.Property<string>("FirstChatMessage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("MessagesJson")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -71,10 +75,13 @@ namespace CSVOracle.Data.Migrations
                     b.Property<string>("ChatLlmInstructions")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Encoding")
+                    b.Property<string>("CsvFilesIndexJson")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FirstChatMessage")
+                    b.Property<string>("DataProfilingReportsIndexJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Encoding")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("InitialDatasetKnowledgeJson")
@@ -107,16 +114,12 @@ namespace CSVOracle.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CsvFileIndexJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DataProfilingIndexJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("DatasetId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

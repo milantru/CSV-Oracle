@@ -38,7 +38,6 @@ namespace CSVOracle.Data.Repositories
 			storedDataset.Encoding = dataset.Encoding;
 			storedDataset.AdditionalInfoIndexJson = dataset.AdditionalInfoIndexJson;
 			storedDataset.InitialDatasetKnowledgeJson = dataset.InitialDatasetKnowledgeJson;
-			storedDataset.FirstChatMessage = dataset.FirstChatMessage;
 			storedDataset.NotesLlmInstructions = dataset.NotesLlmInstructions;
 			storedDataset.ChatLlmInstructions = dataset.ChatLlmInstructions;
 

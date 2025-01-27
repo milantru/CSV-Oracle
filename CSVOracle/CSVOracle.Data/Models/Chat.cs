@@ -18,12 +18,15 @@ namespace CSVOracle.Data.Models
 		public string? UserView { get; set; } = string.Empty;
 
 		[Required]
+		public string FirstChatMessage { get; set; } = string.Empty;
+
+		[Required]
 		public string MessagesJson { get; set; } = string.Empty;
 
 		[Required]
 		public string CurrentDatasetKnowledgeJson { get; set; } = string.Empty;
 
 		[Required]
-		public Dataset Dataset { get; set; } = new();
+		public Dataset Dataset { get; set; } = null!;
 	}
 }

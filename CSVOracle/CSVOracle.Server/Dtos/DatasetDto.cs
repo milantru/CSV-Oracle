@@ -10,6 +10,7 @@ namespace CSVOracle.Server.Dtos
 		public char? Separator { get; set; }
 		public string? Encoding { get; set; }
 		public string? AdditionalInfo { get; set; }
+		public List<DatasetFileDto> DatasetFiles { get; set; } = new();
 
 		public static DatasetDto From(Dataset dataset)
 		{
@@ -18,7 +19,8 @@ namespace CSVOracle.Server.Dtos
 				Id = dataset.Id,
 				Separator = dataset.Separator,
 				Encoding = dataset.Encoding,
-				AdditionalInfo = dataset.AdditionalInfo
+				AdditionalInfo = dataset.AdditionalInfo,
+				DatasetFiles = dataset.DatasetFiles.Select(DatasetFileDto.From).ToList()
 			};
 		}
 	}

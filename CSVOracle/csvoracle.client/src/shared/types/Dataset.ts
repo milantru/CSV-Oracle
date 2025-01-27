@@ -1,3 +1,5 @@
+import { DatasetFile } from "./DatasetFile";
+
 export enum DatasetStatus {
 	Created,
 	Queued,
@@ -10,4 +12,5 @@ export type Dataset = {
 	separator: string | null; // char or null
 	encoding: string | null;
 	additionalInfo: string | null;
+	datasetFiles: DatasetFile[];
 };

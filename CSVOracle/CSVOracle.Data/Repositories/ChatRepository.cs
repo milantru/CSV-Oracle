@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ namespace CSVOracle.Data.Repositories
 
 			storedChat.Name = chat.Name;
 			storedChat.UserView = chat.UserView;
+			storedChat.FirstChatMessage = chat.FirstChatMessage;
 			storedChat.MessagesJson = chat.MessagesJson;
 			storedChat.CurrentDatasetKnowledgeJson = chat.CurrentDatasetKnowledgeJson;
 
