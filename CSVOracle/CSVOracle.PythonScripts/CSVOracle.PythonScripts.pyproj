@@ -4,7 +4,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>95bf2754-ae3f-45e1-9b72-13dcfe2b7439</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>CSVOracle.PythonScripts.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,6 +23,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CSVOracle.PythonScripts.py" />
+    <Compile Include="generate_prompting_phase_prompts.py" />
+    <Compile Include="generate_chat_llm_instructions.py" />
+    <Compile Include="generate_data_profiling_report.py" />
+    <Compile Include="generate_index_file.py" />
+    <Compile Include="generate_notes_llm_instructions.py" />
+    <Compile Include="generate_prompting_phase_instructions.py" />
+    <Compile Include="shared_helpers.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
