@@ -17,12 +17,13 @@ namespace CSVOracle.Server.Controllers
 	[Route("[controller]")]
 	public class DatasetController : ControllerBase
 	{
-		private const string datasetsFolderName = "datasets";
-		private const string datasetMetadataJsonFileName = "metadata.json";
 		private readonly ILogger<DatasetController> logger;
 		private readonly string dataFolderPath;
 		private readonly IDatasetRepository datasetRepository;
 		private readonly TokenHelperService tokenHelper;
+
+		public static string CsvFilesFolderName => "csv_files";
+		public static string DatasetMetadataJsonFileName => "metadata.json";
 
 		public DatasetController(
 			ILogger<DatasetController> logger,
@@ -115,7 +116,11 @@ namespace CSVOracle.Server.Controllers
 				AdditionalInfo = metadata.AdditionalInfo,
 				Separator = metadata.Separator,
 				Encoding = metadata.Encoding,
-				User = user
+				User = user,
+				DatasetFiles = files.Select(file => new DatasetFile
+				{
+					Name = file.FileName,
+				}).ToList()
 			};
 			dataset = await this.datasetRepository.AddAsync(dataset);
 
@@ -247,22 +252,26 @@ namespace CSVOracle.Server.Controllers
 			return true;
 		}
 
-		private static void StoreCsvFilesAndMetadataToFilesystem(string folderPath, List<IFormFile> files, DatasetMetadata metadata)
+		private static void StoreCsvFilesAndMetadataToFilesystem(
+			string folderPath, 
+			List<IFormFile> csvFiles, 
+			DatasetMetadata metadata
+		)
 		{
 			// Create the datasets directory if it doesn't exist
-			var datasetsFolderPath = Path.Combine(folderPath, datasetsFolderName);
-			if (!Directory.Exists(datasetsFolderPath))
+			var csvFilesFolderPath = Path.Combine(folderPath, CsvFilesFolderName);
+			if (!Directory.Exists(csvFilesFolderPath))
 			{
-				Directory.CreateDirectory(datasetsFolderPath);
+				Directory.CreateDirectory(csvFilesFolderPath);
 			}
 
 			// Save each CSV file to the datasets folder
-			foreach (var file in files)
+			foreach (var csvFile in csvFiles)
 			{
-				var filePath = Path.Combine(datasetsFolderPath, file.FileName);
+				var csvFilePath = Path.Combine(csvFilesFolderPath, csvFile.FileName);
 
-				using var fs = new FileStream(filePath, FileMode.Create);
-				file.CopyTo(fs);
+				using var fs = new FileStream(csvFilePath, FileMode.Create);
+				csvFile.CopyTo(fs);
 			}
 
 			// Save the metadata to metadata.txt
@@ -270,7 +279,7 @@ namespace CSVOracle.Server.Controllers
 
 			var metadataJson = SerializeDatasetMetadata(metadata);
 
-			var metadataJsonFilePath = Path.Combine(folderPath, datasetMetadataJsonFileName);
+			var metadataJsonFilePath = Path.Combine(folderPath, DatasetMetadataJsonFileName);
 			System.IO.File.WriteAllText(metadataJsonFilePath, metadataJson);
 		}
 
