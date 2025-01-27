@@ -6,14 +6,29 @@ namespace CSVOracle.Server.Services
 	{
 		private readonly ILogger<PythonExecutorService> logger;
 		private readonly string pythonRuntimePath;
+		private readonly string pythonScriptsFolderPath;
 
 		public PythonExecutorService(ILogger<PythonExecutorService> logger, IConfiguration config)
 		{
 			this.logger = logger;
 			this.pythonRuntimePath = config.GetRequiredSection("AppSettings:PythonRuntimePath").Value!;
+			this.pythonScriptsFolderPath = config.GetRequiredSection("AppSettings:PythonScriptsFolderPath").Value!;
 		}
 
-		public async Task ExecutePythonScriptAsync(string scriptPath, string arguments = "")
+		/// <summary>
+		/// Executes a Python script (from scripts folder) asynchronously.
+		/// </summary>
+		/// <param name="scriptFileName">Name of the python script (with extension).</param>
+		/// <param name="arguments">Cmd arguments used when executing the script.</param>
+		/// <returns></returns>
+		public async Task ExecutePythonScriptAsync(string scriptFileName, string arguments = "")
+		{
+			var scriptPath = Path.Combine(this.pythonScriptsFolderPath, scriptFileName);
+
+			await _ExecutePythonScriptAsync(scriptPath, arguments);
+		}
+
+		private async Task _ExecutePythonScriptAsync(string scriptPath, string arguments = "")
 		{
 			var startInfo = new ProcessStartInfo
 			{
