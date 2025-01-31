@@ -30,6 +30,9 @@ namespace CSVOracle.Server.Services
 
 		private async Task _ExecutePythonScriptAsync(string scriptPath, string arguments = "")
 		{
+			/* There was a mysterious bug that caused the process to hang indefinitely. 
+			 * Rewriting code to use the new process api helped, more here:
+			 * https://stackoverflow.com/questions/439617/hanging-process-when-run-with-net-process-start-whats-wrong */
 			var startInfo = new ProcessStartInfo
 			{
 				FileName = this.pythonRuntimePath,
@@ -41,24 +44,31 @@ namespace CSVOracle.Server.Services
 			};
 
 			using var process = new Process { StartInfo = startInfo };
+			
+			process.Start();
 
-			await Task.Run(() =>
+			var stdErr = process.StandardError;
+			var stdOut = process.StandardOutput;
+
+			var resultAwaiter = stdOut.ReadToEndAsync();
+			var errResultAwaiter = stdErr.ReadToEndAsync();
+
+			await process.WaitForExitAsync();
+
+			await Task.WhenAll(resultAwaiter, errResultAwaiter);
+
+			var result = resultAwaiter.Result;
+			var errResult = errResultAwaiter.Result;
+
+			if (!string.IsNullOrEmpty(result))
 			{
-				process.Start();
-				string result = process.StandardOutput.ReadToEnd();
-				string error = process.StandardError.ReadToEnd();
-				process.WaitForExit();
+				logger.LogInformation($"Python script output: {result}");
+			}
 
-				if (!string.IsNullOrEmpty(result))
-				{
-					logger.LogInformation($"Python script output: {result}");
-				}
-
-				if (!string.IsNullOrEmpty(error))
-				{
-					logger.LogError($"Python script error: {error}");
-				}
-			});
+			if (!string.IsNullOrEmpty(errResult))
+			{
+				logger.LogError($"Python script error: {errResult}");
+			}
 		}
 	}
 }
