@@ -33,9 +33,10 @@ namespace CSVOracle.Data.Repositories
 
 		public async Task<User?> GetUserByEmailAsync(string email)
 		{
-			return await CsvOracleDbContext.Users.AsNoTracking()
+			await Task.CompletedTask;
+			return CsvOracleDbContext.Users.AsNoTracking()
 				.Include(u => u.Datasets)
-				.FirstOrDefaultAsync(u => u.Email == email);
+				.FirstOrDefault(u => u.Email == email);
 		}
 
 		private void UpdateUserDatasets(User storedUser, User user)

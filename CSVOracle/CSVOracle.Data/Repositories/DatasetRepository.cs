@@ -76,12 +76,13 @@ namespace CSVOracle.Data.Repositories
 
 		public async Task<List<Dataset>> GetDatasetsByUserIdAsync(int userId)
 		{
-			return await CsvOracleDbContext.Datasets.AsNoTracking()
+			await Task.CompletedTask;
+			return CsvOracleDbContext.Datasets.AsNoTracking()
 				.Include(d => d.DatasetFiles)
 				.Include(d => d.User)
 				.Include(d => d.Chats)
 				.Where(d => d.User.Id == userId)
-				.ToListAsync();
+				.ToList();
 		}
 
 		private void UpdateDatasetChats(Dataset storedDataset, Dataset dataset)
