@@ -6,7 +6,7 @@ import Register from "../../pages/register/Register";
 import ProtectedRoute from "./ProtectedRoute";
 import Login from "../../pages/login/Login";
 import Profile from "../../pages/profile/Profile";
-import CreateNewDataset from "../../pages/create-new-dataset";
+import CreateNewDataset from "../../pages/create-new-dataset/CreateNewDataset";
 
 function CsvOracleRoutes() {
     return (
