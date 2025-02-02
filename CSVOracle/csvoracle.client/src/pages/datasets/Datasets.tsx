@@ -39,16 +39,12 @@ function Datasets() {
 			<div>
 				<div>
 					{isLoadingDatasets ? (<span>Loading datasets...</span>) : (
-						<label>
+						<p>
 							Select dataset...
-							<select onChange={e => selectDataset(parseInt(e.target.value))}>
-								{datasets.map((dataset, index) => (
-									<option key={index} value={dataset.id}>
-										<DatasetItem dataset={dataset} />
-									</option>
-								))}
-							</select>
-						</label>
+							{datasets.map((dataset, index) => (
+								<DatasetItem key={index} dataset={dataset} onSelect={selectDataset} />
+							))}
+						</p>
 					)}
 				</div>
 				<div>

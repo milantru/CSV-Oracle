@@ -9,9 +9,10 @@ const POLLING_INTERVAL = 1000 * 5; // every 5 seconds
 
 type Props = {
 	dataset: Dataset;
+	onSelect: (datasetId: number) => void;
 };
 
-function DatasetItem({ dataset }: Props) {
+function DatasetItem({ dataset, onSelect }: Props) {
 	const [datasetStatus, setDatasetStatus] = useState<DatasetStatus | null>(null);
 	const [pollingInterval, setPollingInterval] = useState<number | null>(POLLING_INTERVAL);
 	const isPageVisible = useVisibilityChange();
@@ -50,7 +51,13 @@ function DatasetItem({ dataset }: Props) {
 	}, pollingInterval);
 
 	return (
-		<>Dataset with id {dataset.id} ({datasetStatus !== null ? getDatasetStatusLabel(datasetStatus) : "-"})</>
+		<>
+			<input id={`dataset-${dataset.id}`} type="radio" name="dataset" value={dataset.id}
+				onChange={e => onSelect(parseInt(e.target.value))} />
+			<label htmlFor={`dataset-${dataset.id}`}>
+				Dataset with id {dataset.id} ({datasetStatus !== null ? getDatasetStatusLabel(datasetStatus) : "-"})
+			</label>
+		</>
 	);
 
 	async function getDatasetStatus(datasetId: number) {
