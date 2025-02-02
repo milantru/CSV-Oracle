@@ -50,7 +50,7 @@ function DatasetItem({ dataset }: Props) {
 	}, pollingInterval);
 
 	return (
-		<li key={dataset.id}>Dataset with id {dataset.id} ({datasetStatus !== null ? getDatasetStatusLabel(datasetStatus) : "-"})</li>
+		<>Dataset with id {dataset.id} ({datasetStatus !== null ? getDatasetStatusLabel(datasetStatus) : "-"})</>
 	);
 
 	async function getDatasetStatus(datasetId: number) {
