@@ -21,8 +21,6 @@ INSTRUCTIONS:
 - Your answers should be concise and to the point, containing only the answer to the question. So no other text, like for example "Feel free to ask me if you have more questions...".
 - The dataset consists of {get_string(csv_files_names)}.
 - The language of the dataset may differ from that of the user, who is expected to speak English. Because of that, you will answer questions about the dataset in English by default.
-
-If you understand, please respond with "OK".\
 '''
 
 def main(args):
