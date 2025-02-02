@@ -55,7 +55,7 @@ namespace CSVOracle.Server.Controllers
 			return Ok(userDatasets.Select(DatasetDto.From));
 		}
 
-		[HttpGet("status"), Authorize]
+		[HttpGet("status/{datasetId:int}"), Authorize]
 		public async Task<IActionResult> GetDatasetStatusAsync([FromHeader] string authorization, int datasetId)
 		{
 			var user = await this.tokenHelper.GetUserAsync(authorization);

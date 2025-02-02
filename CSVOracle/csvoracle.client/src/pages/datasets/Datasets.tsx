@@ -3,6 +3,7 @@ import { Dataset } from "../../shared/types/Dataset";
 import { getUserDatasetsAPI } from "../../shared/services/DatasetServices";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
+import DatasetItem from "./components/DatasetItem";
 
 function Datasets() {
 	const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -34,8 +35,8 @@ function Datasets() {
 			<div>
 				<div>
 					<ul>
-						{datasets.map((dataset, index) => (
-							<li key={index}>Dataset with id {dataset.id}</li>
+						{datasets.map((dataset) => (
+							<DatasetItem dataset={dataset} />
 						))}
 					</ul>
 				</div>
