@@ -76,7 +76,7 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			await datasetRepository.UpdateAsync(dataset);
 
 			// Prepare paths
-			var datasetFolderPath = Path.Combine(dataFolderPath, datasetId.ToString());
+			var datasetFolderPath = Path.Join(dataFolderPath, datasetId.ToString());
 
 			var csvFilesFolderPath = Path.Join(datasetFolderPath, DatasetController.CsvFilesFolderName);
 			var csvFilesPaths = Directory.GetFiles(csvFilesFolderPath, "*.csv");
