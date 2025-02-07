@@ -17,10 +17,6 @@ function CreateNewDataset() {
 	const [uploadProgress, setUploadProgress] = useState<number>(0);
 	const navigate = useNavigate();
 
-	useEffect(() => {
-		
-	}, [])
-
 	return (
 		<>
 			<form onSubmit={handleSubmit}>
