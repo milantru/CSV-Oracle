@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CSVOracle.Data.Migrations
 {
     [DbContext(typeof(CSVOracleDbContext))]
-    [Migration("20250127102326_Initial")]
+    [Migration("20250202100108_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
