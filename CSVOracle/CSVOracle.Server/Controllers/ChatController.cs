@@ -164,10 +164,85 @@ namespace CSVOracle.Server.Controllers
 		}
 
 		[HttpPost("generate-answer"), Authorize]
-		public async Task<IActionResult> GenerateAnswerAsync([FromHeader] string authorization, GenerateAnswerRequest request)
+		public async Task<IActionResult> GenerateAnswerAsync([FromHeader] string authorization, 
+			[FromForm] GenerateAnswerRequest request)
 		{
-			await Task.CompletedTask;
-			throw new NotImplementedException();
+			var user = await this.tokenHelper.GetUserAsync(authorization);
+			if (user is null)
+			{
+				var message = "Cannot generate answer for a non-existing user.";
+				this.logger.LogInformation(message);
+				return StatusCode(StatusCodes.Status401Unauthorized, message);
+			}
+			
+			Chat chat;
+			try
+			{
+				chat = await this.chatRepository.GetAsync(request.ChatId);
+			}
+			catch
+			{
+				var message = "Cannot generate answer, the chat does not exist.";
+				this.logger.LogInformation(message);
+				return StatusCode(StatusCodes.Status404NotFound, message);
+			}
+
+			// TODO Refactor
+			var chatFolderPath = Path.Join(this.dataFolderPath, Guid.NewGuid().ToString());
+			Directory.CreateDirectory(chatFolderPath);
+
+			string indicesFolderPath = Path.Join(chatFolderPath, "indices");
+			Directory.CreateDirectory(indicesFolderPath);
+			if (chat.Dataset.AdditionalInfoIndexJson is not null)
+			{
+				System.IO.File.WriteAllText(
+					Path.Join(indicesFolderPath, "additional_info_index.json"), chat.Dataset.AdditionalInfoIndexJson);
+			}
+			System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "csv_files_index.json"), chat.Dataset.CsvFilesIndexJson);
+			System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "reports_index.json"), chat.Dataset.DataProfilingReportsIndexJson);
+
+			string datasetKnowledgeFilePath = Path.Join(chatFolderPath, "dataset_knowledge.json");
+			System.IO.File.WriteAllText(datasetKnowledgeFilePath, chat.CurrentDatasetKnowledgeJson);
+
+			string? userViewFilePath = chat.UserView is not null ? Path.Join(chatFolderPath, "user_view.txt") : null;
+			if (userViewFilePath is not null)
+			{
+				System.IO.File.WriteAllText(userViewFilePath, chat.UserView);
+			}
+
+			string chatHistoryFilePath = Path.Join(chatFolderPath, "chat_history.json");
+			System.IO.File.WriteAllText(chatHistoryFilePath, chat.ChatHistoryJson);
+
+			string messageFilePath = Path.Join(chatFolderPath, "message.txt");
+			System.IO.File.WriteAllText(messageFilePath, request.NewMessage);
+
+			string notesLlmInstructionsFilePath = Path.Join(chatFolderPath, "notes_llm_instructions.txt");
+			System.IO.File.WriteAllText(notesLlmInstructionsFilePath, chat.Dataset.NotesLlmInstructions);
+
+			string updatedChatHistoryFilePath = Path.Join(chatFolderPath, "updated_chat_history.json");
+			string updatedDatasetKnowledgeFilePath = Path.Join(chatFolderPath, "updated_dataset_knowledge.json");
+			string answerFilePath = Path.Join(chatFolderPath, "answer.txt");
+
+			await _GenerateAnswerAsync(indicesFolderPath, datasetKnowledgeFilePath, userViewFilePath, chatHistoryFilePath,
+				messageFilePath, notesLlmInstructionsFilePath, updatedChatHistoryFilePath,
+				updatedDatasetKnowledgeFilePath, answerFilePath);
+
+			string chatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath);
+			string? updatedDatasetKnowledgeJson = null;
+			if (System.IO.File.Exists(updatedDatasetKnowledgeFilePath))
+			{
+				updatedDatasetKnowledgeJson = System.IO.File.ReadAllText(updatedDatasetKnowledgeFilePath);
+				chat.CurrentDatasetKnowledgeJson = updatedDatasetKnowledgeJson;
+			}
+			string answer = System.IO.File.ReadAllText(answerFilePath);
+
+			chat.ChatHistoryJson = chatHistoryJson;
+			await this.chatRepository.UpdateAsync(chat);
+
+			Directory.Delete(chatFolderPath, recursive: true);
+
+			this.logger.LogInformation("Chat has been created successfully.");
+			return Ok(ChatDto.From(chat));
 		}
 
 		[HttpPut, Authorize]

@@ -47,3 +47,29 @@ export const createNewChatAPI = async (chatName: string, userView: string, datas
 		return getErrorMessages(error);
 	}
 };
+
+export const generateAnswerAPI = async (message: string, chatId: number)
+	: Promise<{ chat: Chat | null, errorMessages: string[] }> => {
+	const token = localStorage.getItem("token");
+	if (!token) {
+		return { chat: null, errorMessages: ["Please log in."] };
+	}
+
+	const formData = new FormData();
+	formData.append("newMessage", message);
+	formData.append("chatId", chatId.toString());
+
+	try {
+		const response = await axios.post<Chat>(apiBaseUrl + "/Chat/generate-answer", formData, {
+			headers: {
+				"Authorization": "bearer " + token,
+				"Content-Type": "multipart/form-data"
+			}
+		});
+
+		const chat = response.data as Chat;
+		return { chat: chat, errorMessages: [] };
+	} catch (error) {
+		return { chat: null, errorMessages: getErrorMessages(error) };
+	}
+};
