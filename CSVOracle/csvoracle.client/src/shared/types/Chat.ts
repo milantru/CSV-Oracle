@@ -2,6 +2,6 @@ export type Chat = {
 	id: number;
 	name: string;
 	userView: string | null;
-	messagesJson: string;
+	messages: string[];
 	currentDatasetKnowledgeJson: string;
 };

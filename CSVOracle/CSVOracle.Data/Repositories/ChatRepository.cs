@@ -20,14 +20,29 @@ namespace CSVOracle.Data.Repositories
 
 		}
 
+		public override async Task<Chat> AddAsync(Chat chat)
+		{
+			/* We attach the dataset because we don't want to create a new dataset in the database, 
+			 * we want to use the existing one. */
+			CsvOracleDbContext.Attach(chat.Dataset);
+
+			CsvOracleDbContext.Add(chat);
+
+			await CsvOracleDbContext.SaveChangesAsync();
+
+			// After saving changes, the chat will have id set correctly.
+			return await CsvOracleDbContext.Chats.AsNoTracking()
+				.Include(c => c.Dataset)
+				.FirstAsync(c => c.Id == chat.Id);
+		}
+
 		public override async Task UpdateAsync(Chat chat)
 		{
 			var storedChat = await CsvOracleDbContext.Chats.FirstAsync(c => c.Id == chat.Id);
 
 			storedChat.Name = chat.Name;
 			storedChat.UserView = chat.UserView;
-			storedChat.FirstChatMessage = chat.FirstChatMessage;
-			storedChat.MessagesJson = chat.MessagesJson;
+			storedChat.ChatHistoryJson = chat.ChatHistoryJson;
 			storedChat.CurrentDatasetKnowledgeJson = chat.CurrentDatasetKnowledgeJson;
 
 			// We do not update the dataset because once the chat is assigned to the dataset, it is final.
