@@ -259,7 +259,7 @@ namespace CSVOracle.Server.Controllers
 		)
 		{
 			// Create the datasets directory if it doesn't exist
-			var csvFilesFolderPath = Path.Combine(folderPath, CsvFilesFolderName);
+			var csvFilesFolderPath = Path.Join(folderPath, CsvFilesFolderName);
 			if (!Directory.Exists(csvFilesFolderPath))
 			{
 				Directory.CreateDirectory(csvFilesFolderPath);
@@ -268,7 +268,7 @@ namespace CSVOracle.Server.Controllers
 			// Save each CSV file to the datasets folder
 			foreach (var csvFile in csvFiles)
 			{
-				var csvFilePath = Path.Combine(csvFilesFolderPath, csvFile.FileName);
+				var csvFilePath = Path.Join(csvFilesFolderPath, csvFile.FileName);
 
 				using var fs = new FileStream(csvFilePath, FileMode.Create);
 				csvFile.CopyTo(fs);
@@ -279,7 +279,7 @@ namespace CSVOracle.Server.Controllers
 
 			var metadataJson = SerializeDatasetMetadata(metadata);
 
-			var metadataJsonFilePath = Path.Combine(folderPath, DatasetMetadataJsonFileName);
+			var metadataJsonFilePath = Path.Join(folderPath, DatasetMetadataJsonFileName);
 			System.IO.File.WriteAllText(metadataJsonFilePath, metadataJson);
 		}
 

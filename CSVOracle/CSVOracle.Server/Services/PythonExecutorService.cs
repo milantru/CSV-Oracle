@@ -23,7 +23,7 @@ namespace CSVOracle.Server.Services
 		/// <returns></returns>
 		public async Task ExecutePythonScriptAsync(string scriptFileName, string arguments = "")
 		{
-			var scriptPath = Path.Combine(this.pythonScriptsFolderPath, scriptFileName);
+			var scriptPath = Path.Join(this.pythonScriptsFolderPath, scriptFileName);
 
 			await _ExecutePythonScriptAsync(scriptPath, arguments);
 		}
