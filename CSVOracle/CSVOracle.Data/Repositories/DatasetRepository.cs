@@ -59,6 +59,8 @@ namespace CSVOracle.Data.Repositories
 
 			// DatasetFiles are not updated because we add them just once, when the dataset is created.
 
+			// Status is not updated, it is being updated only when processing
+
 			// Attention! The contents of the chats are NOT updated.
 			UpdateDatasetChats(storedDataset, dataset);
 

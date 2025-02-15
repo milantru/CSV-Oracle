@@ -9,6 +9,7 @@ export enum DatasetStatus {
 
 export type Dataset = {
 	id: number;
+	status: DatasetStatus;
 	separator: string | null; // char or null
 	encoding: string | null;
 	additionalInfo: string | null;

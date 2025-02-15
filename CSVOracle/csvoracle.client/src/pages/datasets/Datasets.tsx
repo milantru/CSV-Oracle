@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Dataset } from "../../shared/types/Dataset";
+import { Dataset, DatasetStatus } from "../../shared/types/Dataset";
 import { getUserDatasetsAPI } from "../../shared/services/DatasetServices";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
@@ -56,7 +56,8 @@ function Datasets() {
 						<div className="d-flex w-90">
 							<div className="d-flex flex-wrap overflow-auto border p-1" style={{ width: "100%", maxHeight: "15em" }}>
 								{datasets.map((dataset, index) => (
-									<DatasetItem key={index} dataset={dataset} onSelect={selectDataset} />
+									<DatasetItem key={index} dataset={dataset} onSelect={selectDataset}
+										onStatusUpdate={status => updateDatasetStatus(dataset.id, status)} />
 								))}
 							</div>
 							<div className="w-10 ml-auto">
@@ -91,6 +92,14 @@ function Datasets() {
 		if (dataset) {
 			setSelectedDataset(dataset);
 		}
+	}
+
+	function updateDatasetStatus(datasetId: number, newStatus: DatasetStatus): void {
+		setDatasets(prevState =>
+			prevState.map(dataset =>
+				dataset.id === datasetId ? { ...dataset, status: newStatus } : dataset
+			)
+		);
 	}
 }
 

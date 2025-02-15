@@ -7,6 +7,7 @@ namespace CSVOracle.Server.Dtos
 	public class DatasetDto
 	{
 		public int Id { get; set; }
+		public DatasetStatus Status { get; set; }
 		public char? Separator { get; set; }
 		public string? Encoding { get; set; }
 		public string? AdditionalInfo { get; set; }
@@ -17,6 +18,7 @@ namespace CSVOracle.Server.Dtos
 			return new DatasetDto
 			{
 				Id = dataset.Id,
+				Status = dataset.Status,
 				Separator = dataset.Separator,
 				Encoding = dataset.Encoding,
 				AdditionalInfo = dataset.AdditionalInfo,

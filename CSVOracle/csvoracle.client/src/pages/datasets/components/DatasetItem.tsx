@@ -12,13 +12,13 @@ const POLLING_INTERVAL = 1000 * 5; // every 5 seconds
 type Props = {
 	dataset: Dataset;
 	onSelect: (datasetId: number) => void;
+	onStatusUpdate: (status: DatasetStatus) => void;
 };
 
-function DatasetItem({ dataset, onSelect }: Props) {
-	const [datasetStatus, setDatasetStatus] = useState<DatasetStatus | null>(null);
+function DatasetItem({ dataset, onSelect, onStatusUpdate }: Props) {
 	const [pollingInterval, setPollingInterval] = useState<number | null>(POLLING_INTERVAL);
 	const isPageVisible = useVisibilityChange();
-	const [isPollingDisabled, setIsPollingDisabled] = useState<boolean>(false);
+	const [isPollingDisabled, setIsPollingDisabled] = useState<boolean>(dataset.status === DatasetStatus.Processed);
 	const [isFetching, setIsFetching] = useState<boolean>(false);
 
 	useEffect(() => {
@@ -42,7 +42,10 @@ function DatasetItem({ dataset, onSelect }: Props) {
 				// Dataset is processed, its state won't change, so polling is not required anymore
 				setIsPollingDisabled(true);
 			}
-			setDatasetStatus(status);
+
+			if (status !== dataset.status) {
+				onStatusUpdate(status);
+			}
 			setIsFetching(false);
 		}
 
@@ -56,11 +59,11 @@ function DatasetItem({ dataset, onSelect }: Props) {
 		<button
 			type="button"
 			className="btn text-center m-2 py-3 border rounded-circle d-flex flex-column align-items-center justify-content-end"
-			title={datasetStatus !== null ? getDatasetStatusLabel(datasetStatus) : "-"}
+			title={getDatasetStatusLabel(dataset.status)}
 			onClick={() => onSelect(dataset.id)}
 		>
 			<div className="d-flex flex-column align-items-center">
-				{getStatusIcon(datasetStatus)}
+				{getStatusIcon(dataset.status)}
 				<small>Dataset #{dataset.id}</small>
 			</div>
 		</button>
@@ -110,9 +113,8 @@ function DatasetItem({ dataset, onSelect }: Props) {
 		return statusLabel;
 	}
 
-	function getStatusIcon(datasetStatus: DatasetStatus | null) {
+	function getStatusIcon(datasetStatus: DatasetStatus) {
 		switch (datasetStatus) {
-			case null:
 			case DatasetStatus.Created:
 			case DatasetStatus.Queued:
 			case DatasetStatus.Processing:
