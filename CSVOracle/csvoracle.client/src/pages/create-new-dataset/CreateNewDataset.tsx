@@ -1,7 +1,8 @@
-import { useState, useEffect, FormEvent, ChangeEvent } from "react";
+import { useState, FormEvent, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { uploadDatasetForProcessingAPI } from "../../shared/services/DatasetServices";
 import { toast } from "react-toastify";
+import ErrorsDisplay from "../../shared/components/ErrorsDisplay";
 
 type DatasetFormState = {
 	files: File[];
@@ -19,48 +20,46 @@ function CreateNewDataset() {
 
 	return (
 		<>
-			<form onSubmit={handleSubmit}>
-				<div>
-					<ul>
-						{errorMessages.map((errorMessage, index) => (
-							<li key={index}>{errorMessage}</li>
-						))}
-					</ul>
-				</div>
+			<h1 className="text-center mb-2">Create new dataset</h1>
+
+			<form onSubmit={handleSubmit} className="mx-auto p-4 border rounded shadow" style={{ maxWidth: "720px" }}>
+				<ErrorsDisplay errorMessages={errorMessages} />
 
 				<div>
-					<input type="file" multiple onChange={handleFilesChange} />
-					<label htmlFor="files">Downloading progress:</label>
-					<progress id="files" value={uploadProgress} max="100">{uploadProgress}%</progress>
+					<input type="file" className="form-control" multiple onChange={handleFilesChange} />
+					{isUploading && (<>
+						<label htmlFor="files" className="form-label">Uploading progress: </label>
+						<progress id="files" value={uploadProgress} max="100">{uploadProgress}%</progress>
+					</>)}
 					<ul>
 						{formState.files.map((file, index) => (
-							<li key={index}>Filename: {file.name} ({(file.size / 1024).toFixed(2)} KB)</li>
+							<li key={index}><small>Filename: {file.name} ({(file.size / 1024).toFixed(2)} KB)</small></li>
 
 						))}
 					</ul>
 				</div>
 
-				<div>
-					<input type="text" id="additional-info" value={formState.additionalInfo}
-						onChange={e => setFormState(prevState => ({ ...prevState, additionalInfo: e.target.value }))} />
-					<label htmlFor="additional-info">Additional info</label>
+				<div className="form-outline">
+					<label className="form-label" htmlFor="additional-info">Additional info</label>
+					<textarea id="additional-info" className="form-control border" rows={3} value={formState.additionalInfo}
+						onChange={e => setFormState(prevState => ({ ...prevState, additionalInfo: e.target.value }))}></textarea>
 				</div>
 
-				<div>
-					<input type="text" id="separator" value={formState.separator}
+				<div className="form-outline">
+					<label className="form-label" htmlFor="separator">Separator</label>
+					<input type="text" id="separator" className="form-control border" value={formState.separator}
 						onChange={e => setFormState(prevState => ({ ...prevState, separator: e.target.value }))} />
-					<label htmlFor="separator">Separator</label>
 				</div>
 
-				<div>
-					<input type="text" id="encoding" value={formState.encoding}
+				<div className="form-outline">
+					<label className="form-label" htmlFor="encoding">Encoding</label>
+					<input type="text" id="encoding" className="form-control border" value={formState.encoding}
 						onChange={e => setFormState(prevState => ({ ...prevState, encoding: e.target.value }))} />
-					<label htmlFor="encoding">Encoding</label>
 				</div>
 
-				{formState.files.length > 0 && !isUploading && (
-					<button type="submit">Submit</button>
-				)}
+				<div className="text-center mt-3">
+					<button type="submit" className="btn btn-primary" disabled={formState.files.length == 0 || isUploading}>Submit</button>
+				</div>
 			</form>
 		</>
 	);

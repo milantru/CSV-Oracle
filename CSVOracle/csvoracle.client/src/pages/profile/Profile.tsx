@@ -2,11 +2,11 @@ import UserForm from "../../shared/components/UserForm";
 
 function Profile() {
 	return (
-		<div>
-			<h1>Profile page</h1>
+		<>
+			<h1 className="text-center mb-2">Profile page</h1>
 
 			<UserForm />
-		</div>
+		</>
 	);
 }
 

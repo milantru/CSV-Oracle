@@ -5,6 +5,7 @@ import { getCurrentlyLoggedInUserAPI, updateUserAPI } from "../services/UserServ
 import { toast } from "react-toastify";
 import { registerAPI } from "../services/AuthServices";
 import { useNavigate } from "react-router-dom";
+import ErrorsDisplay from "./ErrorsDisplay";
 
 type UserFormState = User & {
 	oldPassword: string;
@@ -46,42 +47,38 @@ function UserForm() {
 	return formState === null ? (
 		<div>Loading...</div>
 	) : (
-		<form onSubmit={handleSubmit}>
-			<div>
-				<ul>
-					{errorMessages.map((message, index) => (
-						<li key={index}>{message}</li>
-					))}
-				</ul>
-			</div>
+			<form onSubmit={handleSubmit} className="mx-auto p-4 border rounded shadow" style={{ maxWidth: "500px" }}>
+			<ErrorsDisplay errorMessages={errorMessages} />
 
-			<div>
-				<input type="email" id="email" value={formState.email}
+			<div className="form-outline">
+				<label className="form-label " htmlFor="email">Email</label>
+				<input type="email" id="email" className="form-control border" value={formState.email}
 					onChange={e => setFormState(prevState => ({ ...prevState, email: e.target.value }))} />
-				<label htmlFor="email">Email</label>
 			</div>
 
 			{isLoggedIn() && (
-				<div>
-					<input type="password" id="old-password" value={formState.oldPassword}
+				<div className="form-outline">
+					<label className="form-label  mt-3" htmlFor="old-password">Old password</label>
+					<input type="password" id="old-password" className="form-control border" value={formState.oldPassword}
 						onChange={e => setFormState(prevState => ({ ...prevState, oldPassword: e.target.value }))} />
-					<label htmlFor="old-password">Old password</label>
 				</div>
 			)}
 
-			<div>
-				<input type="password" id="password" value={formState.password}
+			<div className="form-outline">
+				<label className="form-label  mt-3" htmlFor="password">{isLoggedIn() ? "New password" : "Password"}</label>
+				<input type="password" id="password" className="form-control border" value={formState.password}
 					onChange={e => setFormState(prevState => ({ ...prevState, password: e.target.value }))} />
-				<label htmlFor="password">{isLoggedIn() ? "New password" : "Password"}</label>
 			</div>
 
-			<div>
-				<input type="password" id="repeated-password" value={formState.repeatedPassword}
+			<div className="form-outline">
+				<label className="form-label mt-3" htmlFor="repeated-password">{isLoggedIn() ? "Confirm new password" : "Confirm password"}</label>
+				<input type="password" id="repeated-password" className="form-control border" value={formState.repeatedPassword}
 					onChange={e => setFormState(prevState => ({ ...prevState, repeatedPassword: e.target.value }))} />
-				<label htmlFor="repeated-password">{isLoggedIn() ? "Confirm new password" : "Confirm password"}</label>
 			</div>
 
-			<button type="submit">{isLoggedIn() ? "Save" : "Register"}</button>
+			<div className="text-center mt-3">
+				<button type="submit" className="btn btn-primary">{isLoggedIn() ? "Save" : "Register"}</button>
+			</div>
 		</form>
 	);
 

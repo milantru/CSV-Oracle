@@ -13,6 +13,7 @@ function Chats() {
 	const [isLoadingChats, setIsLoadingChats] = useState<boolean>(false);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 	const [newMessage, setNewMessage] = useState<string>("");
+	const [showDataset, setShowDataset] = useState(false);
 
 	useEffect(() => {
 		async function loadChats(datasetId: number) {
@@ -38,41 +39,55 @@ function Chats() {
 	}, []);
 
 	return (
-		<div>
-			<aside>
-				<div>
-					<Link to="/datasets">Back to datasets</Link>
-					<Link to={`/chats/${datasetId}/new`}>New dataset chat</Link>
+		<div className="d-flex" style={{ height: "100vh", width: "98vw" }}>
+			<aside className="w-25">
+				<div className="mb-2">
+					<Link to="/datasets" className="btn btn-primary m-2">Back to datasets</Link>
+					<Link to={`/chats/${datasetId}/new`} className="btn btn-primary m-2">New dataset chat</Link>
 				</div>
-				<div>
+				<div className="border overflow-auto" style={{height: "100vh"}}>
 					{isLoadingChats ? (<div>Loading chats...</div>) : (
 						<div>{datasetChats.map((chat, index) => (
-							<button key={index} onClick={() => selectChat(chat.id)}>{chat.name}</button>))}
+							<button key={index} className="btn border w-100" onClick={() => selectChat(chat.id)}>{chat.name}</button>))}
 						</div>
 					)}
 				</div>
 			</aside>
-			<div>
+			<div className="w-75">
 				{selectedChat && (<>
-					<h1>{selectedChat.name}</h1>
+					<div>
+							<h1 className="m-3">{selectedChat.name}</h1>
 
-					<ul>{selectedChat.messages.map((message, index) => (
-						<li key={index}>{message}</li>
-					))}
-					</ul>
+							<div className="flex-grow-1 overflow-auto" style={{ maxHeight: "400px" }}>
+								{selectedChat.messages.slice(1).map((message, index) => (
+									<div key={index} className={`d-flex ${index % 2 ? 'justify-content-end' : 'justify-content-start'}`}>
+										<div className={`border rounded m-2 p-2 w-75 ${index % 2 ? 'bg-secondary' : 'bg-light'}`}>
+											{message}
+										</div>
+									</div>
+								))}
+							</div>
 
-					<form onSubmit={handleSubmit}>
-						<div>
-							<input type="text" id="new-message" value={newMessage}
-								onChange={e => setNewMessage(e.target.value)} />
-							<label htmlFor="new-message">New message</label>
+							<form onSubmit={handleSubmit} className="p-2 border-top bg-white">
+								<div className="d-flex w-75 m-auto">
+									<textarea className="form-control me-2" rows={3} placeholder="Type your message here..." value={newMessage}
+										onChange={e => setNewMessage(e.target.value)}></textarea>
+
+									<div className="d-flex align-items-center">
+										<button type="submit" className="btn btn-primary" disabled={isSubmitting}>Send</button>
+									</div>
+								</div>
+							</form>
+					</div>
+					<div className="position-relative">
+						<div className={showDataset ? 'd-block' : 'd-none'}>
+							{selectedChat.currentDatasetKnowledgeJson}
 						</div>
 
-						<button type="submit" disabled={isSubmitting}>Send</button>
-					</form>
-
-					<div>
-						{selectedChat.currentDatasetKnowledgeJson}
+						<button type="button" className="btn btn-secondary position-absolute end-0 mx-4" style={{ top: "-20px" }}
+							onClick={() => setShowDataset(!showDataset)}>
+							{showDataset ? "Hide Dataset" : "Show Dataset"}
+						</button>
 					</div>
 				</>)}
 			</div>
@@ -92,7 +107,7 @@ function Chats() {
 		if (!selectedChat) {
 			return;
 		}
-		
+
 		setIsSubmitting(true);
 
 		const { chat, errorMessages } = await generateAnswerAPI(newMessage, selectedChat.id);

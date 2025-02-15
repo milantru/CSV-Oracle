@@ -4,6 +4,8 @@ import { Dataset, DatasetStatus } from "../../../shared/types/Dataset";
 import { useEffect, useState } from "react";
 import { useVisibilityChange } from "../../../shared/hooks/useVisibilityChange";
 import { useInterval } from "../../../shared/hooks/useInterval";
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import { BeatLoader } from "react-spinners";
 
 const POLLING_INTERVAL = 1000 * 5; // every 5 seconds
 
@@ -51,13 +53,17 @@ function DatasetItem({ dataset, onSelect }: Props) {
 	}, pollingInterval);
 
 	return (
-		<>
-			<input id={`dataset-${dataset.id}`} type="radio" name="dataset" value={dataset.id}
-				onChange={e => onSelect(parseInt(e.target.value))} />
-			<label htmlFor={`dataset-${dataset.id}`}>
-				Dataset with id {dataset.id} ({datasetStatus !== null ? getDatasetStatusLabel(datasetStatus) : "-"})
-			</label>
-		</>
+		<button
+			type="button"
+			className="btn text-center m-2 py-3 border rounded-circle d-flex flex-column align-items-center justify-content-end"
+			title={datasetStatus !== null ? getDatasetStatusLabel(datasetStatus) : "-"}
+			onClick={() => onSelect(dataset.id)}
+		>
+			<div className="d-flex flex-column align-items-center">
+				{getStatusIcon(datasetStatus)}
+				<small>Dataset #{dataset.id}</small>
+			</div>
+		</button>
 	);
 
 	async function getDatasetStatus(datasetId: number) {
@@ -102,6 +108,20 @@ function DatasetItem({ dataset, onSelect }: Props) {
 		}
 
 		return statusLabel;
+	}
+
+	function getStatusIcon(datasetStatus: DatasetStatus | null) {
+		switch (datasetStatus) {
+			case null:
+			case DatasetStatus.Created:
+			case DatasetStatus.Queued:
+			case DatasetStatus.Processing:
+				return <BeatLoader className="pb-2" />;
+			case DatasetStatus.Processed:
+				return <i className="bi bi-database fs-1 d-block"></i>;
+			default:
+				throw new Error("Unknown dataset status.");
+		}
 	}
 }
 

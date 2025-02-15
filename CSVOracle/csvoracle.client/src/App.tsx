@@ -9,9 +9,11 @@ function App() {
 		<>
 			<Router>
 				<AuthProvider>
-					<Panel />
-					<CsvOracleRoutes />
-					<ToastContainer />
+					<div className="position-relative">
+						<Panel />
+						<CsvOracleRoutes />
+						<ToastContainer />
+					</div>
 				</AuthProvider>
 			</Router>
 		</>

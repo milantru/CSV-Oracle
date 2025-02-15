@@ -2,6 +2,7 @@ import { useState, FormEvent, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { isNumber } from "../../shared/helperFunctions/TypeChecker";
 import { createNewChatAPI } from "../../shared/services/ChatServices";
+import ErrorsDisplay from "../../shared/components/ErrorsDisplay";
 
 type ChatFormState = {
 	name: string;
@@ -23,28 +24,26 @@ function CreateNewChat() {
 
 	return (
 		<>
-			<form onSubmit={handleSubmit}>
-				<div>
-					<ul>
-						{errorMessages.map((errorMessage, index) => (
-							<li key={index}>{errorMessage}</li>
-						))}
-					</ul>
-				</div>
+			<h1 className="text-center mb-2">Create new chat</h1>
 
-				<div>
-					<input type="text" id="name" value={formState.name}
+			<form onSubmit={handleSubmit} className="mx-auto p-4 border rounded shadow" style={{ maxWidth: "720px" }}>
+				<ErrorsDisplay errorMessages={errorMessages} />
+
+				<div className="form-outline">
+					<label className="form-label" htmlFor="name">Name</label>
+					<input type="text" id="name" className="form-control border" value={formState.name}
 						onChange={e => setFormState(prevState => ({ ...prevState, name: e.target.value }))} />
-					<label htmlFor="name">Name</label>
 				</div>
 
-				<div>
-					<input type="text" id="user-view" value={formState.userView}
+				<div className="form-outline">
+					<label className="form-label" htmlFor="user-view">User view</label>
+					<input type="text" id="user-view" className="form-control border" value={formState.userView}
 						onChange={e => setFormState(prevState => ({ ...prevState, userView: e.target.value }))} />
-					<label htmlFor="user-view">User view</label>
 				</div>
 
-				<button type="submit" disabled={isSubmitting}>Submit</button>
+				<div className="text-center mt-3">
+					<button type="submit" className="btn btn-primary" disabled={isSubmitting}>Submit</button>
+				</div>
 			</form>
 		</>
 	);
