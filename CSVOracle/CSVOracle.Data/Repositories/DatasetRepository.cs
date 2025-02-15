@@ -69,11 +69,12 @@ namespace CSVOracle.Data.Repositories
 
 		public override async Task<Dataset> GetAsync(int datasetId)
 		{
-			return await CsvOracleDbContext.Datasets.AsNoTracking()
+			await Task.CompletedTask;
+			return CsvOracleDbContext.Datasets.AsNoTracking()
 				.Include(d => d.DatasetFiles)
 				.Include(d => d.User)
 				.Include(d => d.Chats)
-				.FirstAsync(d => d.Id == datasetId);
+				.First(d => d.Id == datasetId);
 		}
 
 		public async Task<List<Dataset>> GetDatasetsByUserIdAsync(int userId)
