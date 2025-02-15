@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import DatasetItem from "./components/DatasetItem";
 import { useInterval } from "../../shared/hooks/useInterval";
+import { FadeLoader } from "react-spinners";
 
 function Datasets() {
 	const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -51,22 +52,22 @@ function Datasets() {
 
 			<div>
 				<div>
-					{isLoadingDatasets ? (<span>Loading datasets...</span>) : (<>
-						<h4 className="my-3">Select dataset...</h4>
-						<div className="d-flex w-90">
-							<div className="d-flex flex-wrap overflow-auto border p-1" style={{ width: "100%", maxHeight: "15em" }}>
+					<h4 className="my-3">Select dataset...</h4>
+					<div className="d-flex w-90">
+						<div className="d-flex flex-wrap overflow-auto border p-1" style={{ width: "100%", maxHeight: "15em" }}>
+							{isLoadingDatasets ? (<div className="d-flex align-items-center p-4"><FadeLoader /></div>) : (<>
 								{datasets.map((dataset, index) => (
 									<DatasetItem key={index} dataset={dataset} onSelect={selectDataset}
 										onStatusUpdate={status => updateDatasetStatus(dataset.id, status)} />
 								))}
-							</div>
-							<div className="w-10 ml-auto">
-								<Link to="/datasets/new" className="btn border rounded mx-4">
-									<i className="bi bi-database-add fs-1 d-block"></i> Add new dataset
-								</Link>
-							</div>
+							</>)}
 						</div>
-					</>)}
+						<div className="w-10 ml-auto">
+							<Link to="/datasets/new" className="btn border rounded mx-4">
+								<i className="bi bi-database-add fs-1 d-block"></i> Add new dataset
+							</Link>
+						</div>
+					</div>
 				</div>
 				<div className="my-3">
 					{selectedDataset === null ? (<div>No dataset selected</div>) : (

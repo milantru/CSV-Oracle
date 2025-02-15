@@ -4,6 +4,7 @@ import { Chat } from "../../shared/types/Chat";
 import { generateAnswerAPI, getDatasetChatsAPI } from "../../shared/services/ChatServices";
 import { toast } from "react-toastify";
 import { isNumber } from "../../shared/helperFunctions/TypeChecker";
+import { PropagateLoader } from "react-spinners";
 
 function Chats() {
 	const { datasetId } = useParams();
@@ -45,8 +46,8 @@ function Chats() {
 					<Link to="/datasets" className="btn btn-primary m-2">Back to datasets</Link>
 					<Link to={`/chats/${datasetId}/new`} className="btn btn-primary m-2">New dataset chat</Link>
 				</div>
-				<div className="border overflow-auto" style={{height: "100vh"}}>
-					{isLoadingChats ? (<div>Loading chats...</div>) : (
+				<div className="border overflow-auto" style={{ height: "100vh" }}>
+					{isLoadingChats ? (<div className="d-flex justify-content-center align-items-center" style={{ height: "32px" }}><PropagateLoader /></div>) : (
 						<div>{datasetChats.map((chat, index) => (
 							<button key={index} className="btn border w-100" onClick={() => selectChat(chat.id)}>{chat.name}</button>))}
 						</div>
@@ -56,28 +57,28 @@ function Chats() {
 			<div className="w-75">
 				{selectedChat && (<>
 					<div>
-							<h1 className="m-3">{selectedChat.name}</h1>
+						<h1 className="m-3">{selectedChat.name}</h1>
 
-							<div className="flex-grow-1 overflow-auto" style={{ maxHeight: "400px" }}>
-								{selectedChat.messages.slice(1).map((message, index) => (
-									<div key={index} className={`d-flex ${index % 2 ? 'justify-content-end' : 'justify-content-start'}`}>
-										<div className={`border rounded m-2 p-2 w-75 ${index % 2 ? 'bg-secondary' : 'bg-light'}`}>
-											{message}
-										</div>
-									</div>
-								))}
-							</div>
-
-							<form onSubmit={handleSubmit} className="p-2 border-top bg-white">
-								<div className="d-flex w-75 m-auto">
-									<textarea className="form-control me-2" rows={3} placeholder="Type your message here..." value={newMessage}
-										onChange={e => setNewMessage(e.target.value)}></textarea>
-
-									<div className="d-flex align-items-center">
-										<button type="submit" className="btn btn-primary" disabled={isSubmitting}>Send</button>
+						<div className="flex-grow-1 overflow-auto" style={{ maxHeight: "400px" }}>
+							{selectedChat.messages.slice(1).map((message, index) => (
+								<div key={index} className={`d-flex ${index % 2 ? 'justify-content-end' : 'justify-content-start'}`}>
+									<div className={`border rounded m-2 p-2 w-75 ${index % 2 ? 'bg-secondary' : 'bg-light'}`}>
+										{message}
 									</div>
 								</div>
-							</form>
+							))}
+						</div>
+
+						<form onSubmit={handleSubmit} className="p-2 border-top bg-white">
+							<div className="d-flex w-75 m-auto">
+								<textarea className="form-control me-2" rows={3} placeholder="Type your message here..." value={newMessage}
+									onChange={e => setNewMessage(e.target.value)}></textarea>
+
+								<div className="d-flex align-items-center">
+									<button type="submit" className="btn btn-primary" disabled={isSubmitting}>Send</button>
+								</div>
+							</div>
+						</form>
 					</div>
 					<div className="position-relative">
 						<div className={showDataset ? 'd-block' : 'd-none'}>
