@@ -118,11 +118,10 @@ def main(args):
 
     chat_llm = create_chat_llm()
 
-    user_view = read_file(args.user_view_path)
+    user_view = read_file(args.user_view_path) if args.user_view_path else None
     chat_llm_instructions = generate_chat_llm_instructions(user_view)
     
     chat_history = load_chat_history(args.chat_history_path) if args.chat_history_path else None
-    
     agent = create_agent(index_storage_context_dicts_paths, chat_llm, chat_llm_instructions, chat_history)
     
     message = read_file(args.message_path)
