@@ -80,7 +80,11 @@ function Datasets() {
 								(<li key={index}>{datasetFile.name}</li>))}
 							</ul>
 
-							<Link to={`/chats/${selectedDataset.id}`}><span className="d-block w-50 mx-auto btn btn-success py-2">Choose dataset</span></Link>
+							{selectedDataset.status == DatasetStatus.Processed && 
+								<Link to={`/chats/${selectedDataset.id}`}>
+									<span className="d-block w-50 mx-auto btn btn-success py-2">Choose dataset</span>
+								</Link>
+							}
 						</div>
 					)}
 				</div>

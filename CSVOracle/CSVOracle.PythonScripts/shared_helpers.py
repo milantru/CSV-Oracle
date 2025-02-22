@@ -1,20 +1,38 @@
 import json
 import re
 from llama_index.llms.ollama import Ollama
+from llama_index.llms.groq import Groq
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import StorageContext, load_index_from_storage
 
+def get_model(model: str, system_prompt: str | None = None, api_key: str | None = None):
+    """ATTENTION! For some reason the system prompt is not working when LLM.complete() is used.
+    The possible solution for it is to prepend the system prompt at the beginning of the message later when using model.
+    """
+    if model == "mistral:latest" or model == "qwen2.5:14b" or model == "llama3.2:latest":
+        return Ollama(
+            model=model, 
+            system_prompt=system_prompt
+        )
+    elif model == "llama-3.3-70b-versatile":
+        if not api_key:
+            raise Exception("Api key required.")
+        return Groq(
+            model="llama-3.3-70b-versatile", 
+            api_key=api_key
+        )
+    elif model == "deepseek-r1:8b":
+        return  Ollama(
+            model="deepseek-r1:8b", 
+            system_prompt=system_prompt, 
+            request_timeout=420.0, 
+            is_function_calling_model=False
+        )
+    else:
+        raise Exception("Unknown model required.")
+
 def get_embedding_model():
     return HuggingFaceEmbedding()
-
-def create_notes_llm(notes_llm_instructions=None):
-    return Ollama(
-        model="deepseek-r1:8b", 
-        request_timeout=420.0, 
-        # For some reason the system prompt is not working when LLM.complete() is used. That is why 
-        # I prepend instructions (system prompt) at the beginning of the prompt later when using Notes LLM.
-        # system_prompt=notes_llm_instructions
-    )
 
 def read_dataset_metadata_file(metadata_file_path):
     with open(metadata_file_path, 'r') as file:
@@ -57,6 +75,7 @@ def _extract_json_part(json_regex, text):
 
     return tmp
 
+# TODO move to the file where it is used (i think its no more shared)
 def create_notes_llm_prompt(dataset_knowledge, instruction):
     return f"""\
 CURRENT DATASET KNOWLEDGE:
@@ -68,21 +87,88 @@ INSTRUCTION SECTION:
 {instruction}
 """
 
-def create_updated_dataset_knowledge(notes_llm, notes_llm_prompt, max_attempts_count = 3, json_regex=re.compile(r'```json([\s\S]*?)```')):
-    attempts_count = 0
-    while attempts_count < max_attempts_count:
-        try:
-            res = notes_llm.complete(notes_llm_prompt)
-            res_json = _extract_json_part(json_regex, str(res))
-            if not res_json: raise Exception("JSON part not extracted.")
-            dataset_knowledge = json.loads(res_json)
-            break
-        except:
-            print(f"Failed creating updated dataset knowledge.")
-            attempts_count += 1
-            if attempts_count < max_attempts_count:
-                print("Retrying...")
-            else: 
-                print(f"Failed creating updated dataset knowledge for Notes LLM prompt:\n'{notes_llm_prompt}'.")
-                return None
-    return dataset_knowledge
+class CorrelationExplanation:
+    def __init__(self):
+        self.column1_name = ""
+        self.column2_name = ""
+        self.correlation_value = ""
+        self.explanation = ""
+
+    def to_dict(self):
+        return self.__dict__
+
+    @classmethod
+    def from_dict(cls, data):
+        obj = cls()
+        obj.__dict__.update(data)
+        return obj
+
+class ColumnKnowledge:
+    def __init__(self):
+        self.name = ""
+        self.description = ""
+        self.missing_values_explanation = ""
+        self.correlation_explanations = []
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "description": self.description,
+            "missing_values_explanation": self.missing_values_explanation,
+            "correlation_explanations": [ce.to_dict() for ce in self.correlation_explanations]
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        obj = cls()
+        obj.name = data["name"]
+        obj.description = data["description"]
+        obj.missing_values_explanation = data["missing_values_explanation"]
+        obj.correlation_explanations = [CorrelationExplanation.from_dict(ce) for ce in data["correlation_explanations"]]
+        return obj
+
+class TableKnowledge:
+    def __init__(self):
+        self.name = ""
+        self.description = ""
+        self.row_entity_description = ""
+        self.column_knowledges = []
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "description": self.description,
+            "row_entity_description": self.row_entity_description,
+            "column_knowledges": [ck.to_dict() for ck in self.column_knowledges]
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        obj = cls()
+        obj.name = data["name"]
+        obj.description = data["description"]
+        obj.row_entity_description = data["row_entity_description"]
+        obj.column_knowledges = [ColumnKnowledge.from_dict(ck) for ck in data["column_knowledges"]]
+        return obj
+
+class DatasetKnowledge:
+    def __init__(self):
+        self.description = ""
+        self.table_knowledges = []
+        # TODO might add "other" (not only to dataset knowledge)
+        # self.other = "" # Reserved for other info, e.g. info about frameworks that can be used for work with dataset
+
+    def to_dict(self):
+        return {
+            "description": self.description,
+            "table_knowledges": [tk.to_dict() for tk in self.table_knowledges],
+            # "other": self.other
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        obj = cls()
+        obj.description = data["description"]
+        obj.table_knowledges = [TableKnowledge.from_dict(tk) for tk in data["table_knowledges"]]
+        # obj.other = data["other"]
+        return obj

@@ -87,7 +87,7 @@ function Chats() {
 
 						<button type="button" className="btn btn-secondary position-absolute end-0 mx-4" style={{ top: "-20px" }}
 							onClick={() => setShowDataset(!showDataset)}>
-							{showDataset ? "Hide Dataset" : "Show Dataset"}
+							{showDataset ? "Hide DK" : "Show DK"}
 						</button>
 					</div>
 				</>)}
@@ -111,7 +111,11 @@ function Chats() {
 
 		setIsSubmitting(true);
 
-		const { chat, errorMessages } = await generateAnswerAPI(newMessage, selectedChat.id);
+		/* We store the new message to the temporary variable and resetting newMessage state
+		 * because we want the textarea to be empty while generating answer */
+		const tmp = newMessage;
+		setNewMessage("");
+		const { chat, errorMessages } = await generateAnswerAPI(tmp, selectedChat.id);
 		if (errorMessages.length > 0) {
 			for (let i = 0; i < errorMessages.length; i++) {
 				toast.warn(errorMessages[i]);

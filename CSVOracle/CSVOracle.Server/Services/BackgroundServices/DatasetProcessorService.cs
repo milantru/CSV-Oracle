@@ -15,7 +15,6 @@ namespace CSVOracle.Server.Services.BackgroundServices
 		private const string indicesFolderName = "indices";
 		private const string promptingPhasePromptsFileName = "prompting_phase_prompts.json";
 		private const string promptingPhaseInstructionsFileName = "prompting_phase_instructions.txt";
-		private const string notesLlmInstructionsFileName = "notes_llm_instructions.txt";
 		private const string additionalInfoFileName = "additional_info.txt";
 		private const string additionalInfoIndexFileName = "additional_info_index.json";
 		private const string csvFilesIndexFileName = "csv_files_index.json";
@@ -91,7 +90,6 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			Directory.CreateDirectory(indicesFolderPath);
 			var promptingPhasePromptsFilePath = Path.Join(outputFolderPath, promptingPhasePromptsFileName);
 			var promptingPhaseInstructionsFilePath = Path.Join(outputFolderPath, promptingPhaseInstructionsFileName);
-			var notesLlmInstructionsFilePath = Path.Join(outputFolderPath, notesLlmInstructionsFileName);
 			var initialDatasetKnowledgeFilePath = Path.Join(outputFolderPath, initialDatasetKnowledgeFileName);
 			
 			var csvFilesIndexFilePath = Path.Join(indicesFolderPath, csvFilesIndexFileName);
@@ -128,50 +126,40 @@ namespace CSVOracle.Server.Services.BackgroundServices
 
 			tasks.Add(GeneratePromptingPhaseInstructions(csvFilesFolderPath, promptingPhaseInstructionsFilePath));
 
-			tasks.Add(GenerateNotesLlmInstructions(csvFilesFolderPath, notesLlmInstructionsFilePath));
-
 			await Task.WhenAll(tasks);
 
 			await GenerateInitialDatasetKnowledge(indicesFolderPath, promptingPhasePromptsFilePath,
-					promptingPhaseInstructionsFilePath, notesLlmInstructionsFilePath, initialDatasetKnowledgeFilePath);
+					promptingPhaseInstructionsFilePath, initialDatasetKnowledgeFilePath);
 
-			// TODO Read outputs and update dataset
+			// Read outputs and update dataset
 			tasks.Clear();
 
 			if (dataset.AdditionalInfo is not null)
 			{
-				tasks.Add(Task.Run(async () =>
+				tasks.Add(Task.Run(() =>
 				{
-					dataset.AdditionalInfoIndexJson = await File.ReadAllTextAsync(additionalInfoIndexFilePath);
+					dataset.AdditionalInfoIndexJson = File.ReadAllText(additionalInfoIndexFilePath);
 				}));
 			}
-			tasks.Add(Task.Run(async () =>
+			tasks.Add(Task.Run(() =>
 			{
-				dataset.CsvFilesIndexJson = await File.ReadAllTextAsync(csvFilesIndexFilePath);
+				dataset.CsvFilesIndexJson = File.ReadAllText(csvFilesIndexFilePath);
 			}));
-			tasks.Add(Task.Run(async () =>
+			tasks.Add(Task.Run(() =>
 			{
-				dataset.DataProfilingReportsIndexJson = await File.ReadAllTextAsync(reportsIndexFilePath);
+				dataset.DataProfilingReportsIndexJson = File.ReadAllText(reportsIndexFilePath);
 			}));
-			tasks.Add(Task.Run(async () =>
+			tasks.Add(Task.Run(() =>
 			{
-				dataset.InitialDatasetKnowledgeJson = await File.ReadAllTextAsync(initialDatasetKnowledgeFilePath);
+				dataset.InitialDatasetKnowledgeJson = File.ReadAllText(initialDatasetKnowledgeFilePath);
 			}));
-			tasks.Add(Task.Run(async () =>
-			{
-				dataset.NotesLlmInstructions = await File.ReadAllTextAsync(notesLlmInstructionsFilePath);
-			}));
-			//tasks.Add(Task.Run(async () =>
-			//{
-			//	dataset.ChatLlmInstructions = await File.ReadAllTextAsync(chatinstr);
-			//}));
 
 			await Task.WhenAll(tasks);
 
 			dataset.Status = DatasetStatus.Processed;
 			await datasetRepository.UpdateAsync(dataset);
 
-			// TODO delete dataset folder with everything in it
+			// Delete dataset folder with everything in it
 			Directory.Delete(datasetFolderPath, recursive: true);
 		}
 
@@ -219,15 +207,6 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			return task;
 		}
 
-		private Task GenerateNotesLlmInstructions(string csvFilesFolderPath, string outputFilePath)
-		{
-			var args = $"-i \"{csvFilesFolderPath}\" -o \"{outputFilePath}\"";
-
-			var task = pythonExecutor.ExecutePythonScriptAsync("generate_notes_llm_instructions.py", args);
-
-			return task;
-		}
-
 		private Task GenerateIndexFile(string fileOrFolderPath, string outputFilePath)
 		{
 			var args = $"-i \"{fileOrFolderPath}\" -o \"{outputFilePath}\"";
@@ -238,10 +217,10 @@ namespace CSVOracle.Server.Services.BackgroundServices
 		}
 
 		private Task GenerateInitialDatasetKnowledge(string indicesFolderPath, string promptingPhasePromptsPath,
-			string promptingPhaseInstructionsPath, string notesLlmInstructionsPath, string outputFilePath)
+			string promptingPhaseInstructionsPath, string outputFilePath)
 		{
-			var args = $"-i \"{indicesFolderPath}\" -p \"{promptingPhasePromptsPath}\" -r \"{promptingPhaseInstructionsPath}\" " +
-				$"-n \"{notesLlmInstructionsPath}\" -o \"{outputFilePath}\"";
+			var args = $"-i \"{indicesFolderPath}\" -p \"{promptingPhasePromptsPath}\" " +
+				$"-r \"{promptingPhaseInstructionsPath}\" -o \"{outputFilePath}\"";
 
 			var task = pythonExecutor.ExecutePythonScriptAsync("generate_initial_dataset_knowledge.py", args);
 

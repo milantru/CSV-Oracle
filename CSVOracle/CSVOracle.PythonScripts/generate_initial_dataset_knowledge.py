@@ -1,17 +1,15 @@
 import argparse
 import json
-import re
 from pathlib import Path
 from llama_index.core.tools import QueryEngineTool, ToolMetadata
 from llama_index.llms.ollama import Ollama
 from llama_index.core.query_engine import SubQuestionQueryEngine
-from shared_helpers import get_file_paths, read_file, load_index, create_notes_llm, create_updated_dataset_knowledge, create_notes_llm_prompt
+from shared_helpers import get_file_paths, read_file, load_index, get_model, DatasetKnowledge
 
 parser = argparse.ArgumentParser(description="Script for generating an initial dataset knowledge representation.")
 parser.add_argument("-i", "--indices_folder_path", type=str, required=True, help="Path to the input folder containing index files (or to be more precise, index storage context dictionary files).")
 parser.add_argument("-p", "--prompting_phase_prompts_path", type=str, required=True, help="Path to the input file containing prompting phase prompts.")
 parser.add_argument("-r", "--prompting_phase_instructions_path", type=str, required=True, help="Path to the input file containing prompting phase instructions.")
-parser.add_argument("-n", "--notes_llm_instructions_path", type=str, required=True, help="Path to the input file containing Notes LLM instructions prompt.")
 parser.add_argument("-o", "--output_file_path", type=str, required=True, help="Path to the file where the initial dataset knowledge representation should be stored. The new file will be created, or overwritten if already exists.")
 
 
@@ -56,13 +54,6 @@ def create_query_engine_tools(index_storage_context_dicts_paths, llm):
 
     return query_engine_tools
 
-def create_prompting_phase_llm(prompting_phase_instructions):
-    return Ollama(
-        model="deepseek-r1:8b", 
-        request_timeout=420.0, 
-        system_prompt=prompting_phase_instructions
-    )
-
 def create_query_engine(index_storage_context_dicts_paths, llm):
     query_engine_tools = create_query_engine_tools(index_storage_context_dicts_paths, llm)
     
@@ -74,51 +65,39 @@ def create_query_engine(index_storage_context_dicts_paths, llm):
     
     return query_engine
 
-def create_instruction_for_notes_llm(question, answer):
-    return f"""\
-The answer for the question "{question}" was:
-"{answer}"
+def try_answer_question(query_engine, question):
+    answer = generate_answer(query_engine, question)
+    return answer if answer else ""
 
-Please, based on the provided answer, add the newly gained information to the CURRENT DATASET KNOWLEDGE.
-"""
+def create_initial_dataset_knowledge(prompting_phase_prompts, query_engine):    
+    # prompting_phase_prompts is basically dataset knowledge we want to create but has questions in place of answers
+    # so the goal is to answer the questions and replace the questions with its answers
+    prompting_phase_prompts.description = try_answer_question(query_engine, prompting_phase_prompts.description)
+    
+    for table_knowledge in prompting_phase_prompts.table_knowledges:
+        table_knowledge.description = try_answer_question(query_engine, table_knowledge.description)
+        table_knowledge.row_entity_description = try_answer_question(query_engine, table_knowledge.row_entity_description)
+        for column_knowledge in table_knowledge.column_knowledges:
+            column_knowledge.description = try_answer_question(query_engine, column_knowledge.description)
+            column_knowledge.missing_values_explanation = try_answer_question(query_engine, column_knowledge.missing_values_explanation)
+            for correlation_explanation in column_knowledge.correlation_explanations:
+                correlation_explanation.explanation = try_answer_question(query_engine, correlation_explanation.explanation)
 
-def create_initial_dataset_knowledge(prompting_phase_prompts, query_engine, notes_llm, notes_llm_instructions):    
-    json_regex = re.compile(r'```json([\s\S]*?)```') # perf improvement so we dont have to compile every iteration
-    dataset_knowledge = '{\n"tables": []\n}'
-    for prompting_phase_prompt in prompting_phase_prompts:
-        answer = generate_answer(query_engine, prompting_phase_prompt)
-        if not answer:
-            continue
-
-        instruction = create_instruction_for_notes_llm(prompting_phase_prompt, answer.strip())
-        # notes llm prompt contains current dataset knowledge
-        notes_llm_prompt = create_notes_llm_prompt(dataset_knowledge, instruction)
-        updated_dataset_knowledge = create_updated_dataset_knowledge(
-            notes_llm, notes_llm_instructions + notes_llm_prompt, json_regex=json_regex)
-        if not updated_dataset_knowledge:
-            continue
-
-        dataset_knowledge = updated_dataset_knowledge
-
-    return dataset_knowledge
+    return prompting_phase_prompts
 
 def main(args):
     index_storage_context_dicts_paths = get_file_paths(Path(args.indices_folder_path))
 
     prompting_phase_instructions = read_file(args.prompting_phase_instructions_path)
-    prompting_phase_llm = create_prompting_phase_llm(prompting_phase_instructions)
-
-    notes_llm_instructions = read_file(args.notes_llm_instructions_path)
-    notes_llm = create_notes_llm(notes_llm_instructions)
+    prompting_phase_llm = get_model(model="llama3.2:latest", system_prompt=prompting_phase_instructions)
 
     query_engine = create_query_engine(index_storage_context_dicts_paths, prompting_phase_llm)
 
-    prompting_phase_prompts = read_file(args.prompting_phase_prompts_path, load_as_json=True)
-    initial_dataset_knowledge = create_initial_dataset_knowledge(
-        prompting_phase_prompts, query_engine, notes_llm, notes_llm_instructions)
+    prompting_phase_prompts = DatasetKnowledge.from_dict(read_file(args.prompting_phase_prompts_path, load_as_json=True))
+    initial_dataset_knowledge = create_initial_dataset_knowledge(prompting_phase_prompts, query_engine)
 
     with open(args.output_file_path, 'w') as output_file:
-        json.dump(initial_dataset_knowledge, output_file)
+        json.dump(initial_dataset_knowledge.to_dict(), output_file)
 
 if __name__ == "__main__":
     args = parser.parse_args()

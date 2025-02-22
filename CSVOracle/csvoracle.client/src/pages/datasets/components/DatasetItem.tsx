@@ -118,7 +118,7 @@ function DatasetItem({ dataset, onSelect, onStatusUpdate }: Props) {
 			case DatasetStatus.Created:
 			case DatasetStatus.Queued:
 			case DatasetStatus.Processing:
-				return <BeatLoader className="pb-2" />;
+				return <BeatLoader className="pb-2 py-4" />;
 			case DatasetStatus.Processed:
 				return <i className="bi bi-database fs-1 d-block"></i>;
 			default:

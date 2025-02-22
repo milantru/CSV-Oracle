@@ -24,11 +24,9 @@
   <ItemGroup>
     <Compile Include="generate_answer.py" />
     <Compile Include="generate_prompting_phase_prompts.py" />
-    <Compile Include="generate_chat_llm_instructions.py" />
     <Compile Include="generate_data_profiling_report.py" />
     <Compile Include="generate_index_file.py" />
     <Compile Include="generate_initial_dataset_knowledge.py" />
-    <Compile Include="generate_notes_llm_instructions.py" />
     <Compile Include="generate_prompting_phase_instructions.py" />
     <Compile Include="shared_helpers.py" />
   </ItemGroup>

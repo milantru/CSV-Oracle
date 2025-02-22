@@ -1,4 +1,5 @@
-﻿using CSVOracle.Data.Interfaces;
+﻿using CSVOracle.Data.Enums;
+using CSVOracle.Data.Interfaces;
 using CSVOracle.Data.Models;
 using CSVOracle.Server.Dtos;
 using CSVOracle.Server.Services;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
-using static CSVOracle.Server.Controllers.DatasetController;
+using System.Text.Json;
 
 namespace CSVOracle.Server.Controllers
 {
@@ -21,6 +22,7 @@ namespace CSVOracle.Server.Controllers
 		private readonly TokenHelperService tokenHelper;
 		private readonly PythonExecutorService pythonExecutor;
 		private readonly string dataFolderPath;
+		private readonly Dictionary<string, string> apiKeys;
 
 		public ChatController(
 			ILogger<ChatController> logger,
@@ -33,6 +35,7 @@ namespace CSVOracle.Server.Controllers
 		{
 			this.logger = logger;
 			this.dataFolderPath = config.GetRequiredSection("AppSettings:DataFolderPath").Value!;
+			this.apiKeys = config.GetRequiredSection("AppSettings:ApiKeys").Get<Dictionary<string, string>>()!;
 			this.chatRepository = chatRepository;
 			this.datasetRepository = datasetRepository;
 			this.tokenHelper = tokenHelper;
@@ -96,6 +99,13 @@ namespace CSVOracle.Server.Controllers
 				return StatusCode(StatusCodes.Status404NotFound, message);
 			}
 
+			if (dataset.Status != DatasetStatus.Processed)
+			{
+				var message = "Cannot create the dataset chat, the dataset is not processed yet.";
+				this.logger.LogInformation(message);
+				return StatusCode(StatusCodes.Status400BadRequest, message);
+			}
+
 			// TODO Refactor
 			var userView = NormalizeUserView(request.UserView);
 
@@ -122,7 +132,7 @@ namespace CSVOracle.Server.Controllers
 			}
 
 			string messageFilePath = Path.Join(chatFolderPath, "message.txt");
-			string startMessage = userView is null ? "Please write \"Hello! How can I help you with this dataset?\"."
+			string startMessage = userView is null ? "Please just write \"Hello! How can I help you with this dataset?\"."
 				: "If you can deduce the user need based on the user view, write the answer (provide only answer, " +
 				"no questions, e.g. \"Would you like assistance with some specific task?\"). If you cannot deduce the user need " +
 				"based on the user view, just write \"Hello! How can I help you with this dataset?\".";
@@ -347,8 +357,10 @@ namespace CSVOracle.Server.Controllers
 			{
 				args = args + $" -c \"{chatHistoryFilePath}\"";
 			}
-			args = args + $" -m \"{messageFilePath}\" -n \"{notesLlmInstructionsFilePath}\" " +
-				$"-s \"{updatedChatHistoryFilePath}\" -t \"{updatedDatasetKnowledgeFilePath}\" -a \"{answerFilePath}\"";
+			string apiKeysJson = JsonSerializer.Serialize(this.apiKeys, new JsonSerializerOptions { WriteIndented = false});
+			apiKeysJson = apiKeysJson.Replace("\"", "\\\""); // Must be correctly escaped, otherwise json.loads in Python will fail
+			args = args + $" -m \"{messageFilePath}\" -s \"{updatedChatHistoryFilePath}\" " +
+				$"-t \"{updatedDatasetKnowledgeFilePath}\" -a \"{answerFilePath}\" -k \"{apiKeysJson}\"";
 
 			await this.pythonExecutor.ExecutePythonScriptAsync("generate_answer.py", args);
 		}
