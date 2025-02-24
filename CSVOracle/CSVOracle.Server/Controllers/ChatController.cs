@@ -114,21 +114,25 @@ namespace CSVOracle.Server.Controllers
 
 			string indicesFolderPath = Path.Join(chatFolderPath, "indices");
 			Directory.CreateDirectory(indicesFolderPath);
+			var tasks = new List<Task>();
 			if (dataset.AdditionalInfoIndexJson is not null)
 			{
-				System.IO.File.WriteAllText(
-					Path.Join(indicesFolderPath, "additional_info_index.json"), dataset.AdditionalInfoIndexJson);
+				tasks.Add(
+					Task.Run(() =>
+						System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "additional_info_index.json"), dataset.AdditionalInfoIndexJson)
+					)
+				);
 			}
-			System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "csv_files_index.json"), dataset.CsvFilesIndexJson);
-			System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "reports_index.json"), dataset.DataProfilingReportsIndexJson);
+			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "csv_files_index.json"), dataset.CsvFilesIndexJson)));
+			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "reports_index.json"), dataset.DataProfilingReportsIndexJson)));
 
 			string datasetKnowledgeFilePath = Path.Join(chatFolderPath, "dataset_knowledge.json");
-			System.IO.File.WriteAllText(datasetKnowledgeFilePath, dataset.InitialDatasetKnowledgeJson);
+			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(datasetKnowledgeFilePath, dataset.InitialDatasetKnowledgeJson)));
 
 			string? userViewFilePath = userView is not null ? Path.Join(chatFolderPath, "user_view.txt") : null;
 			if (userViewFilePath is not null)
 			{
-				System.IO.File.WriteAllText(userViewFilePath, userView);
+				tasks.Add(Task.Run(() => System.IO.File.WriteAllText(userViewFilePath, userView)));
 			}
 
 			string messageFilePath = Path.Join(chatFolderPath, "message.txt");
@@ -138,24 +142,29 @@ namespace CSVOracle.Server.Controllers
 				"based on the user view, just write \"Hello! How can I help you with this dataset?\".";
 			System.IO.File.WriteAllText(messageFilePath, startMessage);
 
-			string notesLlmInstructionsFilePath = Path.Join(chatFolderPath, "notes_llm_instructions.txt");
-			System.IO.File.WriteAllText(notesLlmInstructionsFilePath, dataset.NotesLlmInstructions);
-
 			string updatedChatHistoryFilePath = Path.Join(chatFolderPath, "updated_chat_history.json");
 			string updatedDatasetKnowledgeFilePath = Path.Join(chatFolderPath, "updated_dataset_knowledge.json");
 			string answerFilePath = Path.Join(chatFolderPath, "answer.txt");
 
+			await Task.WhenAll(tasks);
+			tasks.Clear();
 			await _GenerateAnswerAsync(indicesFolderPath, datasetKnowledgeFilePath, userViewFilePath, null, 
-				messageFilePath, notesLlmInstructionsFilePath, updatedChatHistoryFilePath, 
-				updatedDatasetKnowledgeFilePath, answerFilePath);
+				messageFilePath, updatedChatHistoryFilePath, updatedDatasetKnowledgeFilePath, answerFilePath);
 
-			string chatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath);
+			string chatHistoryJson = null!;
 			string? updatedDatasetKnowledgeJson = null;
 			if (System.IO.File.Exists(updatedDatasetKnowledgeFilePath))
 			{
-				updatedDatasetKnowledgeJson = System.IO.File.ReadAllText(updatedDatasetKnowledgeFilePath);
+				tasks.Add(Task.Run(() => chatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath)));
+				tasks.Add(Task.Run(() => updatedDatasetKnowledgeJson = System.IO.File.ReadAllText(updatedDatasetKnowledgeFilePath)));
+				await Task.WhenAll(tasks);
+				tasks.Clear();
 			}
-			string answer = System.IO.File.ReadAllText(answerFilePath);
+			else
+			{
+				chatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath);
+			}
+			//string answer = System.IO.File.ReadAllText(answerFilePath); // TODO Do we need answer?
 
 			var chat = new Chat
 			{
@@ -203,55 +212,71 @@ namespace CSVOracle.Server.Controllers
 
 			string indicesFolderPath = Path.Join(chatFolderPath, "indices");
 			Directory.CreateDirectory(indicesFolderPath);
+			var tasks = new List<Task>();
 			if (chat.Dataset.AdditionalInfoIndexJson is not null)
 			{
-				System.IO.File.WriteAllText(
-					Path.Join(indicesFolderPath, "additional_info_index.json"), chat.Dataset.AdditionalInfoIndexJson);
+				tasks.Add(
+					Task.Run(() => 
+						System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "additional_info_index.json"), chat.Dataset.AdditionalInfoIndexJson))
+				);
 			}
-			System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "csv_files_index.json"), chat.Dataset.CsvFilesIndexJson);
-			System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "reports_index.json"), chat.Dataset.DataProfilingReportsIndexJson);
+			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "csv_files_index.json"), chat.Dataset.CsvFilesIndexJson)));
+			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "reports_index.json"), chat.Dataset.DataProfilingReportsIndexJson)));
 
 			string datasetKnowledgeFilePath = Path.Join(chatFolderPath, "dataset_knowledge.json");
-			System.IO.File.WriteAllText(datasetKnowledgeFilePath, chat.CurrentDatasetKnowledgeJson);
+			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(datasetKnowledgeFilePath, chat.CurrentDatasetKnowledgeJson)));
 
 			string? userViewFilePath = chat.UserView is not null ? Path.Join(chatFolderPath, "user_view.txt") : null;
 			if (userViewFilePath is not null)
 			{
-				System.IO.File.WriteAllText(userViewFilePath, chat.UserView);
+				tasks.Add(Task.Run(() => System.IO.File.WriteAllText(userViewFilePath, chat.UserView)));
 			}
 
 			string chatHistoryFilePath = Path.Join(chatFolderPath, "chat_history.json");
-			System.IO.File.WriteAllText(chatHistoryFilePath, chat.ChatHistoryJson);
+			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(chatHistoryFilePath, chat.ChatHistoryJson)));
 
 			string messageFilePath = Path.Join(chatFolderPath, "message.txt");
-			System.IO.File.WriteAllText(messageFilePath, request.NewMessage);
-
-			string notesLlmInstructionsFilePath = Path.Join(chatFolderPath, "notes_llm_instructions.txt");
-			System.IO.File.WriteAllText(notesLlmInstructionsFilePath, chat.Dataset.NotesLlmInstructions);
+			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(messageFilePath, request.NewMessage)));
 
 			string updatedChatHistoryFilePath = Path.Join(chatFolderPath, "updated_chat_history.json");
 			string updatedDatasetKnowledgeFilePath = Path.Join(chatFolderPath, "updated_dataset_knowledge.json");
 			string answerFilePath = Path.Join(chatFolderPath, "answer.txt");
 
+			await Task.WhenAll(tasks);
 			await _GenerateAnswerAsync(indicesFolderPath, datasetKnowledgeFilePath, userViewFilePath, chatHistoryFilePath,
-				messageFilePath, notesLlmInstructionsFilePath, updatedChatHistoryFilePath,
-				updatedDatasetKnowledgeFilePath, answerFilePath);
+				messageFilePath, updatedChatHistoryFilePath, updatedDatasetKnowledgeFilePath, answerFilePath);
 
-			string chatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath);
-			string? updatedDatasetKnowledgeJson = null;
+			if (!System.IO.File.Exists(updatedChatHistoryFilePath))
+			{
+				/* This should not happen, if it happened, most likely the LLM tried many times to use some tool or something, couldn't,
+				 * reached max iteractions and thus did not generated answer. Although it is unlikely to happen, theoretically it can happen.
+				 * When the user tries again to generate answer, it most likely will generate answer without a problem.
+				 * The reason why WE are not trying to regenerate answer again is that if this happened, the user probably waited long enough, 
+				 * so we want to display something, change UI. And also, what IF there appeared some other problem and not the one described.
+				 * We certainly want to discover such a problem and solve it, so if the problem persists, let the user report it so it can be solved. */
+				var message = "Failed to generate answer. Please try again. If the problem persists, contact the admin.";
+				this.logger.LogInformation(message);
+				return StatusCode(StatusCodes.Status500InternalServerError, message);
+			}
+
+			var readingTasks = new List<Task>();
 			if (System.IO.File.Exists(updatedDatasetKnowledgeFilePath))
 			{
-				updatedDatasetKnowledgeJson = System.IO.File.ReadAllText(updatedDatasetKnowledgeFilePath);
-				chat.CurrentDatasetKnowledgeJson = updatedDatasetKnowledgeJson;
+				readingTasks.Add(Task.Run(() => chat.ChatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath)));
+				readingTasks.Add(Task.Run(() => chat.CurrentDatasetKnowledgeJson = System.IO.File.ReadAllText(updatedDatasetKnowledgeFilePath)));
 			}
-			string answer = System.IO.File.ReadAllText(answerFilePath);
+			else
+			{
+				chat.ChatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath);
+			}
+			//string answer = System.IO.File.ReadAllText(answerFilePath); // TODO Do we need answer?
 
-			chat.ChatHistoryJson = chatHistoryJson;
+			await Task.WhenAll(readingTasks);
 			await this.chatRepository.UpdateAsync(chat);
 
 			Directory.Delete(chatFolderPath, recursive: true);
 
-			this.logger.LogInformation("Chat has been created successfully.");
+			this.logger.LogInformation("Answer has been generated successfully.");
 			return Ok(ChatDto.From(chat));
 		}
 
@@ -343,9 +368,8 @@ namespace CSVOracle.Server.Controllers
 			return userViewTrimmedOrNull;
 		}
 
-		private async Task _GenerateAnswerAsync(string indicesFolderPath, string datasetKnowledgeFilePath,
-			string? userViewFilePath, string? chatHistoryFilePath, string messageFilePath,
-			string notesLlmInstructionsFilePath, string updatedChatHistoryFilePath,
+		private Task _GenerateAnswerAsync(string indicesFolderPath, string datasetKnowledgeFilePath,
+			string? userViewFilePath, string? chatHistoryFilePath, string messageFilePath, string updatedChatHistoryFilePath,
 			string updatedDatasetKnowledgeFilePath, string answerFilePath)
 		{
 			var args = $"-i \"{indicesFolderPath}\" -d \"{datasetKnowledgeFilePath}\"";
@@ -362,7 +386,7 @@ namespace CSVOracle.Server.Controllers
 			args = args + $" -m \"{messageFilePath}\" -s \"{updatedChatHistoryFilePath}\" " +
 				$"-t \"{updatedDatasetKnowledgeFilePath}\" -a \"{answerFilePath}\" -k \"{apiKeysJson}\"";
 
-			await this.pythonExecutor.ExecutePythonScriptAsync("generate_answer.py", args);
+			return this.pythonExecutor.ExecutePythonScriptAsync("generate_answer.py", args);
 		}
 
 		public record AddChatRequest

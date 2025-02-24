@@ -31,14 +31,14 @@ namespace CSVOracle.Data.Repositories
 			await CsvOracleDbContext.SaveChangesAsync();
 
 			// After saving changes, the chat will have id set correctly.
-			return await CsvOracleDbContext.Chats.AsNoTracking()
+			return CsvOracleDbContext.Chats.AsNoTracking()
 				.Include(c => c.Dataset)
-				.FirstAsync(c => c.Id == chat.Id);
+				.First(c => c.Id == chat.Id);
 		}
 
 		public override async Task UpdateAsync(Chat chat)
 		{
-			var storedChat = await CsvOracleDbContext.Chats.FirstAsync(c => c.Id == chat.Id);
+			var storedChat = CsvOracleDbContext.Chats.First(c => c.Id == chat.Id);
 
 			storedChat.Name = chat.Name;
 			storedChat.UserView = chat.UserView;
@@ -52,9 +52,10 @@ namespace CSVOracle.Data.Repositories
 
 		public override async Task<Chat> GetAsync(int chatId)
 		{
-			return await CsvOracleDbContext.Chats.AsNoTracking()
+			await Task.CompletedTask;
+			return CsvOracleDbContext.Chats.AsNoTracking()
 				.Include(c => c.Dataset)
-				.FirstAsync(c => c.Id == chatId);
+				.First(c => c.Id == chatId);
 		}
 	}
 }

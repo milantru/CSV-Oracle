@@ -5,6 +5,7 @@ import { generateAnswerAPI, getDatasetChatsAPI } from "../../shared/services/Cha
 import { toast } from "react-toastify";
 import { isNumber } from "../../shared/helperFunctions/TypeChecker";
 import { PropagateLoader } from "react-spinners";
+import DatasetKnowledgeDisplay from "./components/DatasetKnowledgeDisplay";
 
 function Chats() {
 	const { datasetId } = useParams();
@@ -82,7 +83,7 @@ function Chats() {
 					</div>
 					<div className="position-relative">
 						<div className={showDataset ? 'd-block' : 'd-none'}>
-							{selectedChat.currentDatasetKnowledgeJson}
+							<DatasetKnowledgeDisplay datasetKnowledgeJson={selectedChat.currentDatasetKnowledgeJson} />
 						</div>
 
 						<button type="button" className="btn btn-secondary position-absolute end-0 mx-4" style={{ top: "-20px" }}
@@ -102,6 +103,14 @@ function Chats() {
 		}
 	}
 
+	function updateChats(updatedChat: Chat): void {
+		setDatasetChats(prevState =>
+			prevState.map(chat =>
+				chat.id === updatedChat.id ? updatedChat : chat
+			)
+		);
+	}
+
 	async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
 		e.preventDefault();
 
@@ -112,9 +121,11 @@ function Chats() {
 		setIsSubmitting(true);
 
 		/* We store the new message to the temporary variable and resetting newMessage state
-		 * because we want the textarea to be empty while generating answer */
+		 * because we want the textarea to be empty while generating answer. But at the same time we also want to display
+		 * newMessage and "..." to show that the message was sent and to simulate that the chat is typing.. */
 		const tmp = newMessage;
 		setNewMessage("");
+		setSelectedChat({ ...selectedChat, messages: [...selectedChat.messages, tmp, "..."] })
 		const { chat, errorMessages } = await generateAnswerAPI(tmp, selectedChat.id);
 		if (errorMessages.length > 0) {
 			for (let i = 0; i < errorMessages.length; i++) {
@@ -125,22 +136,8 @@ function Chats() {
 			return;
 		}
 
-
 		setNewMessage("");
-		const updateChats = (chats: Chat[], chat: Chat) => {
-			const updatedChats: Chat[] = [];
-
-			for (let i = 0; i < chats.length; i++) {
-				if (chats[i].id !== chat.id) {
-					updatedChats.push(chats[i])
-				} else {
-					updatedChats.push(chat)
-				}
-			}
-
-			return updatedChats;
-		}
-		setDatasetChats(prevState => updateChats(prevState, chat!));
+		updateChats(chat!);
 		setSelectedChat(chat);
 		setIsSubmitting(false);
 	}

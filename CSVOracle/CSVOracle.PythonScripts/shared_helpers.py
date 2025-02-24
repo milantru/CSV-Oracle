@@ -4,6 +4,17 @@ from llama_index.llms.ollama import Ollama
 from llama_index.llms.groq import Groq
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import StorageContext, load_index_from_storage
+from llama_index.core.tools import QueryEngineTool, ToolMetadata
+from concurrent.futures import ThreadPoolExecutor
+import time
+from pathlib import Path
+
+def checkpoint(prev_time: float, msg: str = None):
+    curr_time = time.time()
+    if msg:
+        print(msg)
+    print(f"Elapsed time: {curr_time - prev_time:.6f} seconds")
+    return time.time()
 
 def get_model(model: str, system_prompt: str | None = None, api_key: str | None = None):
     """ATTENTION! For some reason the system prompt is not working when LLM.complete() is used.
@@ -14,16 +25,16 @@ def get_model(model: str, system_prompt: str | None = None, api_key: str | None 
             model=model, 
             system_prompt=system_prompt
         )
-    elif model == "llama-3.3-70b-versatile":
+    elif model == "llama-3.3-70b-versatile" or model == "llama-3.3-70b-specdec":
         if not api_key:
             raise Exception("Api key required.")
         return Groq(
-            model="llama-3.3-70b-versatile", 
+            model=model, 
             api_key=api_key
         )
     elif model == "deepseek-r1:8b":
         return  Ollama(
-            model="deepseek-r1:8b", 
+            model=model, 
             system_prompt=system_prompt, 
             request_timeout=420.0, 
             is_function_calling_model=False
@@ -48,44 +59,52 @@ def read_file(file_path, load_as_json=False):
         file_content = json.load(f) if load_as_json else f.read()
     return file_content
 
-def load_index(index_storage_context_dict_path):
+def load_index(index_storage_context_dict_path, embedding_model):
     with open(index_storage_context_dict_path, "r") as index_storage_context_dict_file:
         index_storage_context_dict = json.load(index_storage_context_dict_file)
     index_storage_context = StorageContext.from_dict(index_storage_context_dict)
-    index = load_index_from_storage(index_storage_context, embed_model=get_embedding_model())
+    index = load_index_from_storage(index_storage_context, embed_model=embedding_model)
     return index
 
-def _extract_json_part(json_regex, text):
-    think_end_tag_index = text.find("</think>")
-    if think_end_tag_index != -1:
-        text = text[think_end_tag_index + len("</think>"):].lstrip()
+def create_individual_query_engine_tools(index_storage_context_dicts_paths, llm, embedding_model):
+    tool_metadata_provider = {
+        "additional_info_index.json": ToolMetadata(
+            name="additional_dataset_information",
+            description=(
+                "Provides text with additional information about the dataset provided by the user."
+                "Use a detailed plain text question as input to the tool."
+            ),
+            return_direct=True
+        ),
+        "csv_files_index.json": ToolMetadata(
+            name="csv_files",
+            description=(
+                "Provides actual dataset (all CSV files)."
+                "Useful for when you want to access raw data of the dataset."
+                "Use a detailed plain text question as input to the tool."
+            ),
+            return_direct=True
+        ),
+        "reports_index.json": ToolMetadata(
+            name="data_profiling_reports",
+            description=(
+                "Provides reports generated from data profiling of csv files."
+                "Use a detailed plain text question as input to the tool."
+            ),
+            return_direct=True
+        ),
+    }
 
-    match = json_regex.search(text)
-    if not match:
-        return None
-    tmp = match.group(1)
-    if tmp.startswith("```json\n"):
-        tmp = tmp[8:]
-    elif tmp.startswith("```json"):
-        tmp = tmp[7:]
-    if tmp.endswith("\n```"):
-        tmp = tmp[:-4]
-    elif tmp.endswith("```"):
-        tmp = tmp[:-4]
+    def create_query_engine_tool(path: Path):
+        return QueryEngineTool(
+            query_engine=load_index(path, embedding_model).as_query_engine(llm=llm),
+            metadata=tool_metadata_provider[Path(path).name]
+        )
 
-    return tmp
+    with ThreadPoolExecutor() as executor:
+        query_engine_tools = list(executor.map(create_query_engine_tool, index_storage_context_dicts_paths))
 
-# TODO move to the file where it is used (i think its no more shared)
-def create_notes_llm_prompt(dataset_knowledge, instruction):
-    return f"""\
-CURRENT DATASET KNOWLEDGE:
-```json
-{dataset_knowledge}
-```
-
-INSTRUCTION SECTION:
-{instruction}
-"""
+    return query_engine_tools
 
 class CorrelationExplanation:
     def __init__(self):
@@ -95,12 +114,20 @@ class CorrelationExplanation:
         self.explanation = ""
 
     def to_dict(self):
-        return self.__dict__
+        return {
+            "column1Name": self.column1_name,
+            "column2Name": self.column2_name,
+            "correlationValue": self.correlation_value,
+            "explanation": self.explanation
+        }
 
     @classmethod
     def from_dict(cls, data):
         obj = cls()
-        obj.__dict__.update(data)
+        obj.column1_name = data["column1Name"]
+        obj.column2_name = data["column2Name"]
+        obj.correlation_value = data["correlationValue"]
+        obj.explanation = data["explanation"]
         return obj
 
 class ColumnKnowledge:
@@ -114,8 +141,8 @@ class ColumnKnowledge:
         return {
             "name": self.name,
             "description": self.description,
-            "missing_values_explanation": self.missing_values_explanation,
-            "correlation_explanations": [ce.to_dict() for ce in self.correlation_explanations]
+            "missingValuesExplanation": self.missing_values_explanation,
+            "correlationExplanations": [ce.to_dict() for ce in self.correlation_explanations]
         }
 
     @classmethod
@@ -123,8 +150,8 @@ class ColumnKnowledge:
         obj = cls()
         obj.name = data["name"]
         obj.description = data["description"]
-        obj.missing_values_explanation = data["missing_values_explanation"]
-        obj.correlation_explanations = [CorrelationExplanation.from_dict(ce) for ce in data["correlation_explanations"]]
+        obj.missing_values_explanation = data["missingValuesExplanation"]
+        obj.correlation_explanations = [CorrelationExplanation.from_dict(ce) for ce in data["correlationExplanations"]]
         return obj
 
 class TableKnowledge:
@@ -138,8 +165,8 @@ class TableKnowledge:
         return {
             "name": self.name,
             "description": self.description,
-            "row_entity_description": self.row_entity_description,
-            "column_knowledges": [ck.to_dict() for ck in self.column_knowledges]
+            "rowEntityDescription": self.row_entity_description,
+            "columnKnowledges": [ck.to_dict() for ck in self.column_knowledges]
         }
 
     @classmethod
@@ -147,8 +174,8 @@ class TableKnowledge:
         obj = cls()
         obj.name = data["name"]
         obj.description = data["description"]
-        obj.row_entity_description = data["row_entity_description"]
-        obj.column_knowledges = [ColumnKnowledge.from_dict(ck) for ck in data["column_knowledges"]]
+        obj.row_entity_description = data["rowEntityDescription"]
+        obj.column_knowledges = [ColumnKnowledge.from_dict(ck) for ck in data["columnKnowledges"]]
         return obj
 
 class DatasetKnowledge:
@@ -161,7 +188,7 @@ class DatasetKnowledge:
     def to_dict(self):
         return {
             "description": self.description,
-            "table_knowledges": [tk.to_dict() for tk in self.table_knowledges],
+            "tableKnowledges": [tk.to_dict() for tk in self.table_knowledges],
             # "other": self.other
         }
 
@@ -169,6 +196,6 @@ class DatasetKnowledge:
     def from_dict(cls, data):
         obj = cls()
         obj.description = data["description"]
-        obj.table_knowledges = [TableKnowledge.from_dict(tk) for tk in data["table_knowledges"]]
+        obj.table_knowledges = [TableKnowledge.from_dict(tk) for tk in data["tableKnowledges"]]
         # obj.other = data["other"]
         return obj

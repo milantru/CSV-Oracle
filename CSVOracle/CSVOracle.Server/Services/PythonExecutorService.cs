@@ -21,14 +21,14 @@ namespace CSVOracle.Server.Services
 		/// <param name="scriptFileName">Name of the python script (with extension).</param>
 		/// <param name="arguments">Cmd arguments used when executing the script.</param>
 		/// <returns></returns>
-		public async Task ExecutePythonScriptAsync(string scriptFileName, string arguments = "")
+		public Task ExecutePythonScriptAsync(string scriptFileName, string arguments = "", bool verbose = true) // TODO change verbose to false
 		{
 			var scriptPath = Path.Join(this.pythonScriptsFolderPath, scriptFileName);
 
-			await _ExecutePythonScriptAsync(scriptPath, arguments);
+			return _ExecutePythonScriptAsync(scriptPath, arguments, verbose);
 		}
 
-		private async Task _ExecutePythonScriptAsync(string scriptPath, string arguments = "")
+		private async Task _ExecutePythonScriptAsync(string scriptPath, string arguments = "", bool verbose = false)
 		{
 			/* There was a mysterious bug that caused the process to hang indefinitely. 
 			 * Rewriting code to use the new process api helped, more here:
@@ -56,6 +56,10 @@ namespace CSVOracle.Server.Services
 			await process.WaitForExitAsync();
 
 			await Task.WhenAll(resultAwaiter, errResultAwaiter);
+			if (!verbose)
+			{
+				return;
+			}
 
 			var result = resultAwaiter.Result;
 			var errResult = errResultAwaiter.Result;

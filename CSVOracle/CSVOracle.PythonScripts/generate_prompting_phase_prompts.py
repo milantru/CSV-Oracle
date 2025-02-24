@@ -97,8 +97,10 @@ def create_dataset_knowledge(report):
     
     return dataset_knowledge
 
-def add_column_prompts(column_knowledge, csv_file_name, columns_knowledge):
+def add_column_prompts(table_knowledge, csv_file_name, columns_knowledge):
     for col_name, col_info in columns_knowledge.items():
+        column_knowledge = ColumnKnowledge()
+        
         column_knowledge.name = col_name
         column_knowledge.description = f'Provide a brief description of the column {col_name} from table {csv_file_name}. What does it describe or represent? Answer only with the column description, no other text.'
 
@@ -117,6 +119,8 @@ def add_column_prompts(column_knowledge, csv_file_name, columns_knowledge):
                 correlation_explanation.explanation = f'Provide an explanation for why the column {col_name} from table {csv_file_name} is correlated with the column {correlated_col_name} (correlation value: {corr_value}). Answer only with the explanation, no other text.'
                 column_knowledge.correlation_explanations.append(correlation_explanation)
 
+        table_knowledge.column_knowledges.append(column_knowledge)
+        
         # TODO (schema) for each column, if schema provided; chcelo by to schemu...
         # column_prompt_schema = 'Why does this constraint exist? Explain the reasoning behind the given constraint or rule in the schema.'
         # prompts.append(column_prompt_schema)
@@ -126,6 +130,7 @@ def main(args):
     reports_files_paths = list(reports_folder_path.glob("*.json"))
     csv_files_names = [report_file_path.name for report_file_path in reports_files_paths]
 
+    # TODO Not "true" dataset knowledge, this is info gathered from e.g. reports, probably need to rename to avoid confusion
     datasets_columns_knowledge = []
     for report_file_path, csv_file_name in zip(reports_files_paths, csv_files_names):
         with open(report_file_path, 'r') as file:
@@ -152,8 +157,7 @@ def main(args):
         table_knowledge.row_entity_description = f"What kind of entity or entities does the table row of {csv_file_name} represent? Make the answer concise."
         
         dataset_columns_knowledge = datasets_columns_knowledge[i]
-        table_knowledge.column_knowledges.append(ColumnKnowledge())
-        add_column_prompts(table_knowledge.column_knowledges[-1], csv_file_name, dataset_columns_knowledge)
+        add_column_prompts(table_knowledge, csv_file_name, dataset_columns_knowledge)
         
         dataset_knowledge.table_knowledges.append(table_knowledge)
     

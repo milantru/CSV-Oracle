@@ -4,7 +4,7 @@ from pathlib import Path
 from llama_index.core.tools import QueryEngineTool, ToolMetadata
 from llama_index.llms.ollama import Ollama
 from llama_index.core.query_engine import SubQuestionQueryEngine
-from shared_helpers import get_file_paths, read_file, load_index, get_model, DatasetKnowledge
+from shared_helpers import get_file_paths, read_file, get_model, DatasetKnowledge, create_individual_query_engine_tools, get_embedding_model
 
 parser = argparse.ArgumentParser(description="Script for generating an initial dataset knowledge representation.")
 parser.add_argument("-i", "--indices_folder_path", type=str, required=True, help="Path to the input folder containing index files (or to be more precise, index storage context dictionary files).")
@@ -14,6 +14,10 @@ parser.add_argument("-o", "--output_file_path", type=str, required=True, help="P
 
 
 def generate_answer(query_engine, question, max_attempts_count = 3):
+    answer = ""
+    if not question:
+        print("Skipping empty question...")
+        return answer
     attempts_count = 0
     while attempts_count < max_attempts_count:
         try:
@@ -29,33 +33,9 @@ def generate_answer(query_engine, question, max_attempts_count = 3):
                 return None
     return answer
 
-def create_query_engine_tools(index_storage_context_dicts_paths, llm):
-    tool_metadata_provider = {
-        "additional_info_index.json": ToolMetadata(
-            name="Additional information",
-            description="Provides additional information about the dataset",
-        ),
-        "csv_files_index.json": ToolMetadata(
-            name="CSV files",
-            description="Provides actual dataset (all CSV files)",
-        ),
-        "reports_index.json": ToolMetadata(
-            name="Data profiling reports",
-            description="Provides reports generated from data profiling of CSV files",
-        ),
-    }
-    
-    query_engine_tools = [
-        QueryEngineTool(
-            query_engine=load_index(path).as_query_engine(llm=llm),
-            metadata=tool_metadata_provider[Path(path).name]
-        )
-        for path in index_storage_context_dicts_paths]
-
-    return query_engine_tools
-
 def create_query_engine(index_storage_context_dicts_paths, llm):
-    query_engine_tools = create_query_engine_tools(index_storage_context_dicts_paths, llm)
+    query_engine_tools = create_individual_query_engine_tools(
+        index_storage_context_dicts_paths, llm, embedding_model=get_embedding_model())
     
     query_engine = SubQuestionQueryEngine.from_defaults(
         query_engine_tools=query_engine_tools,
