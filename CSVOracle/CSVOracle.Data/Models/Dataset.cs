@@ -31,8 +31,6 @@ namespace CSVOracle.Data.Models
 
 		public string? InitialDatasetKnowledgeJson { get; set; }
 
-		public string? NotesLlmInstructions { get; set; }
-
 		public string? ChatLlmInstructions { get; set; }
 
 		[Required]

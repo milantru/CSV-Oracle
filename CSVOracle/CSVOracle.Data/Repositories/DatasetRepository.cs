@@ -52,7 +52,6 @@ namespace CSVOracle.Data.Repositories
 			storedDataset.CsvFilesIndexJson= dataset.CsvFilesIndexJson;
 			storedDataset.DataProfilingReportsIndexJson = dataset.DataProfilingReportsIndexJson;
 			storedDataset.InitialDatasetKnowledgeJson = dataset.InitialDatasetKnowledgeJson;
-			storedDataset.NotesLlmInstructions = dataset.NotesLlmInstructions;
 			storedDataset.ChatLlmInstructions = dataset.ChatLlmInstructions;
 
 			// User is not updated because once the dataset is assigned to the user (when creating dataset), it is final.
