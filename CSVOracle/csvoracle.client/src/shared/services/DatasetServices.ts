@@ -79,7 +79,7 @@ export const uploadDatasetForProcessingAPI = async (
 		});
 
 		const datasetId = response.data;
-		return { uploadedDatasetId: datasetId, errorMessages: [] };;
+		return { uploadedDatasetId: datasetId, errorMessages: [] };
 	}
 	catch (error) {
 		return { uploadedDatasetId: null, errorMessages: getErrorMessages(error) };
