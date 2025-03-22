@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
 from llama_index.readers.json import JSONReader
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from shared_helpers import get_embedding_model
 
 parser = argparse.ArgumentParser(description="Script for generating an index storage context dictionary file from either .txt, .csv, or .json file(s). If input is folder, it cannot be empty and all files must share the same extension.")
 parser.add_argument("-i", "--input_path", type=str, required=True, help="Path to the input file or non-empty folder containing input files sharing the same extension.")
@@ -31,7 +31,7 @@ def main(args):
     
     documents = get_documents(files_paths)
     
-    index = VectorStoreIndex.from_documents(documents, embed_model=HuggingFaceEmbedding())
+    index = VectorStoreIndex.from_documents(documents, embed_model=get_embedding_model())
 
     index_storage_context_dict=index.storage_context.to_dict()
     with open(args.output_file_path, 'w') as output_file:
