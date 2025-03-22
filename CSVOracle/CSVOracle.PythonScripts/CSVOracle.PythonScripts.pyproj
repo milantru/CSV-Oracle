@@ -28,6 +28,7 @@
     <Compile Include="generate_index_file.py" />
     <Compile Include="generate_initial_dataset_knowledge.py" />
     <Compile Include="generate_prompting_phase_instructions.py" />
+    <Compile Include="llm_server.py" />
     <Compile Include="shared_helpers.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />

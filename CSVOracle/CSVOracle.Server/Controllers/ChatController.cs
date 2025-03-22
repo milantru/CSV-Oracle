@@ -6,8 +6,10 @@ using CSVOracle.Server.Services;
 using CSVOracle.Server.Services.BackgroundServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
+using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace CSVOracle.Server.Controllers
@@ -23,6 +25,7 @@ namespace CSVOracle.Server.Controllers
 		private readonly PythonExecutorService pythonExecutor;
 		private readonly string dataFolderPath;
 		private readonly Dictionary<string, string> apiKeys;
+		private readonly string llmServerUrlForGeneratingAnswer;
 
 		public ChatController(
 			ILogger<ChatController> logger,
@@ -36,6 +39,7 @@ namespace CSVOracle.Server.Controllers
 			this.logger = logger;
 			this.dataFolderPath = config.GetRequiredSection("AppSettings:DataFolderPath").Value!;
 			this.apiKeys = config.GetRequiredSection("AppSettings:ApiKeys").Get<Dictionary<string, string>>()!;
+			this.llmServerUrlForGeneratingAnswer = config.GetRequiredSection("AppSettings:LlmServerUrlForGeneratingAnswer").Value!;
 			this.chatRepository = chatRepository;
 			this.datasetRepository = datasetRepository;
 			this.tokenHelper = tokenHelper;
@@ -368,25 +372,31 @@ namespace CSVOracle.Server.Controllers
 			return userViewTrimmedOrNull;
 		}
 
-		private Task _GenerateAnswerAsync(string indicesFolderPath, string datasetKnowledgeFilePath,
+		private async Task _GenerateAnswerAsync(string indicesFolderPath, string datasetKnowledgeFilePath,
 			string? userViewFilePath, string? chatHistoryFilePath, string messageFilePath, string updatedChatHistoryFilePath,
 			string updatedDatasetKnowledgeFilePath, string answerFilePath)
 		{
-			var args = $"-i \"{indicesFolderPath}\" -d \"{datasetKnowledgeFilePath}\"";
-			if (userViewFilePath is not null)
-			{
-				args = args + $" -u \"{userViewFilePath}\"";
-			}
-			if (chatHistoryFilePath is not null)
-			{
-				args = args + $" -c \"{chatHistoryFilePath}\"";
-			}
-			string apiKeysJson = JsonSerializer.Serialize(this.apiKeys, new JsonSerializerOptions { WriteIndented = false});
-			apiKeysJson = apiKeysJson.Replace("\"", "\\\""); // Must be correctly escaped, otherwise json.loads in Python will fail
-			args = args + $" -m \"{messageFilePath}\" -s \"{updatedChatHistoryFilePath}\" " +
-				$"-t \"{updatedDatasetKnowledgeFilePath}\" -a \"{answerFilePath}\" -k \"{apiKeysJson}\"";
+			string apiKeysJson = System.Text.Json.JsonSerializer.Serialize(
+				this.apiKeys, new JsonSerializerOptions { WriteIndented = false});
 
-			return this.pythonExecutor.ExecutePythonScriptAsync("generate_answer.py", args);
+			var args = new
+			{
+				indices_folder_path = indicesFolderPath,
+				dataset_knowledge_path = datasetKnowledgeFilePath,
+				user_view_path = userViewFilePath,
+				chat_history_path = chatHistoryFilePath,
+				message_path = messageFilePath,
+				updated_chat_history_path = updatedChatHistoryFilePath,
+				updated_dataset_knowledge_path = updatedDatasetKnowledgeFilePath,
+				answer_path = answerFilePath,
+				api_keys = apiKeysJson
+			};
+
+			var argsJson = JsonConvert.SerializeObject(args);
+			var content = new StringContent(argsJson, new MediaTypeHeaderValue("application/json"));
+
+			using var client = new HttpClient();
+			_ = await client.PostAsync(this.llmServerUrlForGeneratingAnswer, content);
 		}
 
 		public record AddChatRequest
