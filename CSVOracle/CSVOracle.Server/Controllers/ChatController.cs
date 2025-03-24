@@ -116,19 +116,7 @@ namespace CSVOracle.Server.Controllers
 			var chatFolderPath = Path.Join(this.dataFolderPath, Guid.NewGuid().ToString());
 			Directory.CreateDirectory(chatFolderPath);
 
-			string indicesFolderPath = Path.Join(chatFolderPath, "indices");
-			Directory.CreateDirectory(indicesFolderPath);
 			var tasks = new List<Task>();
-			if (dataset.AdditionalInfoIndexJson is not null)
-			{
-				tasks.Add(
-					Task.Run(() =>
-						System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "additional_info_index.json"), dataset.AdditionalInfoIndexJson)
-					)
-				);
-			}
-			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "csv_files_index.json"), dataset.CsvFilesIndexJson)));
-			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "reports_index.json"), dataset.DataProfilingReportsIndexJson)));
 
 			string datasetKnowledgeFilePath = Path.Join(chatFolderPath, "dataset_knowledge.json");
 			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(datasetKnowledgeFilePath, dataset.InitialDatasetKnowledgeJson)));
@@ -152,7 +140,17 @@ namespace CSVOracle.Server.Controllers
 
 			await Task.WhenAll(tasks);
 			tasks.Clear();
-			await _GenerateAnswerAsync(indicesFolderPath, datasetKnowledgeFilePath, userViewFilePath, null, 
+
+			List<string> collectionNames = [
+				DatasetProcessorService.GetChromaDbCollectionNameForCsvFiles(dataset.User.Id, dataset.Id),
+				DatasetProcessorService.GetChromaDbCollectionNameForReports(dataset.User.Id, dataset.Id)
+			];
+			if (!string.IsNullOrEmpty(dataset.AdditionalInfo)) {
+				collectionNames.Add(
+					DatasetProcessorService.GetChromaDbCollectionNameForAdditionalInfo(dataset.User.Id, dataset.Id)
+				);
+			}
+			await _GenerateAnswerAsync(collectionNames, datasetKnowledgeFilePath, userViewFilePath, null,
 				messageFilePath, updatedChatHistoryFilePath, updatedDatasetKnowledgeFilePath, answerFilePath);
 
 			string chatHistoryJson = null!;
@@ -187,7 +185,7 @@ namespace CSVOracle.Server.Controllers
 		}
 
 		[HttpPost("generate-answer"), Authorize]
-		public async Task<IActionResult> GenerateAnswerAsync([FromHeader] string authorization, 
+		public async Task<IActionResult> GenerateAnswerAsync([FromHeader] string authorization,
 			[FromForm] GenerateAnswerRequest request)
 		{
 			var user = await this.tokenHelper.GetUserAsync(authorization);
@@ -197,7 +195,7 @@ namespace CSVOracle.Server.Controllers
 				this.logger.LogInformation(message);
 				return StatusCode(StatusCodes.Status401Unauthorized, message);
 			}
-			
+
 			Chat chat;
 			try
 			{
@@ -214,18 +212,7 @@ namespace CSVOracle.Server.Controllers
 			var chatFolderPath = Path.Join(this.dataFolderPath, Guid.NewGuid().ToString());
 			Directory.CreateDirectory(chatFolderPath);
 
-			string indicesFolderPath = Path.Join(chatFolderPath, "indices");
-			Directory.CreateDirectory(indicesFolderPath);
 			var tasks = new List<Task>();
-			if (chat.Dataset.AdditionalInfoIndexJson is not null)
-			{
-				tasks.Add(
-					Task.Run(() => 
-						System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "additional_info_index.json"), chat.Dataset.AdditionalInfoIndexJson))
-				);
-			}
-			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "csv_files_index.json"), chat.Dataset.CsvFilesIndexJson)));
-			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(Path.Join(indicesFolderPath, "reports_index.json"), chat.Dataset.DataProfilingReportsIndexJson)));
 
 			string datasetKnowledgeFilePath = Path.Join(chatFolderPath, "dataset_knowledge.json");
 			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(datasetKnowledgeFilePath, chat.CurrentDatasetKnowledgeJson)));
@@ -247,7 +234,17 @@ namespace CSVOracle.Server.Controllers
 			string answerFilePath = Path.Join(chatFolderPath, "answer.txt");
 
 			await Task.WhenAll(tasks);
-			await _GenerateAnswerAsync(indicesFolderPath, datasetKnowledgeFilePath, userViewFilePath, chatHistoryFilePath,
+
+			List<string> collectionNames = [
+				DatasetProcessorService.GetChromaDbCollectionNameForCsvFiles(user.Id, chat.Dataset.Id),
+				DatasetProcessorService.GetChromaDbCollectionNameForReports(user.Id, chat.Dataset.Id)
+			];
+			if (!string.IsNullOrEmpty(chat.Dataset.AdditionalInfo)) {
+				collectionNames.Add(
+					DatasetProcessorService.GetChromaDbCollectionNameForAdditionalInfo(user.Id, chat.Dataset.Id)
+				);
+			}
+			await _GenerateAnswerAsync(collectionNames, datasetKnowledgeFilePath, userViewFilePath, chatHistoryFilePath,
 				messageFilePath, updatedChatHistoryFilePath, updatedDatasetKnowledgeFilePath, answerFilePath);
 
 			if (!System.IO.File.Exists(updatedChatHistoryFilePath))
@@ -372,16 +369,16 @@ namespace CSVOracle.Server.Controllers
 			return userViewTrimmedOrNull;
 		}
 
-		private async Task _GenerateAnswerAsync(string indicesFolderPath, string datasetKnowledgeFilePath,
+		private async Task _GenerateAnswerAsync(List<string> collectionNames, string datasetKnowledgeFilePath,
 			string? userViewFilePath, string? chatHistoryFilePath, string messageFilePath, string updatedChatHistoryFilePath,
 			string updatedDatasetKnowledgeFilePath, string answerFilePath)
 		{
-			string apiKeysJson = System.Text.Json.JsonSerializer.Serialize(
-				this.apiKeys, new JsonSerializerOptions { WriteIndented = false});
+			var options = new JsonSerializerOptions { WriteIndented = false };
+			string apiKeysJson = System.Text.Json.JsonSerializer.Serialize(this.apiKeys, options);
 
 			var args = new
 			{
-				indices_folder_path = indicesFolderPath,
+				collection_names = collectionNames,
 				dataset_knowledge_path = datasetKnowledgeFilePath,
 				user_view_path = userViewFilePath,
 				chat_history_path = chatHistoryFilePath,

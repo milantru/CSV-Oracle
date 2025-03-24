@@ -13,7 +13,7 @@ def generate_answer():
     data = request.get_json()
 
     args = Args(**{
-        "indices_folder_path": data.get("indices_folder_path"),
+        "collection_names": data.get("collection_names"),
         "dataset_knowledge_path": data.get("dataset_knowledge_path"),
         "user_view_path": data.get("user_view_path", None),
         "chat_history_path": data.get("chat_history_path", None),
@@ -27,7 +27,8 @@ def generate_answer():
     try:
         main(args)
         return "Answer generated successfully", 200
-    except:
+    except Exception as e:
+        print(e)
         return "Failed to generate answer", 500
 
 print("LLM server is running")

@@ -1,19 +1,18 @@
-import argparse
-import json
 import re
-from pathlib import Path
+import json
+import argparse
 from llama_index.core.tools import QueryEngineTool, ToolMetadata, FunctionTool
 from llama_index.core.query_engine import SubQuestionQueryEngine
 from llama_index.core.agent import ReActAgent
 from llama_index.core.llms import ChatMessage
-from shared_helpers import get_file_paths, read_file, get_model, DatasetKnowledge, get_embedding_model, create_individual_query_engine_tools
+from shared_helpers import read_file, get_model, DatasetKnowledge, get_embedding_model, create_individual_query_engine_tools, get_chroma_db_client
 from concurrent.futures import ThreadPoolExecutor
 
 parser = argparse.ArgumentParser(description="Script for chat managing (answering messages in a chat fashion).")
-parser.add_argument("-i", "--indices_folder_path", type=str, required=True, help="Path to the input folder containing index files (or to be more precise, index storage context dictionary files).")
+parser.add_argument("-c", "--collection_names", type=str, required=True, help="JSON string containing list of ChromaDb collection names (for retrieving indices).")
 parser.add_argument("-d", "--dataset_knowledge_path", type=str, required=True, help="Path to the file containing dataset knowledge.")
 parser.add_argument("-u", "--user_view_path", type=str, default=None, help="(Optional) Path to the file containing user view.")
-parser.add_argument("-c", "--chat_history_path", type=str, default=None, help="(Optional) Path to the file containing chat history. If not provided, the new chat is started creating a new chat history.")
+parser.add_argument("-r", "--chat_history_path", type=str, default=None, help="(Optional) Path to the file containing chat history. If not provided, the new chat is started creating a new chat history.")
 parser.add_argument("-m", "--message_path", type=str, required=True, help="Path to the file containing the new message sent by the user to the chat.")
 parser.add_argument("-s", "--updated_chat_history_path", type=str, required=True, help="Path to the file where the updated chat history should be stored. The new file will be created, or overwritten if already exists.")
 parser.add_argument("-t", "--updated_dataset_knowledge_path", type=str, required=True, help="Path to the file where the updated dataset knowledge should be stored. The new file will be created, or overwritten if already exists.")
@@ -280,8 +279,8 @@ def create_func_tools():
     
     return func_tools
 
-def create_query_engine_tools(index_storage_context_dicts_paths, chat_llm, embedding_model):
-    individual_query_engine_tools = create_individual_query_engine_tools(index_storage_context_dicts_paths, chat_llm, embedding_model=embedding_model)
+def create_query_engine_tools(collection_names, db, chat_llm, embedding_model):
+    individual_query_engine_tools = create_individual_query_engine_tools(collection_names, db, chat_llm, embedding_model)
     sub_question_query_engine_tool = create_sub_question_query_engine_tool_from(individual_query_engine_tools, chat_llm)
     return individual_query_engine_tools + [sub_question_query_engine_tool]
 
@@ -301,10 +300,14 @@ def main(args):
     
     GLOBALS["dataset_knowledge"] = DatasetKnowledge.from_dict(read_file(args.dataset_knowledge_path, load_as_json=True))
 
-    index_storage_context_dicts_paths = get_file_paths(Path(args.indices_folder_path))
-    chat_llm = get_model(model="llama-3.3-70b-versatile", api_key=args.api_keys["GROQ_API_KEY"])
+    chat_llm = get_model(model="llama3-70b-8192", api_key=args.api_keys["GROQ_API_KEY"])
 
-    query_engine_tools = create_query_engine_tools(index_storage_context_dicts_paths, chat_llm, embedding_model=get_embedding_model())
+    query_engine_tools = create_query_engine_tools(
+        collection_names = args.collection_names,
+        db = get_chroma_db_client(),
+        chat_llm = chat_llm,
+        embedding_model = get_embedding_model()
+    )
     func_tools = create_func_tools()
 
     tools = query_engine_tools + func_tools
@@ -314,8 +317,8 @@ def main(args):
     
     message = read_file(args.message_path)
 
-    # Generate answer
-    response = agent.chat(message)
+    # Generate answer (no need to persist it on the disk, the answer is present in the chat history which is persisted later)
+    answer = agent.chat(message)
 
     # Write
     with ThreadPoolExecutor() as executor:
@@ -327,7 +330,7 @@ def main(args):
         future2.result()
 
         # TODO Do we need this?
-        # answer = str(response)
+        # answer = str(answer)
         # with open(args.answer_path, 'w') as f:
         #     f.write(answer)
 

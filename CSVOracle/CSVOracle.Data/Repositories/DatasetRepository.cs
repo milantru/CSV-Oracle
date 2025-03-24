@@ -48,9 +48,6 @@ namespace CSVOracle.Data.Repositories
 			storedDataset.Separator = dataset.Separator;
 			storedDataset.Encoding = dataset.Encoding;
 			storedDataset.AdditionalInfo = dataset.AdditionalInfo;
-			storedDataset.AdditionalInfoIndexJson= dataset.AdditionalInfoIndexJson;
-			storedDataset.CsvFilesIndexJson= dataset.CsvFilesIndexJson;
-			storedDataset.DataProfilingReportsIndexJson = dataset.DataProfilingReportsIndexJson;
 			storedDataset.InitialDatasetKnowledgeJson = dataset.InitialDatasetKnowledgeJson;
 			storedDataset.ChatLlmInstructions = dataset.ChatLlmInstructions;
 

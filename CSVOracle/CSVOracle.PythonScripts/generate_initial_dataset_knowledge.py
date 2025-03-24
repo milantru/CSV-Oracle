@@ -1,23 +1,18 @@
 import argparse
 import json
-from pathlib import Path
-from llama_index.core.tools import QueryEngineTool, ToolMetadata
-from llama_index.llms.ollama import Ollama
-from llama_index.core.query_engine import SubQuestionQueryEngine
-from shared_helpers import get_file_paths, read_file, get_model, DatasetKnowledge, create_individual_query_engine_tools, get_embedding_model
+from shared_helpers import read_file, get_model, DatasetKnowledge, get_embedding_model, create_individual_query_engine_tools, create_sub_question_query_engine, get_chroma_db_client
 
 parser = argparse.ArgumentParser(description="Script for generating an initial dataset knowledge representation.")
-parser.add_argument("-i", "--indices_folder_path", type=str, required=True, help="Path to the input folder containing index files (or to be more precise, index storage context dictionary files).")
+parser.add_argument("-c", "--collection_names", type=str, required=True, help="JSON string containing list of ChromaDb collection names (for retrieving indices).")
 parser.add_argument("-p", "--prompting_phase_prompts_path", type=str, required=True, help="Path to the input file containing prompting phase prompts.")
 parser.add_argument("-r", "--prompting_phase_instructions_path", type=str, required=True, help="Path to the input file containing prompting phase instructions.")
 parser.add_argument("-o", "--output_file_path", type=str, required=True, help="Path to the file where the initial dataset knowledge representation should be stored. The new file will be created, or overwritten if already exists.")
-
 
 def generate_answer(query_engine, question, max_attempts_count = 3):
     answer = ""
     if not question:
         print("Skipping empty question...")
-        return answer
+        return None
     attempts_count = 0
     while attempts_count < max_attempts_count:
         try:
@@ -33,15 +28,11 @@ def generate_answer(query_engine, question, max_attempts_count = 3):
                 return None
     return answer
 
-def create_query_engine(index_storage_context_dicts_paths, llm):
+def create_query_engine(collection_names, db, llm, embedding_model):
     query_engine_tools = create_individual_query_engine_tools(
-        index_storage_context_dicts_paths, llm, embedding_model=get_embedding_model())
+        collection_names, db, llm, embedding_model)
     
-    query_engine = SubQuestionQueryEngine.from_defaults(
-        query_engine_tools=query_engine_tools,
-        llm=llm,
-        verbose=False
-    )
+    query_engine = create_sub_question_query_engine(query_engine_tools, llm)
     
     return query_engine
 
@@ -49,7 +40,7 @@ def try_answer_question(query_engine, question):
     answer = generate_answer(query_engine, question)
     return answer if answer else ""
 
-def create_initial_dataset_knowledge(prompting_phase_prompts, query_engine):    
+def create_initial_dataset_knowledge(prompting_phase_prompts, query_engine):
     # prompting_phase_prompts is basically dataset knowledge we want to create but has questions in place of answers
     # so the goal is to answer the questions and replace the questions with its answers
     prompting_phase_prompts.description = try_answer_question(query_engine, prompting_phase_prompts.description)
@@ -66,12 +57,17 @@ def create_initial_dataset_knowledge(prompting_phase_prompts, query_engine):
     return prompting_phase_prompts
 
 def main(args):
-    index_storage_context_dicts_paths = get_file_paths(Path(args.indices_folder_path))
+    llm = get_model(
+        model = "llama3.2:latest", 
+        system_prompt = read_file(args.prompting_phase_instructions_path)
+    )
 
-    prompting_phase_instructions = read_file(args.prompting_phase_instructions_path)
-    prompting_phase_llm = get_model(model="llama3.2:latest", system_prompt=prompting_phase_instructions)
-
-    query_engine = create_query_engine(index_storage_context_dicts_paths, prompting_phase_llm)
+    query_engine = create_query_engine(
+        collection_names = json.loads(args.collection_names), 
+        db = get_chroma_db_client(), 
+        llm = llm,
+        embedding_model = get_embedding_model()
+    )
 
     prompting_phase_prompts = DatasetKnowledge.from_dict(read_file(args.prompting_phase_prompts_path, load_as_json=True))
     initial_dataset_knowledge = create_initial_dataset_knowledge(prompting_phase_prompts, query_engine)

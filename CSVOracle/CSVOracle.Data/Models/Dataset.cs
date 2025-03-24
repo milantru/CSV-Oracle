@@ -21,12 +21,6 @@ namespace CSVOracle.Data.Models
 
 		public string? AdditionalInfo { get; set; }
 
-		public string? AdditionalInfoIndexJson { get; set; }
-		
-		public string? CsvFilesIndexJson { get; set; }
-
-		public string? DataProfilingReportsIndexJson { get; set; }
-
 		public List<DatasetFile> DatasetFiles { get; set; } = new();
 
 		public string? InitialDatasetKnowledgeJson { get; set; }

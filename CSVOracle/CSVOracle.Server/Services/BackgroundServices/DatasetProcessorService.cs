@@ -3,6 +3,7 @@ using CSVOracle.Data.Enums;
 using CSVOracle.Data.Interfaces;
 using CSVOracle.Server.Controllers;
 using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace CSVOracle.Server.Services.BackgroundServices
 {
@@ -17,7 +18,6 @@ namespace CSVOracle.Server.Services.BackgroundServices
 		private const string promptingPhaseInstructionsFileName = "prompting_phase_instructions.txt";
 		private const string additionalInfoFileName = "additional_info.txt";
 		private const string additionalInfoIndexFileName = "additional_info_index.json";
-		private const string csvFilesIndexFileName = "csv_files_index.json";
 		private const string reportsIndexFileName = "reports_index.json";
 		private const string initialDatasetKnowledgeFileName = "initial_dataset_knowledge.json";
 		private readonly ILogger<DatasetProcessorService> logger;
@@ -39,6 +39,10 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			this.scopeFactory = scopeFactory;
 			this.pythonExecutor = pythonExecutor;
 		}
+
+		public static string GetChromaDbCollectionNameForCsvFiles(int userId, int datasetId) => $"{userId}-{datasetId}-csvFiles";
+		public static string GetChromaDbCollectionNameForReports(int userId, int datasetId) => $"{userId}-{datasetId}-reports";
+		public static string GetChromaDbCollectionNameForAdditionalInfo(int userId, int datasetId) => $"{userId}-{datasetId}-additionalInfo";
 
 		public static void EnqueueDatasetId(int datasetId)
 		{
@@ -86,22 +90,17 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			Directory.CreateDirectory(outputFolderPath);
 			var reportsFolderPath = Path.Join(outputFolderPath, reportsFolderName);
 			Directory.CreateDirectory(reportsFolderPath);
-			var indicesFolderPath = Path.Join(outputFolderPath, indicesFolderName);
-			Directory.CreateDirectory(indicesFolderPath);
 			var promptingPhasePromptsFilePath = Path.Join(outputFolderPath, promptingPhasePromptsFileName);
 			var promptingPhaseInstructionsFilePath = Path.Join(outputFolderPath, promptingPhaseInstructionsFileName);
 			var initialDatasetKnowledgeFilePath = Path.Join(outputFolderPath, initialDatasetKnowledgeFileName);
-			
-			var csvFilesIndexFilePath = Path.Join(indicesFolderPath, csvFilesIndexFileName);
-			var additionalInfoIndexFilePath = Path.Join(indicesFolderPath, additionalInfoIndexFileName);
-			var reportsIndexFilePath = Path.Join(indicesFolderPath, reportsIndexFileName);
 
 			// Tasks...
 			var tasks = new List<Task>();
 
 			tasks.Add(Task.Run(async () =>
 			{
-				var generateCsvFilesIndexTask = GenerateIndexFile(csvFilesFolderPath, csvFilesIndexFilePath);
+				var csvFilesCollectionName = GetChromaDbCollectionNameForCsvFiles(dataset.User.Id, dataset.Id);
+				var generateCsvFilesIndexTask = GenerateIndexFile(csvFilesFolderPath, csvFilesCollectionName);
 
 				Task? generateAdditionalInfoIndexTask = null;
 				if (!string.IsNullOrEmpty(dataset.AdditionalInfo))
@@ -109,16 +108,18 @@ namespace CSVOracle.Server.Services.BackgroundServices
 					var additionalInfoFilePath = Path.Join(outputFolderPath, additionalInfoFileName);
 					System.IO.File.WriteAllText(additionalInfoFilePath, dataset.AdditionalInfo);
 
-					generateAdditionalInfoIndexTask = GenerateIndexFile(additionalInfoFilePath, additionalInfoIndexFilePath);
+					var additionalInfoCollectionName = GetChromaDbCollectionNameForAdditionalInfo(dataset.User.Id, dataset.Id);
+					generateAdditionalInfoIndexTask = GenerateIndexFile(additionalInfoFilePath, additionalInfoCollectionName);
 				}
 
 				var generateDataProfilingReportsTasks = GenerateDataProfilingReports(
 					csvFilesPaths, datasetMetadataJsonFilePath, reportsFolderPath);
 				await Task.WhenAll(generateDataProfilingReportsTasks);
 
+				var reportsCollectionName = GetChromaDbCollectionNameForReports(dataset.User.Id, dataset.Id);
 				await Task.WhenAll(
 					GeneratePromptingPhasePrompts(reportsFolderPath, promptingPhasePromptsFilePath),
-					GenerateIndexFile(reportsFolderPath, reportsIndexFilePath),
+					GenerateIndexFile(reportsFolderPath, reportsCollectionName),
 					generateCsvFilesIndexTask,
 					generateAdditionalInfoIndexTask ?? Task.CompletedTask
 				);
@@ -127,34 +128,22 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			tasks.Add(GeneratePromptingPhaseInstructions(csvFilesFolderPath, promptingPhaseInstructionsFilePath));
 
 			await Task.WhenAll(tasks);
-
-			await GenerateInitialDatasetKnowledge(indicesFolderPath, promptingPhasePromptsFilePath,
-					promptingPhaseInstructionsFilePath, initialDatasetKnowledgeFilePath);
-
-			// Read outputs and update dataset
 			tasks.Clear();
 
-			if (dataset.AdditionalInfo is not null)
-			{
-				tasks.Add(Task.Run(() =>
-				{
-					dataset.AdditionalInfoIndexJson = File.ReadAllText(additionalInfoIndexFilePath);
-				}));
+			List<string> collectionNames = [
+				GetChromaDbCollectionNameForCsvFiles(dataset.User.Id, dataset.Id),
+				GetChromaDbCollectionNameForReports(dataset.User.Id, dataset.Id)
+			];
+			if (!string.IsNullOrEmpty(dataset.AdditionalInfo)) {
+				collectionNames.Add(
+					GetChromaDbCollectionNameForAdditionalInfo(dataset.User.Id, dataset.Id)
+				);
 			}
-			tasks.Add(Task.Run(() =>
-			{
-				dataset.CsvFilesIndexJson = File.ReadAllText(csvFilesIndexFilePath);
-			}));
-			tasks.Add(Task.Run(() =>
-			{
-				dataset.DataProfilingReportsIndexJson = File.ReadAllText(reportsIndexFilePath);
-			}));
-			tasks.Add(Task.Run(() =>
-			{
-				dataset.InitialDatasetKnowledgeJson = File.ReadAllText(initialDatasetKnowledgeFilePath);
-			}));
+			await GenerateInitialDatasetKnowledge(collectionNames, promptingPhasePromptsFilePath,
+					promptingPhaseInstructionsFilePath, initialDatasetKnowledgeFilePath);
 
-			await Task.WhenAll(tasks);
+			// Read output and update dataset
+			dataset.InitialDatasetKnowledgeJson = File.ReadAllText(initialDatasetKnowledgeFilePath);
 
 			dataset.Status = DatasetStatus.Processed;
 			await datasetRepository.UpdateAsync(dataset);
@@ -173,7 +162,7 @@ namespace CSVOracle.Server.Services.BackgroundServices
 		}
 
 		private List<Task> GenerateDataProfilingReports(
-			string[] csvFilesPaths, 
+			string[] csvFilesPaths,
 			string datasetMetadataJsonFilePath,
 			string outputFolderPath
 		)
@@ -207,19 +196,23 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			return task;
 		}
 
-		private Task GenerateIndexFile(string fileOrFolderPath, string outputFilePath)
+		private Task GenerateIndexFile(string fileOrFolderPath, string collectionName)
 		{
-			var args = $"-i \"{fileOrFolderPath}\" -o \"{outputFilePath}\"";
+			var args = $"-i \"{fileOrFolderPath}\" -c \"{collectionName}\"";
 
 			var task = pythonExecutor.ExecutePythonScriptAsync("generate_index_file.py", args);
 
 			return task;
 		}
 
-		private Task GenerateInitialDatasetKnowledge(string indicesFolderPath, string promptingPhasePromptsPath,
+		private Task GenerateInitialDatasetKnowledge(List<string> collectionNames, string promptingPhasePromptsPath,
 			string promptingPhaseInstructionsPath, string outputFilePath)
 		{
-			var args = $"-i \"{indicesFolderPath}\" -p \"{promptingPhasePromptsPath}\" " +
+			var options = new JsonSerializerOptions { WriteIndented = false };
+			// Replace must be used to correctly escape the quotes, otherwise json.loads in Python will fail
+			string collectionNamesJson = JsonSerializer.Serialize(collectionNames, options).Replace("\"", "\\\"");
+
+			var args = $"-c \"{collectionNamesJson}\" -p \"{promptingPhasePromptsPath}\" " +
 				$"-r \"{promptingPhaseInstructionsPath}\" -o \"{outputFilePath}\"";
 
 			var task = pythonExecutor.ExecutePythonScriptAsync("generate_initial_dataset_knowledge.py", args);

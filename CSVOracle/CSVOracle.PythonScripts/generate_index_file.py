@@ -1,16 +1,14 @@
 import argparse
-import json
 from pathlib import Path
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
 from llama_index.readers.json import JSONReader
-from shared_helpers import get_embedding_model
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core import StorageContext
+from shared_helpers import get_embedding_model, get_file_paths, get_chroma_db_client
 
 parser = argparse.ArgumentParser(description="Script for generating an index storage context dictionary file from either .txt, .csv, or .json file(s). If input is folder, it cannot be empty and all files must share the same extension.")
 parser.add_argument("-i", "--input_path", type=str, required=True, help="Path to the input file or non-empty folder containing input files sharing the same extension.")
-parser.add_argument("-o", "--output_file_path", type=str, required=True, help="Path to the file where the index storage context dictionary should be stored. The new file will be created, or overwritten if already exists.")
-
-def get_file_paths(folder_path):
-    return [file_path for file_path in folder_path.iterdir() if file_path.is_file()]
+parser.add_argument("-c", "--collection_name", type=str, required=True, help="Name of the ChromaDB collection where index will be stored.")
 
 def get_documents(files_paths):
     extension = files_paths[0].suffix
@@ -26,16 +24,22 @@ def get_documents(files_paths):
         raise ValueError("Unsupported file extension. Only .txt, .csv, and .json are supported.")
 
 def main(args):
+    # Setup
     input_path = Path(args.input_path)
     files_paths = [input_path] if input_path.is_file() else get_file_paths(input_path)
-    
-    documents = get_documents(files_paths)
-    
-    index = VectorStoreIndex.from_documents(documents, embed_model=get_embedding_model())
 
-    index_storage_context_dict=index.storage_context.to_dict()
-    with open(args.output_file_path, 'w') as output_file:
-        json.dump(index_storage_context_dict, output_file)
+    db = get_chroma_db_client()
+    chroma_collection = db.create_collection(args.collection_name)
+    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    
+    # Load documents
+    documents = get_documents(files_paths)
+
+    # Save index to disk (chroma db)
+    index = VectorStoreIndex.from_documents(
+        documents, storage_context=storage_context, embed_model=get_embedding_model()
+    )
 
 if __name__ == "__main__":
     args = parser.parse_args()

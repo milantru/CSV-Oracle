@@ -1,13 +1,17 @@
+import time
 import json
-import re
+import chromadb
+from pathlib import Path
 from llama_index.llms.ollama import Ollama
 from llama_index.llms.groq import Groq
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.core import StorageContext, load_index_from_storage
+from llama_index.core import VectorStoreIndex
 from llama_index.core.tools import QueryEngineTool, ToolMetadata
+from llama_index.core.query_engine import SubQuestionQueryEngine
 from concurrent.futures import ThreadPoolExecutor
-import time
-from pathlib import Path
+from llama_index.vector_stores.chroma import ChromaVectorStore
+
+CHROMA_DB_FOLDER_PATH = str(Path(__file__).parent / Path("../Data/chroma_db"))
 
 def checkpoint(prev_time: float, msg: str = None):
     curr_time = time.time()
@@ -25,7 +29,7 @@ def get_model(model: str, system_prompt: str | None = None, api_key: str | None 
             model=model, 
             system_prompt=system_prompt
         )
-    elif model == "llama-3.3-70b-versatile" or model == "llama-3.3-70b-specdec":
+    elif model == "llama-3.3-70b-versatile" or model == "llama-3.3-70b-specdec" or model == "llama3-70b-8192":
         if not api_key:
             raise Exception("Api key required.")
         return Groq(
@@ -59,16 +63,19 @@ def read_file(file_path, load_as_json=False):
         file_content = json.load(f) if load_as_json else f.read()
     return file_content
 
-def load_index(index_storage_context_dict_path, embedding_model):
-    with open(index_storage_context_dict_path, "r") as index_storage_context_dict_file:
-        index_storage_context_dict = json.load(index_storage_context_dict_file)
-    index_storage_context = StorageContext.from_dict(index_storage_context_dict)
-    index = load_index_from_storage(index_storage_context, embed_model=embedding_model)
+def load_index_from_chroma_db(collection_name, db, embedding_model):
+    chroma_collection = db.get_collection(collection_name)
+    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+    index = VectorStoreIndex.from_vector_store(
+        vector_store,
+        embed_model=embedding_model,
+    )
+
     return index
 
-def create_individual_query_engine_tools(index_storage_context_dicts_paths, llm, embedding_model):
+def create_individual_query_engine_tools(collection_names, db, llm, embedding_model):
     tool_metadata_provider = {
-        "additional_info_index.json": ToolMetadata(
+        "additionalInfo": ToolMetadata(
             name="additional_dataset_information",
             description=(
                 "Provides text with additional information about the dataset provided by the user."
@@ -76,7 +83,7 @@ def create_individual_query_engine_tools(index_storage_context_dicts_paths, llm,
             ),
             return_direct=True
         ),
-        "csv_files_index.json": ToolMetadata(
+        "csvFiles": ToolMetadata(
             name="csv_files",
             description=(
                 "Provides actual dataset (all CSV files)."
@@ -85,7 +92,7 @@ def create_individual_query_engine_tools(index_storage_context_dicts_paths, llm,
             ),
             return_direct=True
         ),
-        "reports_index.json": ToolMetadata(
+        "reports": ToolMetadata(
             name="data_profiling_reports",
             description=(
                 "Provides reports generated from data profiling of csv files."
@@ -95,16 +102,30 @@ def create_individual_query_engine_tools(index_storage_context_dicts_paths, llm,
         ),
     }
 
-    def create_query_engine_tool(path: Path):
+    def create_query_engine_tool(collection_name):
+        # collection name should have format "{user_id}-{database_id}-{collection_type}"
+        collection_type = collection_name.split("-")[2]
         return QueryEngineTool(
-            query_engine=load_index(path, embedding_model).as_query_engine(llm=llm),
-            metadata=tool_metadata_provider[Path(path).name]
+            query_engine=load_index_from_chroma_db(collection_name, db, embedding_model=embedding_model).as_query_engine(llm=llm), # similarity_top_k=1
+            metadata=tool_metadata_provider[collection_type]
         )
 
     with ThreadPoolExecutor() as executor:
-        query_engine_tools = list(executor.map(create_query_engine_tool, index_storage_context_dicts_paths))
+        query_engine_tools = list(executor.map(create_query_engine_tool, collection_names))
 
     return query_engine_tools
+
+def create_sub_question_query_engine(query_engine_tools, llm):
+    sub_question_query_engine = SubQuestionQueryEngine.from_defaults(
+        query_engine_tools=query_engine_tools,
+        llm=llm,
+        verbose=False
+    )
+
+    return sub_question_query_engine
+
+def get_chroma_db_client():
+    return chromadb.PersistentClient(path=CHROMA_DB_FOLDER_PATH)
 
 class CorrelationExplanation:
     def __init__(self):
