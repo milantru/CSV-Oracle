@@ -1,2 +1,6 @@
 test/venv/
 CSVOracle/Data
+CSVOracle/Data/chroma_db
+CSVOracle/CSVOracle.PythonScripts/venv
+
+test
