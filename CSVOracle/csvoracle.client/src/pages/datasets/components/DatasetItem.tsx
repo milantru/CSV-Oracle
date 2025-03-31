@@ -7,7 +7,7 @@ import { useInterval } from "../../../shared/hooks/useInterval";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { BeatLoader } from "react-spinners";
 
-const POLLING_INTERVAL = 1000 * 5; // every 5 seconds
+const POLLING_INTERVAL = 1000 * 2; // every 2 seconds
 
 type Props = {
 	dataset: Dataset;

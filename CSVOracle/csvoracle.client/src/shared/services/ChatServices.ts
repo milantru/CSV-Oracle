@@ -2,6 +2,7 @@ import axios from "axios";
 import { apiBaseUrl } from "../Constants";
 import { getErrorMessages } from "../helperFunctions/ErrorHandler";
 import { Chat } from "../types/Chat";
+import { DatasetKnowledge } from "../../pages/chats/types";
 
 export const getDatasetChatsAPI = async (datasetId: number): Promise<{ chats: Chat[], errorMessages: string[] }> => {
 	const token = localStorage.getItem("token");
@@ -20,6 +21,26 @@ export const getDatasetChatsAPI = async (datasetId: number): Promise<{ chats: Ch
 		return { chats: chats, errorMessages: [] };
 	} catch (error) {
 		return { chats: [], errorMessages: getErrorMessages(error) };
+	}
+};
+
+export const getDatasetKnowledgeAPI = async (chatId: number): Promise<{ datasetKnowledge: DatasetKnowledge | null, errorMessages: string[] }> => {
+	const token = localStorage.getItem("token");
+	if (!token) {
+		return { datasetKnowledge: null, errorMessages: ["Please log in."] };
+	}
+
+	try {
+		const response = await axios.get<DatasetKnowledge>(apiBaseUrl + `/Chat/dataset-knowledge/${chatId}`, {
+			headers: {
+				Authorization: "bearer " + token
+			}
+		});
+
+		const datasetKnowledge = response.data;
+		return { datasetKnowledge: datasetKnowledge, errorMessages: [] };
+	} catch (error) {
+		return { datasetKnowledge: null, errorMessages: getErrorMessages(error) };
 	}
 };
 

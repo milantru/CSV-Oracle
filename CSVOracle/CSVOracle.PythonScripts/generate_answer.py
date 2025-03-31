@@ -2,10 +2,10 @@ import re
 import json
 import argparse
 from llama_index.core.tools import QueryEngineTool, ToolMetadata, FunctionTool
-from llama_index.core.query_engine import SubQuestionQueryEngine
 from llama_index.core.agent import ReActAgent
-from llama_index.core.llms import ChatMessage
-from shared_helpers import read_file, get_model, DatasetKnowledge, get_embedding_model, create_individual_query_engine_tools, get_chroma_db_client
+from llama_index.core.agent.react.formatter import ReActChatFormatter
+from llama_index.core.llms import ChatMessage, MessageRole
+from shared_helpers import read_file, get_model, DatasetKnowledge, get_embedding_model, create_individual_query_engine_tools, create_sub_question_query_engine, get_chroma_db_client
 from concurrent.futures import ThreadPoolExecutor
 
 parser = argparse.ArgumentParser(description="Script for chat managing (answering messages in a chat fashion).")
@@ -25,19 +25,15 @@ GLOBALS = {
     "dataset_knowledge": None
 }
 
-def create_sub_question_query_engine_tool_from(query_engine_tools, llm):
-    sub_question_query_engine = SubQuestionQueryEngine.from_defaults(
-        query_engine_tools=query_engine_tools,
-        llm=llm,
-        verbose=True
-    )
+def create_sub_question_query_engine_tool(query_engine_tools, llm, return_direct=False):
+    sub_question_query_engine = create_sub_question_query_engine(query_engine_tools, llm)
 
     sub_question_query_engine_tool = QueryEngineTool(
         query_engine=sub_question_query_engine,
         metadata=ToolMetadata(
             name="sub_question_query_engine",
             description="Useful for when you want to answer queries that require analyzing all of the dataset information sources",
-            return_direct=True
+            return_direct=return_direct
         )
     )
 
@@ -48,12 +44,12 @@ def create_agent(llm, tools, instructions=None, chat_history=None):
         tools=tools, 
         llm=llm,
         chat_history=chat_history,
-        context=instructions,
-        # react_chat_formatter=ReActChatFormatter.from_defaults(
-        #     observation_role=MessageRole.TOOL,
-        #     context=instructions,
-        # ),
-        verbose=True
+        # context=instructions,
+        react_chat_formatter=ReActChatFormatter.from_defaults(
+            observation_role=MessageRole.TOOL,
+            context=instructions,
+        ),
+        verbose=False
     )
     
     return agent
@@ -280,8 +276,9 @@ def create_func_tools():
     return func_tools
 
 def create_query_engine_tools(collection_names, db, chat_llm, embedding_model):
-    individual_query_engine_tools = create_individual_query_engine_tools(collection_names, db, chat_llm, embedding_model)
-    sub_question_query_engine_tool = create_sub_question_query_engine_tool_from(individual_query_engine_tools, chat_llm)
+    # return_direct set to True should speed up answering (unfortunatelly for the price of answer quality)
+    individual_query_engine_tools = create_individual_query_engine_tools(collection_names, db, chat_llm, embedding_model, return_direct=True)
+    sub_question_query_engine_tool = create_sub_question_query_engine_tool(individual_query_engine_tools, chat_llm, return_direct=True)
     return individual_query_engine_tools + [sub_question_query_engine_tool]
 
 def save_dataset_knowledge(output_file_path: str, dataset_knowledge: DatasetKnowledge):
@@ -300,7 +297,7 @@ def main(args):
     
     GLOBALS["dataset_knowledge"] = DatasetKnowledge.from_dict(read_file(args.dataset_knowledge_path, load_as_json=True))
 
-    chat_llm = get_model(model="llama3-70b-8192", api_key=args.api_keys["GROQ_API_KEY"])
+    chat_llm = get_model(model="llama3.3:latest")
 
     query_engine_tools = create_query_engine_tools(
         collection_names = args.collection_names,

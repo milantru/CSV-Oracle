@@ -80,6 +80,40 @@ namespace CSVOracle.Server.Controllers
 			return Ok(dataset.Chats.Select(ChatDto.From));
 		}
 
+		[HttpGet("dataset-knowledge/{chatId:int}"), Authorize]
+		public async Task<IActionResult> GetDatasetKnowledgeAsync([FromHeader] string authorization, int chatId)
+		{
+			var user = await this.tokenHelper.GetUserAsync(authorization);
+			if (user is null)
+			{
+				var message = "Cannot retrieve the dataset knowledge for a non-existing user.";
+				this.logger.LogInformation(message);
+				return StatusCode(StatusCodes.Status401Unauthorized, message);
+			}
+
+			Chat chat;
+			try
+			{
+				chat = await this.chatRepository.GetAsync(chatId);
+			}
+			catch
+			{
+				var message = "Cannot retrieve the chat, it does not exist.";
+				this.logger.LogInformation(message);
+				return StatusCode(StatusCodes.Status404NotFound, message);
+			}
+
+			if (!user.Datasets.Select(d => d.Id).Contains(chat.Dataset.Id))
+			{
+				var message = "Cannot retrieve the dataset knowledge, it does not belong to the user.";
+				this.logger.LogInformation(message);
+				return StatusCode(StatusCodes.Status403Forbidden, message);
+			}
+
+			this.logger.LogInformation("Returning dataset knowledge.");
+			return Ok(chat.CurrentDatasetKnowledgeJson);
+		}
+
 		[HttpPost, Authorize]
 		public async Task<IActionResult> AddChatAsync([FromHeader] string authorization, [FromForm] AddChatRequest request)
 		{

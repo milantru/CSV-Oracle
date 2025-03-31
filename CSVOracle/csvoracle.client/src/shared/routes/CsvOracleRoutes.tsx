@@ -8,6 +8,7 @@ import Profile from "../../pages/profile/Profile";
 import CreateNewDataset from "../../pages/create-new-dataset/CreateNewDataset";
 import Chats from "../../pages/chats/chats";
 import CreateNewChat from "../../pages/create-new-chat/CreateNewChat";
+import DatasetKnowledge from "../../pages/dataset-knowledge/dataset-knowledge";
 
 function CsvOracleRoutes() {
     return (
@@ -21,6 +22,7 @@ function CsvOracleRoutes() {
                 <Route path="/datasets/new" element={<ProtectedRoute><CreateNewDataset /></ProtectedRoute>} />
                 <Route path="/chats/:datasetId" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
                 <Route path="/chats/:datasetId/new" element={<ProtectedRoute><CreateNewChat /></ProtectedRoute>} />
+                <Route path="/dataset-knowledge/:chatId" element={<ProtectedRoute><DatasetKnowledge /></ProtectedRoute>} />
                 <Route path="not-found" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
             </Routes>

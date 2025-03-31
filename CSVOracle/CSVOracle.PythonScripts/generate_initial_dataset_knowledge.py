@@ -40,7 +40,7 @@ def try_answer_question(query_engine, question):
     answer = generate_answer(query_engine, question)
     return answer if answer else ""
 
-def create_initial_dataset_knowledge(prompting_phase_prompts, query_engine):
+def create_initial_dataset_knowledge(prompting_phase_prompts: DatasetKnowledge, query_engine):
     # prompting_phase_prompts is basically dataset knowledge we want to create but has questions in place of answers
     # so the goal is to answer the questions and replace the questions with its answers
     prompting_phase_prompts.description = try_answer_question(query_engine, prompting_phase_prompts.description)
@@ -51,14 +51,14 @@ def create_initial_dataset_knowledge(prompting_phase_prompts, query_engine):
         for column_knowledge in table_knowledge.column_knowledges:
             column_knowledge.description = try_answer_question(query_engine, column_knowledge.description)
             column_knowledge.missing_values_explanation = try_answer_question(query_engine, column_knowledge.missing_values_explanation)
-            for correlation_explanation in column_knowledge.correlation_explanations:
-                correlation_explanation.explanation = try_answer_question(query_engine, correlation_explanation.explanation)
+        for correlation_explanation in table_knowledge.correlation_explanations:
+            correlation_explanation.explanation = try_answer_question(query_engine, correlation_explanation.explanation)
 
     return prompting_phase_prompts
 
 def main(args):
     llm = get_model(
-        model = "llama3.2:latest", 
+        model = "llama3.3:latest", 
         system_prompt = read_file(args.prompting_phase_instructions_path)
     )
 

@@ -80,7 +80,7 @@ function Datasets() {
 								(<li key={index}>{datasetFile.name}</li>))}
 							</ul>
 
-							{selectedDataset.status == DatasetStatus.Processed && 
+							{selectedDataset.status == DatasetStatus.Processed &&
 								<Link to={`/chats/${selectedDataset.id}`}>
 									<span className="d-block w-50 mx-auto btn btn-success py-2">Choose dataset</span>
 								</Link>
@@ -105,6 +105,10 @@ function Datasets() {
 				dataset.id === datasetId ? { ...dataset, status: newStatus } : dataset
 			)
 		);
+
+		if (selectedDataset?.id === datasetId) {
+			setSelectedDataset({ ...selectedDataset, status: newStatus });
+		}
 	}
 }
 

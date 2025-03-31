@@ -1,7 +1,7 @@
 import argparse
 import json
 from pathlib import Path
-from shared_helpers import DatasetKnowledge, TableKnowledge, ColumnKnowledge, CorrelationExplanation
+from shared_helpers import DatasetKnowledge, TableKnowledge, ColumnKnowledge, CorrelationExplanation, Row
 
 parser = argparse.ArgumentParser(description="Script for generating prompting phase question prompts for the LLM.")
 parser.add_argument("-i", "--input_reports_folder_path", type=str, required=True, help="Path to the folder containing reports generated from the csv files of the dataset.")
@@ -53,7 +53,7 @@ def process_column_data(column_data):
     # but the code is not written here for these properties to avoid code duplicity
     return processed_column_data
 
-def add_columns_info_to_knowledge(dataset_knowledge, report):
+def add_columns_info(dataset_info_from_report, report):
     # First get info like missing values count, minimums, maximums, means, stds...
     processed_columns_data = {}
     for column_name, column_data in report["variables"].items():
@@ -62,8 +62,8 @@ def add_columns_info_to_knowledge(dataset_knowledge, report):
 
     # Then for each column, get all columns that correlate with it.
     corr_threshold = 0.5
-    # This if is here because for some reason sometimes there are no correlations. 
-    # Probably insufficient data.
+    # It seems that if there is insufficient ammount of data the correlations are not calculated and therefore missing,
+    # that is why this if is here.
     if "auto" in report["correlations"]:
         cols_correlations = report["correlations"]["auto"]
         for i in range(len(cols_correlations)):
@@ -79,26 +79,49 @@ def add_columns_info_to_knowledge(dataset_knowledge, report):
             processed_columns_data[col_i_name]["Is correlated with columns"] = cols_correlated_with_col_i
     
     # Finally, update knowledge
-    dataset_knowledge["Columns"] = processed_columns_data
+    dataset_info_from_report["Columns"] = processed_columns_data
 
-def add_general_table_info_to_knowledge(dataset_knowledge, report):
+def get_sample_rows(report):
+    def to_row(row_object):
+        row = Row()
+        row.values = list(row_object.values())
+        return row
+
+    sample_objects = report["sample"]
+    head_rows, tail_rows = [], []
+    for sample_object in sample_objects:
+        if sample_object["id"] == "head":
+            row_objects = sample_object["data"]
+            head_rows = [to_row(row_object) for row_object in row_objects]
+        elif sample_object["id"] == "tail":
+            row_objects = sample_object["data"]
+            tail_rows = [to_row(row_object) for row_object in row_objects]
+
+    return head_rows, tail_rows
+
+def add_general_table_info(dataset_info_from_report, report):
     table_data = report["table"]
     
-    dataset_knowledge["Row count"] = table_data["n"]
-    dataset_knowledge["Column count"] = table_data["n_var"]
-    dataset_knowledge["Missing cells count"] = table_data["n_cells_missing"]
-    dataset_knowledge["Missing cells count in %"] = to_percentage(table_data["p_cells_missing"])
+    dataset_info_from_report["Row count"] = table_data["n"]
+    dataset_info_from_report["Column count"] = table_data["n_var"]
+    dataset_info_from_report["Missing cells count"] = table_data["n_cells_missing"]
+    dataset_info_from_report["Missing cells count in %"] = to_percentage(table_data["p_cells_missing"])
 
-def create_dataset_knowledge(report):
-    dataset_knowledge = {} # We will gradually add new knowledge about the dataset (new properties)
-    
-    add_general_table_info_to_knowledge(dataset_knowledge, report)
-    add_columns_info_to_knowledge(dataset_knowledge, report)
-    
-    return dataset_knowledge
+    head_rows, tail_rows = get_sample_rows(report)
+    dataset_info_from_report["Sample head"] = head_rows
+    dataset_info_from_report["Sample tail"] = tail_rows
 
-def add_column_prompts(table_knowledge, csv_file_name, columns_knowledge):
-    for col_name, col_info in columns_knowledge.items():
+def create_dataset_info_from_report(report):
+    dataset_info_from_report = {} # We will gradually add new info about the dataset (new properties)
+    
+    add_general_table_info(dataset_info_from_report, report)
+    add_columns_info(dataset_info_from_report, report)
+    
+    return dataset_info_from_report
+
+def add_column_prompts(table_knowledge: TableKnowledge, csv_file_name: str, column_info_from_report: dict):
+    for col_name, col_info in column_info_from_report.items():
+        # Create and add column knowledge
         column_knowledge = ColumnKnowledge()
         
         column_knowledge.name = col_name
@@ -110,37 +133,45 @@ def add_column_prompts(table_knowledge, csv_file_name, columns_knowledge):
         and ("Missing values count in %" in col_info and col_info["Missing values count in %"] > 0):
             column_knowledge.missing_values_explanation = f'The column {col_name} from table {csv_file_name} has {col_info["Missing values count"]} missing values ({col_info["Missing values count in %"]} %). Provide an explanation why the values are missing. Answer only with the explanation, no other text.'
         
-        if "Is correlated with columns" in col_info and len(col_info["Is correlated with columns"]) > 0:
-            for correlated_col_name, corr_value in col_info["Is correlated with columns"]:
-                correlation_explanation = CorrelationExplanation()
-                correlation_explanation.column1_name = col_name
-                correlation_explanation.column2_name = correlated_col_name
-                correlation_explanation.correlation_value = corr_value
-                correlation_explanation.explanation = f'Provide an explanation for why the column {col_name} from table {csv_file_name} is correlated with the column {correlated_col_name} (correlation value: {corr_value}). Answer only with the explanation, no other text.'
-                column_knowledge.correlation_explanations.append(correlation_explanation)
-
         table_knowledge.column_knowledges.append(column_knowledge)
-        
+
+        # Create and add correlation explanation
+        if "Is correlated with columns" in col_info and len(col_info["Is correlated with columns"]) > 0:
+            processed_pairs = {} # Keeps track of already processed column pairs
+            for correlated_col_name, corr_value in col_info["Is correlated with columns"]:
+                col1_name, col2_name = sorted([col_name, correlated_col_name])
+                if col1_name in processed_pairs and col2_name in processed_pairs[col1_name]:
+                    continue
+                if col1_name not in processed_pairs:
+                    processed_pairs[col1_name] = {}
+                processed_pairs[col1_name][col2_name] = True
+
+                correlation_explanation = CorrelationExplanation()
+                correlation_explanation.column1_name = col1_name
+                correlation_explanation.column2_name = col2_name
+                correlation_explanation.correlation_value = corr_value
+                correlation_explanation.explanation = f'Provide an explanation for why the columns {col1_name} and {col2_name} from table {csv_file_name} are correlated (correlation value: {corr_value}). Answer only with the explanation, no other text.'
+                
+                table_knowledge.correlation_explanations.append(correlation_explanation)
+
         # TODO (schema) for each column, if schema provided; chcelo by to schemu...
         # column_prompt_schema = 'Why does this constraint exist? Explain the reasoning behind the given constraint or rule in the schema.'
         # prompts.append(column_prompt_schema)
 
 def main(args):
-    reports_folder_path = Path(args.input_reports_folder_path)
-    reports_files_paths = list(reports_folder_path.glob("*.json"))
-    csv_files_names = [report_file_path.name for report_file_path in reports_files_paths]
+    reports_files_paths = list(Path(args.input_reports_folder_path).glob("*.json"))
+    csv_files_names = [report_file_path.stem.removesuffix("_report") for report_file_path in reports_files_paths]
 
-    # TODO Not "true" dataset knowledge, this is info gathered from e.g. reports, probably need to rename to avoid confusion
-    datasets_columns_knowledge = []
-    for report_file_path, csv_file_name in zip(reports_files_paths, csv_files_names):
+    dataset_info_from_reports = []
+    for report_file_path in reports_files_paths:
         with open(report_file_path, 'r') as file:
             report = json.load(file)
 
-        dataset_knowledge = create_dataset_knowledge(report)
-        datasets_columns_knowledge.append(dataset_knowledge["Columns"])
+        dataset_info_from_report = create_dataset_info_from_report(report)
+        dataset_info_from_reports.append(dataset_info_from_report)
 
     # Questions start
-    # We start creating dataset knowledge (the one the user will interact with) we will ofr now mostly fill it with questions
+    # We start creating dataset knowledge (the one the user will interact with), we will now mostly fill it with questions
     # that will be used in prompting phase to get more info. Maybe a bit of a hacky solution but works nicely - this way 
     # the structure of the knowledge is secured.
     dataset_knowledge = DatasetKnowledge()
@@ -151,13 +182,16 @@ def main(args):
     for i in range(len(csv_files_names)):
         table_knowledge = TableKnowledge()
         csv_file_name = csv_files_names[i]
+        dataset_info_from_report = dataset_info_from_reports[i]
 
         table_knowledge.name = csv_file_name
         table_knowledge.description = f"Summarize what the table {csv_file_name} represents and explain what context or domain the data comes from. Be concise."
         table_knowledge.row_entity_description = f"What kind of entity or entities does the table row of {csv_file_name} represent? Make the answer concise."
+        table_knowledge.sample_head = dataset_info_from_report["Sample head"]
+        table_knowledge.sample_tail = dataset_info_from_report["Sample tail"]
         
-        dataset_columns_knowledge = datasets_columns_knowledge[i]
-        add_column_prompts(table_knowledge, csv_file_name, dataset_columns_knowledge)
+        column_info_from_report = dataset_info_from_report["Columns"]
+        add_column_prompts(table_knowledge, csv_file_name, column_info_from_report)
         
         dataset_knowledge.table_knowledges.append(table_knowledge)
     

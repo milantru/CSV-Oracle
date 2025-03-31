@@ -13,7 +13,12 @@ def create_data_profiling_report(csv_file_path, separator, encoding):
     df = pd.read_csv(csv_file_path, sep=separator, encoding=encoding)
 
     type_schema = None # {"Survived": "categorical", "Embarked": "categorical"} # TODO (schema) Schema?
-    report = ProfileReport(df, title="CSV Oracle profiling report using ydata profiling", type_schema=type_schema)
+
+    report = ProfileReport(
+        df=df,
+        title="CSV Oracle profiling report using ydata profiling",
+        type_schema=type_schema,
+    )
 
     return report
 
