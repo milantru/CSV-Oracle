@@ -9,7 +9,7 @@ type Props = {
 
 function TableKnowledgeDisplay({ tableKnowledge }: Props) {
     const columnColorWhenSelected = "#5b5b5b";
-    const columnColorWhenHovered = "#777";
+    const columnColorWhenHovered = "#777"; // This color is also used for highlighting columns correlated with the selected column
     // Max 2 columns can be selected
     const [selectedColumnIndices, setSelectedColumnIndices] = useState<number[]>([]);
     // When 2 columns are selected, the correlation explanation is selected
@@ -44,7 +44,11 @@ function TableKnowledgeDisplay({ tableKnowledge }: Props) {
                             <th key={idx}
                                 title={getTableInfoString(ck)}
                                 onClick={e => handleColumnSelection(e, idx)}
-                                style={{ transition: "background-color 0.2s ease", cursor: "pointer" }}
+                                style={{
+                                    transition: "background-color 0.2s ease",
+                                    cursor: "pointer",
+                                    boxShadow: isCorrelatedWithSelectedColumn(idx) ? `inset 0 0 4px 4px ${columnColorWhenHovered}` : ""
+                                }}
                                 onMouseEnter={e => handleOnMouseEnter(e, idx)}
                                 onMouseLeave={e => handleOnMouseLeave(e, idx)}>
                                 {ck.name}
@@ -134,6 +138,23 @@ function TableKnowledgeDisplay({ tableKnowledge }: Props) {
         }
 
         event.currentTarget.style.backgroundColor = "";
+    }
+
+    function isCorrelatedWithSelectedColumn(columnKnowledgeIdx: number) {
+        if (selectedColumnIndices.length !== 1) {
+            return false;
+        }
+
+        const selectedColumnKnowledge = tableKnowledge.columnKnowledges[selectedColumnIndices[0]];
+        const columnKnowledgeToTest = tableKnowledge.columnKnowledges[columnKnowledgeIdx];
+
+        /* The column, even though it is correlated with itself, won't be found, therefore false will be returned,
+         * but for our usecase it is OK. */
+        const result = tableKnowledge.correlationExplanations.find(ce =>
+            (ce.column1Name === selectedColumnKnowledge.name && ce.column2Name === columnKnowledgeToTest.name)
+            || (ce.column1Name === columnKnowledgeToTest.name && ce.column2Name === selectedColumnKnowledge.name));
+
+        return result !== undefined;
     }
 }
 
