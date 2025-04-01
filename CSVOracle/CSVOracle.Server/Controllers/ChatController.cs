@@ -162,10 +162,10 @@ namespace CSVOracle.Server.Controllers
 			}
 
 			string messageFilePath = Path.Join(chatFolderPath, "message.txt");
-			string startMessage = userView is null ? "Please just write \"Hello! How can I help you with this dataset?\"."
+			string startMessage = userView is null ? "Please, without using any tool, just write \"Hello! How can I help you with this dataset?\"."
 				: "If you can deduce the user need based on the user view, write the answer (provide only answer, " +
 				"no questions, e.g. \"Would you like assistance with some specific task?\"). If you cannot deduce the user need " +
-				"based on the user view, just write \"Hello! How can I help you with this dataset?\".";
+				"based on the user view, then without using any tool just write \"Hello! How can I help you with this dataset?\".";
 			System.IO.File.WriteAllText(messageFilePath, startMessage);
 
 			string updatedChatHistoryFilePath = Path.Join(chatFolderPath, "updated_chat_history.json");
