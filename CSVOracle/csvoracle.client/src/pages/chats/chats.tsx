@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Chat } from "../../shared/types/Chat";
-import { generateAnswerAPI, getDatasetChatsAPI } from "../../shared/services/ChatServices";
+import { deleteChatAPI, generateAnswerAPI, getDatasetChatsAPI } from "../../shared/services/ChatServices";
 import { toast } from "react-toastify";
 import { isNumber } from "../../shared/helperFunctions/TypeChecker";
 import { PropagateLoader, SyncLoader } from "react-spinners";
@@ -62,14 +62,30 @@ function Chats() {
 					) : (
 						<div>{datasetChats.map((chat, index) => (
 							<button key={index}
-								className="btn border-bottom rounded-0 w-100"
+								className="btn border-bottom rounded-0 w-100 position-relative"
 								style={{
 									borderRadius: "",
 									boxShadow: "none",
 									backgroundColor: chat.id === selectedChat?.id ? "#cecece" : ""
 								}}
 								onClick={() => selectChat(chat.id)}>
-								{chat.name}
+								<span>{chat.name}</span>
+								<span
+									className="position-absolute text-danger"
+									style={{
+										cursor: "pointer",
+										zIndex: 1,
+										fontSize: "1.75rem",
+										top: "50%",
+										right: "1rem",
+										transform: "translateY(-50%)", // vertically center
+									}}
+									onClick={e => {
+										e.stopPropagation(); // prevent triggering button's onClick
+										deleteChat(chat.id);
+									}}>
+									&times;
+								</span>
 							</button>))}
 						</div>
 					)}
@@ -149,6 +165,22 @@ function Chats() {
 		const chat = datasetChats.find(c => c.id === chatId);
 		if (chat) {
 			setSelectedChat(chat);
+		}
+	}
+
+	async function deleteChat(chatId: number) {
+		const { errorMessages: errMsgs } = await deleteChatAPI(chatId);
+		if (errMsgs.length > 0) {
+			for (const errMsg of errMsgs) {
+				toast.warn(errMsg);
+			}
+			return;
+		}
+
+		setDatasetChats(prevState => prevState.filter(c => c.id !== chatId));
+
+		if (selectedChat?.id === chatId) {
+			setSelectedChat(null);
 		}
 	}
 

@@ -6,7 +6,6 @@ import { useVisibilityChange } from "../../../shared/hooks/useVisibilityChange";
 import { useInterval } from "../../../shared/hooks/useInterval";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { BeatLoader } from "react-spinners";
-import { toastError } from "../../../shared/helperFunctions/ErrorHandler";
 
 const POLLING_INTERVAL = 1000 * 2; // every 2 seconds
 
@@ -78,7 +77,7 @@ function DatasetItem({ dataset, isSelected, onSelect, onStatusUpdate, onDelete }
 			<span
 				className="position-absolute translate-middle badge rounded-pill bg-danger"
 				style={{ cursor: "pointer", zIndex: 1, top: 15, right: -12, fontSize: "1rem" }}
-				onClick={(e) => {
+				onClick={e => {
 					e.stopPropagation(); // prevent triggering onSelect
 					deleteDataset(dataset.id);
 				}}>
@@ -94,8 +93,8 @@ function DatasetItem({ dataset, isSelected, onSelect, onStatusUpdate, onDelete }
 	async function getDatasetStatus(datasetId: number) {
 		const { status, errorMessages: errMsgs } = await getUserDatasetStatusAPI(datasetId)
 		if (errMsgs.length > 0) {
-			for (let i = 0; i < errMsgs.length; i++) {
-				toast.warning(errMsgs[i]);
+			for (const errMsg of errMsgs) {
+				toast.warn(errMsg);
 			}
 			return null;
 		}
@@ -149,10 +148,10 @@ function DatasetItem({ dataset, isSelected, onSelect, onStatusUpdate, onDelete }
 	}
 
 	async function deleteDataset(datasetId: number) {
-		const { errorMessages } = await deleteDatasetAPI(datasetId);
-		if (errorMessages.length > 0) {
-			for (const errMsg of errorMessages) {
-				toastError(errMsg);
+		const { errorMessages: errMsgs } = await deleteDatasetAPI(datasetId);
+		if (errMsgs.length > 0) {
+			for (const errMsg of errMsgs) {
+				toast.warn(errMsg);
 			}
 			return;
 		}

@@ -345,8 +345,8 @@ namespace CSVOracle.Server.Controllers
 			return Ok();
 		}
 
-		[HttpDelete, Authorize]
-		public async Task<IActionResult> DeleteChatAsync([FromHeader] string authorization, ChatDto chat)
+		[HttpDelete("{chatId:int}"), Authorize]
+		public async Task<IActionResult> DeleteChatAsync([FromHeader] string authorization, int chatId)
 		{
 			var user = await this.tokenHelper.GetUserAsync(authorization);
 			if (user is null)
@@ -359,7 +359,7 @@ namespace CSVOracle.Server.Controllers
 			Chat storedChat;
 			try
 			{
-				storedChat = await this.chatRepository.GetAsync(chat.Id);
+				storedChat = await this.chatRepository.GetAsync(chatId);
 			}
 			catch
 			{

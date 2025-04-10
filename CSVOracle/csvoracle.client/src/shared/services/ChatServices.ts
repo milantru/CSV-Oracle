@@ -94,3 +94,22 @@ export const generateAnswerAPI = async (message: string, chatId: number)
 		return { chat: null, errorMessages: getErrorMessages(error) };
 	}
 };
+
+export const deleteChatAPI = async (chatId: number): Promise<{ errorMessages: string[] }> => {
+	const token = localStorage.getItem("token");
+	if (!token) {
+		return { errorMessages: ["Please log in."] };
+	}
+
+	try {
+		await axios.delete(apiBaseUrl + `/Chat/${chatId}`, {
+			headers: {
+				Authorization: "bearer " + token
+			}
+		});
+
+		return { errorMessages: [] };
+	} catch (error) {
+		return { errorMessages: getErrorMessages(error) };
+	}
+};
