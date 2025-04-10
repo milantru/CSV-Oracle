@@ -3,7 +3,7 @@ import { apiBaseUrl } from "../Constants";
 import { getErrorMessages } from "../helperFunctions/ErrorHandler";
 import { Dataset, DatasetStatus } from "../types/Dataset";
 
-export const getUserDatasetsAPI = async (): Promise<{userDatasets: Dataset[], errorMessages: string[]}> => {
+export const getUserDatasetsAPI = async (): Promise<{ userDatasets: Dataset[], errorMessages: string[] }> => {
 	const token = localStorage.getItem("token");
 	if (!token) {
 		return { userDatasets: [], errorMessages: ["Please log in."] };
@@ -28,7 +28,7 @@ export const getUserDatasetStatusAPI = async (datasetId: number): Promise<{ stat
 	if (!token) {
 		return { status: null, errorMessages: ["Please log in."] };
 	}
-	
+
 	try {
 		const response = await axios.get<DatasetStatus>(apiBaseUrl + `/Dataset/status/${datasetId}`, {
 			headers: {
@@ -83,5 +83,24 @@ export const uploadDatasetForProcessingAPI = async (
 	}
 	catch (error) {
 		return { uploadedDatasetId: null, errorMessages: getErrorMessages(error) };
+	}
+};
+
+export const deleteDatasetAPI = async (datasetId: number): Promise<{ errorMessages: string[] }> => {
+	const token = localStorage.getItem("token");
+	if (!token) {
+		return { errorMessages: ["Please log in."] };
+	}
+
+	try {
+		await axios.delete(apiBaseUrl + `/Dataset/${datasetId}`, {
+			headers: {
+				Authorization: "bearer " + token
+			}
+		});
+
+		return { errorMessages: [] };
+	} catch (error) {
+		return { errorMessages: getErrorMessages(error) };
 	}
 };

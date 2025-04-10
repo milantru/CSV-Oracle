@@ -1,21 +1,24 @@
 import { toast } from "react-toastify";
-import { getUserDatasetStatusAPI } from "../../../shared/services/DatasetServices";
+import { deleteDatasetAPI, getUserDatasetStatusAPI } from "../../../shared/services/DatasetServices";
 import { Dataset, DatasetStatus } from "../../../shared/types/Dataset";
 import { useEffect, useState } from "react";
 import { useVisibilityChange } from "../../../shared/hooks/useVisibilityChange";
 import { useInterval } from "../../../shared/hooks/useInterval";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { BeatLoader } from "react-spinners";
+import { toastError } from "../../../shared/helperFunctions/ErrorHandler";
 
 const POLLING_INTERVAL = 1000 * 2; // every 2 seconds
 
 type Props = {
 	dataset: Dataset;
+	isSelected: boolean;
 	onSelect: (datasetId: number) => void;
 	onStatusUpdate: (status: DatasetStatus) => void;
+	onDelete: (datasetId: number) => void;
 };
 
-function DatasetItem({ dataset, onSelect, onStatusUpdate }: Props) {
+function DatasetItem({ dataset, isSelected, onSelect, onStatusUpdate, onDelete }: Props) {
 	const [pollingInterval, setPollingInterval] = useState<number | null>(POLLING_INTERVAL);
 	const isPageVisible = useVisibilityChange();
 	const [isPollingDisabled, setIsPollingDisabled] = useState<boolean>(dataset.status === DatasetStatus.Processed);
@@ -58,10 +61,29 @@ function DatasetItem({ dataset, onSelect, onStatusUpdate }: Props) {
 	return (
 		<button
 			type="button"
-			className="btn text-center m-2 py-3 border rounded-circle d-flex flex-column align-items-center justify-content-end"
+			className={`text-center m-2 px-4 py-3 border rounded-circle d-flex flex-column
+				align-items-center justify-content-end position-relative ${isSelected ? "border-primary bg-light" : ""}`}
+			style={{
+				backgroundColor: "transparent",
+				border: "1px solid #ccc",
+				padding: "1rem",
+				cursor: "pointer",
+				transition: "all 0.15s ease-in-out",
+				overflow: "visible",
+				boxShadow: "none",
+				outline: "none"
+			}}
 			title={getDatasetStatusLabel(dataset.status)}
-			onClick={() => onSelect(dataset.id)}
-		>
+			onClick={() => onSelect(dataset.id)}>
+			<span
+				className="position-absolute translate-middle badge rounded-pill bg-danger"
+				style={{ cursor: "pointer", zIndex: 1, top: 15, right: -12, fontSize: "1rem" }}
+				onClick={(e) => {
+					e.stopPropagation(); // prevent triggering onSelect
+					deleteDataset(dataset.id);
+				}}>
+				&times;
+			</span>
 			<div className="d-flex flex-column align-items-center">
 				{getStatusIcon(dataset.status)}
 				<small>Dataset #{dataset.id}</small>
@@ -124,6 +146,18 @@ function DatasetItem({ dataset, onSelect, onStatusUpdate }: Props) {
 			default:
 				throw new Error("Unknown dataset status.");
 		}
+	}
+
+	async function deleteDataset(datasetId: number) {
+		const { errorMessages } = await deleteDatasetAPI(datasetId);
+		if (errorMessages.length > 0) {
+			for (const errMsg of errorMessages) {
+				toastError(errMsg);
+			}
+			return;
+		}
+
+		onDelete(datasetId);
 	}
 }
 

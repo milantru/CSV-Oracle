@@ -185,8 +185,8 @@ namespace CSVOracle.Server.Controllers
 			return Ok();
 		}
 
-		[HttpDelete, Authorize]
-		public async Task<IActionResult> DeleteDatasetAsync([FromHeader] string authorization, DatasetDto dataset)
+		[HttpDelete("{datasetId:int}"), Authorize]
+		public async Task<IActionResult> DeleteDatasetAsync([FromHeader] string authorization, int datasetId)
 		{
 			var user = await this.tokenHelper.GetUserAsync(authorization);
 			if (user is null)
@@ -199,7 +199,7 @@ namespace CSVOracle.Server.Controllers
 			Dataset storedDataset;
 			try
 			{
-				storedDataset = await this.datasetRepository.GetAsync(dataset.Id);
+				storedDataset = await this.datasetRepository.GetAsync(datasetId);
 			}
 			catch
 			{

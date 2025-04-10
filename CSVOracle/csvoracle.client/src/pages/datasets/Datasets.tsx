@@ -57,8 +57,12 @@ function Datasets() {
 						<div className="d-flex flex-wrap overflow-auto border p-1" style={{ width: "100%", maxHeight: "15em" }}>
 							{isLoadingDatasets ? (<div className="d-flex align-items-center p-4"><FadeLoader /></div>) : (<>
 								{datasets.map((dataset, index) => (
-									<DatasetItem key={index} dataset={dataset} onSelect={selectDataset}
-										onStatusUpdate={status => updateDatasetStatus(dataset.id, status)} />
+									<DatasetItem key={index}
+										dataset={dataset}
+										isSelected={selectedDataset?.id === dataset.id}
+										onSelect={selectDataset}
+										onStatusUpdate={status => updateDatasetStatus(dataset.id, status)}
+										onDelete={removeDataset} />
 								))}
 							</>)}
 						</div>
@@ -108,6 +112,14 @@ function Datasets() {
 
 		if (selectedDataset?.id === datasetId) {
 			setSelectedDataset({ ...selectedDataset, status: newStatus });
+		}
+	}
+
+	function removeDataset(datasetId: number) {
+		setDatasets(prevState => prevState.filter(d => d.id !== datasetId));
+
+		if (selectedDataset?.id === datasetId) {
+			setSelectedDataset(null);
 		}
 	}
 }
