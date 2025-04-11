@@ -7,6 +7,8 @@ import { isNumber } from "../../shared/helperFunctions/TypeChecker";
 import { PropagateLoader, SyncLoader } from "react-spinners";
 import DatasetKnowledgeDisplay from "./components/DatasetKnowledgeDisplay";
 import { DatasetKnowledge } from "./types";
+import { confirmAlert } from "react-confirm-alert";
+import "react-confirm-alert/src/react-confirm-alert.css";
 
 function Chats() {
 	const { datasetId } = useParams();
@@ -82,7 +84,7 @@ function Chats() {
 									}}
 									onClick={e => {
 										e.stopPropagation(); // prevent triggering button's onClick
-										deleteChat(chat.id);
+										handleDelete(chat.id);
 									}}>
 									&times;
 								</span>
@@ -181,6 +183,23 @@ function Chats() {
 		if (selectedChat?.id === chatId) {
 			setSelectedChat(null);
 		}
+	}
+
+	function handleDelete(chatId: number) {
+		confirmAlert({
+			title: "Confirm to delete",
+			message: "Are you sure you want to delete this chat?",
+			buttons: [
+				{
+					label: "Yes",
+					onClick: () => deleteChat(chatId)
+				},
+				{
+					label: "Cancel",
+					onClick: () => { }
+				}
+			]
+		});
 	}
 
 	function updateChats(updatedChat: Chat): void {

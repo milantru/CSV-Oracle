@@ -6,3 +6,9 @@ body {
     height: 100%;
     box-sizing: "border-box";
 }
+
+/* Override CSS of react-confirm-alert package */
+.react-confirm-alert-overlay {
+    /* lower opacity */
+    background: rgba(0, 0, 0, 0.3) !important;
+}

@@ -6,6 +6,8 @@ import { useVisibilityChange } from "../../../shared/hooks/useVisibilityChange";
 import { useInterval } from "../../../shared/hooks/useInterval";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { BeatLoader } from "react-spinners";
+import { confirmAlert } from "react-confirm-alert";
+import "react-confirm-alert/src/react-confirm-alert.css";
 
 const POLLING_INTERVAL = 1000 * 2; // every 2 seconds
 
@@ -79,7 +81,7 @@ function DatasetItem({ dataset, isSelected, onSelect, onStatusUpdate, onDelete }
 				style={{ cursor: "pointer", zIndex: 1, top: 15, right: -12, fontSize: "1rem" }}
 				onClick={e => {
 					e.stopPropagation(); // prevent triggering onSelect
-					deleteDataset(dataset.id);
+					handleDelete(dataset.id);
 				}}>
 				&times;
 			</span>
@@ -157,6 +159,23 @@ function DatasetItem({ dataset, isSelected, onSelect, onStatusUpdate, onDelete }
 		}
 
 		onDelete(datasetId);
+	}
+
+	function handleDelete(datasetId: number) {
+		confirmAlert({
+			title: "Confirm to delete",
+			message: "Are you sure you want to delete this dataset?",
+			buttons: [
+				{
+					label: "Yes",
+					onClick: () => deleteDataset(datasetId)
+				},
+				{
+					label: "Cancel",
+					onClick: () => { }
+				}
+			]
+		});
 	}
 }
 
