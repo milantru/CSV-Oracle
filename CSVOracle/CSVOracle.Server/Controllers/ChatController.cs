@@ -144,60 +144,81 @@ namespace CSVOracle.Server.Controllers
 			// TODO Refactor
 			var userView = NormalizeUserView(request.UserView);
 
-			var chatFolderPath = Path.Join(this.dataFolderPath, Guid.NewGuid().ToString());
-			Directory.CreateDirectory(chatFolderPath);
-
-			var tasks = new List<Task>();
-
-			string datasetKnowledgeFilePath = Path.Join(chatFolderPath, "dataset_knowledge.json");
-			tasks.Add(Task.Run(() => System.IO.File.WriteAllText(datasetKnowledgeFilePath, dataset.InitialDatasetKnowledgeJson)));
-
-			string? userViewFilePath = userView is not null ? Path.Join(chatFolderPath, "user_view.txt") : null;
-			if (userViewFilePath is not null)
-			{
-				tasks.Add(Task.Run(() => System.IO.File.WriteAllText(userViewFilePath, userView)));
-			}
-
-			string messageFilePath = Path.Join(chatFolderPath, "message.txt");
-			string startMessage = userView is null ? "Please, without using any tool, just write \"Hello! How can I help you with this dataset?\"."
-				: "If you can deduce the user need based on the user view, write the answer (provide only answer, " +
-				"no questions, e.g. \"Would you like assistance with some specific task?\"). If you cannot deduce the user need " +
-				"based on the user view, then without using any tool just write \"Hello! How can I help you with this dataset?\".";
-			System.IO.File.WriteAllText(messageFilePath, startMessage);
-
-			string updatedChatHistoryFilePath = Path.Join(chatFolderPath, "updated_chat_history.json");
-			string updatedDatasetKnowledgeFilePath = Path.Join(chatFolderPath, "updated_dataset_knowledge.json");
-			string answerFilePath = Path.Join(chatFolderPath, "answer.txt");
-
-			await Task.WhenAll(tasks);
-			tasks.Clear();
-
-			List<string> collectionNames = [
-				DatasetProcessorService.GetChromaDbCollectionNameForCsvFiles(dataset.User.Id, dataset.Id),
-				DatasetProcessorService.GetChromaDbCollectionNameForReports(dataset.User.Id, dataset.Id)
-			];
-			if (!string.IsNullOrEmpty(dataset.AdditionalInfo)) {
-				collectionNames.Add(
-					DatasetProcessorService.GetChromaDbCollectionNameForAdditionalInfo(dataset.User.Id, dataset.Id)
-				);
-			}
-			await _GenerateAnswerAsync(collectionNames, datasetKnowledgeFilePath, userViewFilePath, null,
-				messageFilePath, updatedChatHistoryFilePath, updatedDatasetKnowledgeFilePath, answerFilePath);
-
 			string chatHistoryJson = null!;
 			string? updatedDatasetKnowledgeJson = null;
-			if (System.IO.File.Exists(updatedDatasetKnowledgeFilePath))
+			string? chatFolderPath = null;
+			if (userView is null)
 			{
-				tasks.Add(Task.Run(() => chatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath)));
-				tasks.Add(Task.Run(() => updatedDatasetKnowledgeJson = System.IO.File.ReadAllText(updatedDatasetKnowledgeFilePath)));
-				await Task.WhenAll(tasks);
-				tasks.Clear();
+				var startMessage = "Hello! How can I help you with this dataset?";
+				var chatMessage = new ChatDto.ChatMessage(
+					role: ChatDto.ChatMessageRole.Assistant,
+					text: startMessage
+				);
+				var chatHistory = new List<ChatDto.ChatMessage> { chatMessage };
+				chatHistoryJson = ChatDto.ChatHistory.ToChatHistoryJson(chatHistory);
 			}
 			else
 			{
-				chatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath);
+				chatFolderPath = Path.Join(this.dataFolderPath, Guid.NewGuid().ToString());
+				Directory.CreateDirectory(chatFolderPath);
+
+				var tasks = new List<Task>();
+
+				string datasetKnowledgeFilePath = Path.Join(chatFolderPath, "dataset_knowledge.json");
+				tasks.Add(Task.Run(() => System.IO.File.WriteAllText(datasetKnowledgeFilePath, dataset.InitialDatasetKnowledgeJson)));
+
+				string? userViewFilePath = userView is not null ? Path.Join(chatFolderPath, "user_view.txt") : null;
+				if (userViewFilePath is not null)
+				{
+					tasks.Add(Task.Run(() => System.IO.File.WriteAllText(userViewFilePath, userView)));
+				}
+
+				string messageFilePath = Path.Join(chatFolderPath, "message.txt");
+				var startMessage = "If you can deduce the user need based on the user view, write the answer (provide only answer, " +
+					"no questions, e.g. \"Would you like assistance with some specific task?\"). If you cannot deduce the user need " +
+					"based on the user view, then without using any tool just write \"Hello! How can I help you with this dataset?\".";
+				System.IO.File.WriteAllText(messageFilePath, startMessage);
+
+				string updatedChatHistoryFilePath = Path.Join(chatFolderPath, "updated_chat_history.json");
+				string updatedDatasetKnowledgeFilePath = Path.Join(chatFolderPath, "updated_dataset_knowledge.json");
+				string answerFilePath = Path.Join(chatFolderPath, "answer.txt");
+
+				await Task.WhenAll(tasks);
+				tasks.Clear();
+
+				List<string> collectionNames = [
+					DatasetProcessorService.GetChromaDbCollectionNameForCsvFiles(dataset.User.Id, dataset.Id),
+					DatasetProcessorService.GetChromaDbCollectionNameForReports(dataset.User.Id, dataset.Id)
+				];
+				if (!string.IsNullOrEmpty(dataset.AdditionalInfo))
+				{
+					collectionNames.Add(
+						DatasetProcessorService.GetChromaDbCollectionNameForAdditionalInfo(dataset.User.Id, dataset.Id)
+					);
+				}
+				await _GenerateAnswerAsync(collectionNames, datasetKnowledgeFilePath, userViewFilePath, null,
+					messageFilePath, updatedChatHistoryFilePath, updatedDatasetKnowledgeFilePath, answerFilePath);
+
+				if (System.IO.File.Exists(updatedDatasetKnowledgeFilePath))
+				{
+					tasks.Add(Task.Run(() => chatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath)));
+					tasks.Add(Task.Run(() => updatedDatasetKnowledgeJson = System.IO.File.ReadAllText(updatedDatasetKnowledgeFilePath)));
+					await Task.WhenAll(tasks);
+					tasks.Clear();
+				}
+				else
+				{
+					chatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath);
+				}
+				//string answer = System.IO.File.ReadAllText(answerFilePath); // TODO Do we need answer?
+
+				var chatMessages = ChatDto.ChatHistory.FromChatHistoryJson(chatHistoryJson);
+				/* Last message should contain either the answer to the user need coming from user view or default sentence,
+				 * e.g. "Hello! How can I help you with this dataset?". We want to display only this message at the beginning
+				 * of the chat. */
+				var lastChatMessage = chatMessages.Last();
+				chatHistoryJson = ChatDto.ChatHistory.ToChatHistoryJson(new List<ChatDto.ChatMessage> { lastChatMessage });
 			}
-			//string answer = System.IO.File.ReadAllText(answerFilePath); // TODO Do we need answer?
 
 			var chat = new Chat
 			{
@@ -209,7 +230,10 @@ namespace CSVOracle.Server.Controllers
 			};
 			await this.chatRepository.AddAsync(chat);
 
-			Directory.Delete(chatFolderPath, recursive: true);
+			if (chatFolderPath is not null)
+			{
+				Directory.Delete(chatFolderPath, recursive: true);
+			}
 
 			this.logger.LogInformation("Chat has been created successfully.");
 			return Ok();
@@ -270,7 +294,8 @@ namespace CSVOracle.Server.Controllers
 				DatasetProcessorService.GetChromaDbCollectionNameForCsvFiles(user.Id, chat.Dataset.Id),
 				DatasetProcessorService.GetChromaDbCollectionNameForReports(user.Id, chat.Dataset.Id)
 			];
-			if (!string.IsNullOrEmpty(chat.Dataset.AdditionalInfo)) {
+			if (!string.IsNullOrEmpty(chat.Dataset.AdditionalInfo))
+			{
 				collectionNames.Add(
 					DatasetProcessorService.GetChromaDbCollectionNameForAdditionalInfo(user.Id, chat.Dataset.Id)
 				);

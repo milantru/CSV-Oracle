@@ -100,8 +100,7 @@ function Chats() {
 						<div className="position-relative d-flex flex-column" style={{ height: showDataset ? "50%" : "100%" }}>
 							{/* Chat messages */}
 							<div ref={chatMessages} className="overflow-auto">
-								{/* The first message is a technical detail used to start the conversation, that is why it is skipped. */}
-								{selectedChat.messages.slice(1).map((message, index) => (
+								{selectedChat.messages.map((message, index) => (
 									<div key={index} className={`d-flex ${index % 2 ? "justify-content-end" : "justify-content-start"}`}>
 										<div className={`border rounded m-2 p-2 w-75 ${index % 2 ? "bg-secondary" : "bg-light"}`}>
 											{message === "..." ? <SyncLoader size={4} speedMultiplier={0.5} /> : message}
