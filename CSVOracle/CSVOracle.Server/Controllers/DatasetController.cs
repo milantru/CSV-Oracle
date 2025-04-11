@@ -10,6 +10,8 @@ using System.Text.Json;
 using System.Text;
 using System.Text.Json.Serialization;
 using CSVOracle.Server.Services.BackgroundServices;
+using Newtonsoft.Json;
+using System.Net.Http.Headers;
 
 namespace CSVOracle.Server.Controllers
 {
@@ -21,6 +23,7 @@ namespace CSVOracle.Server.Controllers
 		private readonly string dataFolderPath;
 		private readonly IDatasetRepository datasetRepository;
 		private readonly TokenHelperService tokenHelper;
+		private readonly string llmServerUrlForDeletingCollections;
 
 		public static string CsvFilesFolderName => "csv_files";
 		public static string DatasetMetadataJsonFileName => "metadata.json";
@@ -28,12 +31,13 @@ namespace CSVOracle.Server.Controllers
 		public DatasetController(
 			ILogger<DatasetController> logger,
 			IConfiguration config,
-			IDatasetRepository datasetRepository, 
+			IDatasetRepository datasetRepository,
 			TokenHelperService tokenHelper
 		)
 		{
 			this.logger = logger;
 			this.dataFolderPath = config.GetRequiredSection("AppSettings:DataFolderPath").Value!;
+			this.llmServerUrlForDeletingCollections = config.GetRequiredSection("AppSettings:LlmServerUrlForDeletingCollections").Value!;
 			this.datasetRepository = datasetRepository;
 			this.tokenHelper = tokenHelper;
 		}
@@ -82,7 +86,7 @@ namespace CSVOracle.Server.Controllers
 
 		[HttpPost, Authorize]
 		public async Task<IActionResult> EnqueueDatasetForProcessingAsync(
-			[FromHeader] string authorization, 
+			[FromHeader] string authorization,
 			[FromForm] List<IFormFile> files,
 			[FromForm] DatasetMetadata metadata
 		)
@@ -215,10 +219,45 @@ namespace CSVOracle.Server.Controllers
 				return StatusCode(StatusCodes.Status403Forbidden, message);
 			}
 
+			/* Each dataset has indices and each index is stored in its Chroma DB collection.
+			 * If we are deleting dataset, we won't need the indices anymore,
+			 * so we delete the indices (collections) as well. */
+			await DeleteIndicesAsync(storedDataset);
 			await this.datasetRepository.RemoveAsync(storedDataset);
 
 			this.logger.LogInformation("Dataset has been deleted successfully.");
 			return Ok();
+		}
+
+		private async Task DeleteCollectionsAsync(List<string> collectionNames)
+		{
+			var args = new { collection_names = collectionNames };
+			var argsJson = JsonConvert.SerializeObject(args);
+			var content = new StringContent(argsJson, new MediaTypeHeaderValue("application/json"));
+
+			using var client = new HttpClient();
+			_ = await client.PostAsync(this.llmServerUrlForDeletingCollections, content);
+		}
+
+		private async Task DeleteIndicesAsync(Dataset dataset)
+		{
+			int userId = dataset.User.Id;
+			int datasetId = dataset.Id;
+            var collectionNames = new List<string>();
+
+			var csvFilesCollectionName = DatasetProcessorService.GetChromaDbCollectionNameForCsvFiles(userId, datasetId);
+			collectionNames.Add(csvFilesCollectionName);
+
+			var reportsCollectionName = DatasetProcessorService.GetChromaDbCollectionNameForReports(userId, datasetId);
+			collectionNames.Add(reportsCollectionName);
+
+			if (!string.IsNullOrEmpty(dataset.AdditionalInfo))
+			{
+				var additionalInfoCollectionName = DatasetProcessorService.GetChromaDbCollectionNameForAdditionalInfo(userId, datasetId);
+				collectionNames.Add(additionalInfoCollectionName);
+			}
+
+            await DeleteCollectionsAsync(collectionNames);
 		}
 
 		private static void UpdateDatasetWithDtoData(Dataset dataset, DatasetDto datasetDto)
@@ -253,8 +292,8 @@ namespace CSVOracle.Server.Controllers
 		}
 
 		private static void StoreCsvFilesAndMetadataToFilesystem(
-			string folderPath, 
-			List<IFormFile> csvFiles, 
+			string folderPath,
+			List<IFormFile> csvFiles,
 			DatasetMetadata metadata
 		)
 		{
@@ -311,7 +350,7 @@ namespace CSVOracle.Server.Controllers
 
 		private static string SerializeDatasetMetadata(DatasetMetadata metadata)
 		{
-			return JsonSerializer.Serialize(metadata, new JsonSerializerOptions
+			return System.Text.Json.JsonSerializer.Serialize(metadata, new JsonSerializerOptions
 			{
 				PropertyNamingPolicy = JsonNamingPolicy.CamelCase
 			});

@@ -1,4 +1,5 @@
-from generate_answer import main
+from generate_answer import main as generate_answer_main
+from delete_collections import main as delete_collections_main
 from flask import Flask, request
 import json
 
@@ -25,10 +26,25 @@ def generate_answer():
     })
 
     try:
-        main(args)
+        generate_answer_main(args)
         return "Answer generated successfully", 200
     except Exception as e:
         print(e)
         return "Failed to generate answer", 500
+
+@app.route("/delete-collections", methods=["POST"])
+def delete_collections():
+    data = request.get_json()
+
+    args = Args(**{
+        "collection_names": data.get("collection_names")
+    })
+
+    try:
+        delete_collections_main(args)
+        return "Collections deleted successfully", 200
+    except Exception as e:
+        print(e)
+        return "Failed to delete collections", 500
 
 print("LLM server is running")

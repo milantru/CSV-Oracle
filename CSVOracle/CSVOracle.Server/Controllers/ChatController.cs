@@ -419,7 +419,6 @@ namespace CSVOracle.Server.Controllers
 				answer_path = answerFilePath,
 				api_keys = apiKeysJson
 			};
-
 			var argsJson = JsonConvert.SerializeObject(args);
 			var content = new StringContent(argsJson, new MediaTypeHeaderValue("application/json"));
 
