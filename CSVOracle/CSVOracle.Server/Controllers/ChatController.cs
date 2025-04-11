@@ -22,7 +22,6 @@ namespace CSVOracle.Server.Controllers
 		private readonly IChatRepository chatRepository;
 		private readonly IDatasetRepository datasetRepository;
 		private readonly TokenHelperService tokenHelper;
-		private readonly PythonExecutorService pythonExecutor;
 		private readonly string dataFolderPath;
 		private readonly Dictionary<string, string> apiKeys;
 		private readonly string llmServerUrlForGeneratingAnswer;
@@ -32,8 +31,7 @@ namespace CSVOracle.Server.Controllers
 			IConfiguration config,
 			IChatRepository chatRepository,
 			IDatasetRepository datasetRepository,
-			TokenHelperService tokenHelper,
-			PythonExecutorService pythonExecutor
+			TokenHelperService tokenHelper
 		)
 		{
 			this.logger = logger;
@@ -43,7 +41,6 @@ namespace CSVOracle.Server.Controllers
 			this.chatRepository = chatRepository;
 			this.datasetRepository = datasetRepository;
 			this.tokenHelper = tokenHelper;
-			this.pythonExecutor = pythonExecutor;
 		}
 
 		[HttpGet("{datasetId:int}"), Authorize]
