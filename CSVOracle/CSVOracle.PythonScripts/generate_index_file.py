@@ -6,7 +6,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import StorageContext
 from shared_helpers import get_embedding_model, get_file_paths, get_chroma_db_client
 
-parser = argparse.ArgumentParser(description="Script for generating an index storage context dictionary file from either .txt, .csv, or .json file(s). If input is folder, it cannot be empty and all files must share the same extension.")
+parser = argparse.ArgumentParser(description="Script for creating and storing index in Chroma DB collection either from .txt, .csv, or .json file(s). If input is a folder, it cannot be empty and all files must share the same extension.")
 parser.add_argument("-i", "--input_path", type=str, required=True, help="Path to the input file or non-empty folder containing input files sharing the same extension.")
 parser.add_argument("-c", "--collection_name", type=str, required=True, help="Name of the ChromaDB collection where index will be stored.")
 
