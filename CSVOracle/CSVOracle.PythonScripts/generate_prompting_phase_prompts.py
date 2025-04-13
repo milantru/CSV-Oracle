@@ -14,7 +14,7 @@ def process_column_data(column_data):
     # TODO What if more types?
     processed_column_data = {}
 
-    # Generic (also Unsupported)
+    # In general (also type Unsupported)
     if "type" in column_data: processed_column_data["Deduced type"] = column_data["type"]
     if "n_distinct" in column_data: processed_column_data["Distinct values count"] = column_data["n_distinct"]
     if "p_distinct" in column_data: processed_column_data["Distinct values count in %"] = to_percentage(column_data["p_distinct"])
@@ -23,7 +23,7 @@ def process_column_data(column_data):
     if "n_missing" in column_data: processed_column_data["Missing values count"] = column_data["n_missing"]
     if "p_missing" in column_data: processed_column_data["Missing values count in %"] = to_percentage(column_data["p_missing"])
 
-    # Numeric
+    # type Numeric
     if "n_negative" in column_data: processed_column_data["Negative values count"] = column_data["n_negative"]
     if "p_negative" in column_data: processed_column_data["Negative values count in %"] = to_percentage(column_data["p_negative"])
     if "n_zeros" in column_data: processed_column_data["Zeros count"] = column_data["n_zeros"]
@@ -38,16 +38,16 @@ def process_column_data(column_data):
     if "skewness" in column_data: processed_column_data["Skewness"] = column_data["skewness"]
     if "sum" in column_data: processed_column_data["Sum"] = column_data["sum"]
     
-    # Text
+    # type Text
     if "min_length" in column_data: processed_column_data["Min length"] = column_data["min_length"]
     if "max_length" in column_data: processed_column_data["Max length"] = column_data["max_length"]
     if "mean_length" in column_data: processed_column_data["Mean length"] = column_data["mean_length"]
     if "median_length" in column_data: processed_column_data["Median length"] = column_data["median_length"]
         
-    # Categorical
+    # type Categorical
     # Seems no categorical data is needed
 
-    # DateTime
+    # type DateTime
     # Comments like Numerical, Text, etc. are for guidance only, 
     # for example DateTime also contains "min" and "max", as the Numerical does, 
     # but the code is not written here for these properties to avoid code duplicity
@@ -130,7 +130,7 @@ def add_column_prompts(table_knowledge: TableKnowledge, csv_file_name: str, colu
         # "Missing values count" is expected to always be in col_info, but we check its existience anyway 
         # because of defensive programming. And we do so in case of other properties as well.
         if ("Missing values count" in col_info and col_info["Missing values count"] > 0) \
-        and ("Missing values count in %" in col_info and col_info["Missing values count in %"] > 0):
+            and ("Missing values count in %" in col_info and col_info["Missing values count in %"] > 0):
             column_knowledge.missing_values_explanation = f'The column {col_name} from table {csv_file_name} has {col_info["Missing values count"]} missing values ({col_info["Missing values count in %"]} %). Provide an explanation why the values are missing. Answer only with the explanation, no other text.'
         
         table_knowledge.column_knowledges.append(column_knowledge)

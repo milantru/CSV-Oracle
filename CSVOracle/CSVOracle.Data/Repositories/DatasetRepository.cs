@@ -47,7 +47,6 @@ namespace CSVOracle.Data.Repositories
 			storedDataset.Status = dataset.Status;
 			storedDataset.Separator = dataset.Separator;
 			storedDataset.Encoding = dataset.Encoding;
-			storedDataset.AdditionalInfo = dataset.AdditionalInfo;
 			storedDataset.InitialDatasetKnowledgeJson = dataset.InitialDatasetKnowledgeJson;
 			storedDataset.ChatLlmInstructions = dataset.ChatLlmInstructions;
 
@@ -55,7 +54,7 @@ namespace CSVOracle.Data.Repositories
 
 			// DatasetFiles are not updated because we add them just once, when the dataset is created.
 
-			// Status is not updated, it is being updated only when processing
+			// IsSchemaProvided is not updated, additional schema providing is not supported
 
 			// Attention! The contents of the chats are NOT updated.
 			UpdateDatasetChats(storedDataset, dataset);

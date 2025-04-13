@@ -10,7 +10,7 @@ namespace CSVOracle.Server.Dtos
 		public DatasetStatus Status { get; set; }
 		public char? Separator { get; set; }
 		public string? Encoding { get; set; }
-		public string? AdditionalInfo { get; set; }
+		public bool IsSchemaProvided { get; set; }
 		public List<DatasetFileDto> DatasetFiles { get; set; } = new();
 
 		public static DatasetDto From(Dataset dataset)
@@ -21,7 +21,7 @@ namespace CSVOracle.Server.Dtos
 				Status = dataset.Status,
 				Separator = dataset.Separator,
 				Encoding = dataset.Encoding,
-				AdditionalInfo = dataset.AdditionalInfo,
+				IsSchemaProvided = dataset.IsSchemaProvided,
 				DatasetFiles = dataset.DatasetFiles.Select(DatasetFileDto.From).ToList()
 			};
 		}

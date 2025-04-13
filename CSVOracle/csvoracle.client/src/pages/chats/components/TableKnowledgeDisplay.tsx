@@ -99,7 +99,7 @@ function TableKnowledgeDisplay({ tableKnowledge }: Props) {
         infoString += description
 
         if (columnKnowledge.missingValuesExplanation) {
-            infoString += "It seems this column has many missing values. A possible reason is:\n";
+            infoString += "It seems this column has missing values. A possible reason is:\n";
             infoString += columnKnowledge.missingValuesExplanation;
         }
 

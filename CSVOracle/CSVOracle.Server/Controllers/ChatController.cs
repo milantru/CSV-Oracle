@@ -190,10 +190,10 @@ namespace CSVOracle.Server.Controllers
 					DatasetProcessorService.GetChromaDbCollectionNameForCsvFiles(dataset.User.Id, dataset.Id),
 					DatasetProcessorService.GetChromaDbCollectionNameForReports(dataset.User.Id, dataset.Id)
 				];
-				if (!string.IsNullOrEmpty(dataset.AdditionalInfo))
+				if (dataset.IsSchemaProvided)
 				{
 					collectionNames.Add(
-						DatasetProcessorService.GetChromaDbCollectionNameForAdditionalInfo(dataset.User.Id, dataset.Id)
+						DatasetProcessorService.GetChromaDbCollectionNameForSchema(dataset.User.Id, dataset.Id)
 					);
 				}
 				await _GenerateAnswerAsync(collectionNames, datasetKnowledgeFilePath, userViewFilePath, null,
@@ -232,6 +232,8 @@ namespace CSVOracle.Server.Controllers
 
 			if (chatFolderPath is not null)
 			{
+				/* We tried to answer user need based on the user view directly,
+				 * so the folder was created, we can delete it now. */
 				Directory.Delete(chatFolderPath, recursive: true);
 			}
 
@@ -294,10 +296,10 @@ namespace CSVOracle.Server.Controllers
 				DatasetProcessorService.GetChromaDbCollectionNameForCsvFiles(user.Id, chat.Dataset.Id),
 				DatasetProcessorService.GetChromaDbCollectionNameForReports(user.Id, chat.Dataset.Id)
 			];
-			if (!string.IsNullOrEmpty(chat.Dataset.AdditionalInfo))
+			if (chat.Dataset.IsSchemaProvided)
 			{
 				collectionNames.Add(
-					DatasetProcessorService.GetChromaDbCollectionNameForAdditionalInfo(user.Id, chat.Dataset.Id)
+					DatasetProcessorService.GetChromaDbCollectionNameForSchema(user.Id, chat.Dataset.Id)
 				);
 			}
 			await _GenerateAnswerAsync(collectionNames, datasetKnowledgeFilePath, userViewFilePath, chatHistoryFilePath,

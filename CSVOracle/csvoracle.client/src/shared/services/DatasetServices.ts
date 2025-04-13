@@ -44,8 +44,8 @@ export const getUserDatasetStatusAPI = async (datasetId: number): Promise<{ stat
 };
 
 export const uploadDatasetForProcessingAPI = async (
-	files: File[],
-	additionalInfo: string | null,
+	csvFiles: File[],
+	schemaFile: File | null,
 	separator: string | null,
 	encoding: string | null,
 	setUploadProgress: React.Dispatch<React.SetStateAction<number>>)
@@ -54,15 +54,15 @@ export const uploadDatasetForProcessingAPI = async (
 	if (!token) {
 		return { uploadedDatasetId: null, errorMessages: ["Please log in."] };
 	}
-	if (files.length === 0) {
-		return { uploadedDatasetId: null, errorMessages: ["No files provided."] };
+	if (csvFiles.length === 0) {
+		return { uploadedDatasetId: null, errorMessages: ["No csv files provided."] };
 	}
 
 	const formData = new FormData();
-	for (let i = 0; i < files.length; i++) {
-		formData.append("files", files[i]);
+	for (let i = 0; i < csvFiles.length; i++) {
+		formData.append("csvFiles", csvFiles[i]);
 	}
-	if (additionalInfo) formData.append("metadata.additionalInfo", additionalInfo);
+	if (schemaFile) formData.append("schemaFile", schemaFile);
 	if (separator) formData.append("metadata.separator", separator);
 	if (encoding) formData.append("metadata.encoding", encoding);
 

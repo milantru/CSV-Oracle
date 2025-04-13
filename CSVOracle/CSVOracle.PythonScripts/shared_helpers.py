@@ -12,12 +12,6 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 
 CHROMA_DB_FOLDER_PATH = str(Path(__file__).parent / Path("../Data/chroma_db"))
 
-def read_dataset_metadata_file(metadata_file_path):
-    with open(metadata_file_path, 'r') as file:
-        metadata = json.load(file)
-
-    return metadata["additionalInfo"], metadata["separator"], metadata["encoding"]
-
 def get_file_paths(folder_path):
     return [file_path for file_path in folder_path.iterdir() if file_path.is_file()]
 
@@ -28,21 +22,12 @@ def read_file(file_path, load_as_json=False):
 
 def create_individual_query_engine_tools(collection_names, db, llm, embedding_model, return_direct=False):
     tool_metadata_provider = {
-        "additionalInfo": ToolMetadata(
-            name="additional_information",
-            description=(
-                "Provides text with additional information about the dataset provided by the user. "
-                "It may or may not contain useful information, please prefer other tools and use this as a last resort, "
-                "or with combination with other tool. "
-                "Use a detailed plain text question as input to the tool."
-            ),
-            return_direct=return_direct
-        ),
         "csvFiles": ToolMetadata(
             name="csv_files",
             description=(
-                "Provides actual dataset (all CSV files). "
-                "Useful for when you want to access raw data of the dataset. "
+                "Provides access to the raw dataset in CSV format. "
+                "Use this tool to retrieve the original CSV files. "
+                "Ask specific questions if you want to view or analyze the actual data content. "
                 "Use a detailed plain text question as input to the tool."
             ),
             return_direct=return_direct
@@ -50,11 +35,23 @@ def create_individual_query_engine_tools(collection_names, db, llm, embedding_mo
         "reports": ToolMetadata(
             name="data_profiling_reports",
             description=(
-                "Provides reports generated from data profiling of csv files. "
+                "Provides data profiling reports generated from the CSV files. "
+                "Use this tool to understand data distributions, missing values, unique counts, and other statistics. "
+                "Ask questions related to data quality, patterns, or summary insights. "
                 "Use a detailed plain text question as input to the tool."
             ),
             return_direct=return_direct
         ),
+        "schema": ToolMetadata(
+            name="csv_schema",
+            description=(
+                "Returns the CSVW (CSV on the Web) schema describing the dataset's structure. "
+                "Use this tool to understand metadata such as column definitions, data types, and constraints. "
+                "Ask schema-related questions to explore how the data is organized or validated. "
+                "Use a detailed plain text question as input to the tool."
+            ),
+            return_direct=return_direct
+        )
     }
 
     def create_query_engine_tool(collection_name):

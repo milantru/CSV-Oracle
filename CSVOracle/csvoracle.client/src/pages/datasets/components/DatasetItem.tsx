@@ -9,7 +9,7 @@ import { BeatLoader } from "react-spinners";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css";
 
-const POLLING_INTERVAL = 1000 * 2; // every 2 seconds
+const POLLING_INTERVAL = 1000 * 1.5; // every 1.5 second
 
 type Props = {
 	dataset: Dataset;
@@ -22,7 +22,8 @@ type Props = {
 function DatasetItem({ dataset, isSelected, onSelect, onStatusUpdate, onDelete }: Props) {
 	const [pollingInterval, setPollingInterval] = useState<number | null>(POLLING_INTERVAL);
 	const isPageVisible = useVisibilityChange();
-	const [isPollingDisabled, setIsPollingDisabled] = useState<boolean>(dataset.status === DatasetStatus.Processed);
+	const [isPollingDisabled, setIsPollingDisabled] = useState<boolean>(
+		dataset.status === DatasetStatus.Processed || dataset.status === DatasetStatus.Failed);
 	const [isFetching, setIsFetching] = useState<boolean>(false);
 
 	useEffect(() => {
@@ -38,12 +39,13 @@ function DatasetItem({ dataset, isSelected, onSelect, onStatusUpdate, onDelete }
 			setIsFetching(true);
 			const status = await getDatasetStatus(dataset.id);
 			if (status === null) {
+				// Error occurred, disable polling
 				setIsPollingDisabled(true);
 				return;
 			}
 
-			if (status == DatasetStatus.Processed) {
-				// Dataset is processed, its state won't change, so polling is not required anymore
+			if (status == DatasetStatus.Processed || status == DatasetStatus.Failed) {
+				// Dataset processing finished, polling is not required anymore
 				setIsPollingDisabled(true);
 			}
 
@@ -109,23 +111,23 @@ function DatasetItem({ dataset, isSelected, onSelect, onStatusUpdate, onDelete }
 
 		switch (status) {
 			case DatasetStatus.Created: {
-				//statusMessage = "Created";
 				statusLabel = DatasetStatus[DatasetStatus.Created];
 				break;
 			}
 			case DatasetStatus.Queued: {
-				//statusMessage = "Queued";
 				statusLabel = DatasetStatus[DatasetStatus.Queued];
 				break;
 			}
 			case DatasetStatus.Processing: {
-				//statusMessage = "Processing";
 				statusLabel = DatasetStatus[DatasetStatus.Processing];
 				break;
 			}
 			case DatasetStatus.Processed: {
-				//statusMessage = "Processed";
 				statusLabel = DatasetStatus[DatasetStatus.Processed];
+				break;
+			}
+			case DatasetStatus.Failed: {
+				statusLabel = DatasetStatus[DatasetStatus.Failed];
 				break;
 			}
 			default: {
@@ -144,6 +146,8 @@ function DatasetItem({ dataset, isSelected, onSelect, onStatusUpdate, onDelete }
 				return <BeatLoader className="pb-2 py-4" />;
 			case DatasetStatus.Processed:
 				return <i className="bi bi-database fs-1 d-block"></i>;
+			case DatasetStatus.Failed:
+				return <i className="bi bi-database-x fs-1 d-block"></i>;
 			default:
 				throw new Error("Unknown dataset status.");
 		}

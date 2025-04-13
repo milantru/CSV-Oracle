@@ -19,7 +19,7 @@ namespace CSVOracle.Data.Models
 
 		public string? Encoding { get; set; }
 
-		public string? AdditionalInfo { get; set; }
+		public bool IsSchemaProvided { get; set; }
 
 		public List<DatasetFile> DatasetFiles { get; set; } = new();
 

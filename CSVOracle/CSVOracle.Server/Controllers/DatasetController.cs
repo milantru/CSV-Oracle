@@ -26,6 +26,7 @@ namespace CSVOracle.Server.Controllers
 		private readonly string llmServerUrlForDeletingCollections;
 
 		public static string CsvFilesFolderName => "csv_files";
+		public static string SchemaJsonFileName => "schema.json";
 		public static string DatasetMetadataJsonFileName => "metadata.json";
 
 		public DatasetController(
@@ -87,7 +88,8 @@ namespace CSVOracle.Server.Controllers
 		[HttpPost, Authorize]
 		public async Task<IActionResult> EnqueueDatasetForProcessingAsync(
 			[FromHeader] string authorization,
-			[FromForm] List<IFormFile> files,
+			[FromForm] List<IFormFile> csvFiles,
+			IFormFile? schemaFile,
 			[FromForm] DatasetMetadata metadata
 		)
 		{
@@ -99,15 +101,21 @@ namespace CSVOracle.Server.Controllers
 				return StatusCode(StatusCodes.Status401Unauthorized, message);
 			}
 
-			if (!ValidateCsvFiles(files))
+			if (!ValidateCsvFiles(csvFiles))
 			{
-				var message = "Cannot enqueue the dataset for processing, file (or files) were invalid.";
+				var message = "Cannot enqueue the dataset for processing: invalid CSV file(s).";
+				this.logger.LogInformation(message);
+				return StatusCode(StatusCodes.Status400BadRequest, message);
+			}
+			if (schemaFile is not null && !ValidateSchemaFile(schemaFile))
+			{
+				var message = "Cannot enqueue the dataset for processing: schema file is invalid.";
 				this.logger.LogInformation(message);
 				return StatusCode(StatusCodes.Status400BadRequest, message);
 			}
 			if (!ValidateDatasetMetadata(metadata))
 			{
-				var message = "Cannot enqueue the dataset for processing, dataset metadata is invalid " +
+				var message = "Cannot enqueue the dataset for processing: dataset metadata is invalid " +
 					"(maybe it contains only whitespace?).";
 				this.logger.LogInformation(message);
 				return StatusCode(StatusCodes.Status400BadRequest, message);
@@ -117,11 +125,11 @@ namespace CSVOracle.Server.Controllers
 			var dataset = new Dataset
 			{
 				Status = DatasetStatus.Created,
-				AdditionalInfo = metadata.AdditionalInfo,
 				Separator = metadata.Separator,
 				Encoding = metadata.Encoding,
+				IsSchemaProvided = schemaFile is not null,
 				User = user,
-				DatasetFiles = files.Select(file => new DatasetFile
+				DatasetFiles = csvFiles.Select(file => new DatasetFile
 				{
 					Name = file.FileName,
 				}).ToList()
@@ -133,7 +141,7 @@ namespace CSVOracle.Server.Controllers
 			Directory.CreateDirectory(folderPath);
 
 			// Store files and metadata in the working directory
-			StoreCsvFilesAndMetadataToFilesystem(folderPath, files, metadata);
+			StoreFilesAndMetadataToFilesystem(folderPath, csvFiles, schemaFile, metadata);
 
 			// Update dataset status and enqueue the dataset for processing
 			dataset.Status = DatasetStatus.Queued;
@@ -243,7 +251,7 @@ namespace CSVOracle.Server.Controllers
 		{
 			int userId = dataset.User.Id;
 			int datasetId = dataset.Id;
-            var collectionNames = new List<string>();
+			var collectionNames = new List<string>();
 
 			var csvFilesCollectionName = DatasetProcessorService.GetChromaDbCollectionNameForCsvFiles(userId, datasetId);
 			collectionNames.Add(csvFilesCollectionName);
@@ -251,20 +259,19 @@ namespace CSVOracle.Server.Controllers
 			var reportsCollectionName = DatasetProcessorService.GetChromaDbCollectionNameForReports(userId, datasetId);
 			collectionNames.Add(reportsCollectionName);
 
-			if (!string.IsNullOrEmpty(dataset.AdditionalInfo))
+			if (dataset.IsSchemaProvided)
 			{
-				var additionalInfoCollectionName = DatasetProcessorService.GetChromaDbCollectionNameForAdditionalInfo(userId, datasetId);
-				collectionNames.Add(additionalInfoCollectionName);
+				var schemaCollectionName = DatasetProcessorService.GetChromaDbCollectionNameForSchema(userId, datasetId);
+				collectionNames.Add(schemaCollectionName);
 			}
 
-            await DeleteCollectionsAsync(collectionNames);
+			await DeleteCollectionsAsync(collectionNames);
 		}
 
 		private static void UpdateDatasetWithDtoData(Dataset dataset, DatasetDto datasetDto)
 		{
 			dataset.Separator = datasetDto.Separator;
 			dataset.Encoding = datasetDto.Encoding;
-			dataset.AdditionalInfo = datasetDto.AdditionalInfo;
 		}
 
 		private static bool ValidateCsvFile(IFormFile file)
@@ -277,12 +284,18 @@ namespace CSVOracle.Server.Controllers
 			return files.Count > 0 && files.All(ValidateCsvFile);
 		}
 
+		private static bool ValidateSchemaFile(IFormFile? file)
+		{
+			if (file is null)
+			{
+				return true;
+			}
+
+			return file.Length > 0 && file.FileName.EndsWith(".json") && file.ContentType == "application/json";
+		}
+
 		private static bool ValidateDatasetMetadata(DatasetMetadata metadata)
 		{
-			if (metadata.AdditionalInfo is not null && string.IsNullOrWhiteSpace(metadata.AdditionalInfo))
-			{
-				return false;
-			}
 			if (metadata.Encoding is not null && string.IsNullOrWhiteSpace(metadata.Encoding))
 			{
 				return false;
@@ -291,9 +304,10 @@ namespace CSVOracle.Server.Controllers
 			return true;
 		}
 
-		private static void StoreCsvFilesAndMetadataToFilesystem(
+		private static void StoreFilesAndMetadataToFilesystem(
 			string folderPath,
 			List<IFormFile> csvFiles,
+			IFormFile? schemaFile,
 			DatasetMetadata metadata
 		)
 		{
@@ -313,6 +327,15 @@ namespace CSVOracle.Server.Controllers
 				csvFile.CopyTo(fs);
 			}
 
+			// Save schema file (if provided) to schema.json
+			if (schemaFile is not null)
+			{
+				var schemaJsonFilePath = Path.Join(folderPath, SchemaJsonFileName);
+
+				using var fs = new FileStream(schemaJsonFilePath, FileMode.Create);
+				schemaFile.CopyTo(fs);
+			}
+
 			// Save the metadata to metadata.txt
 			NormalizeDatasetMetadata(metadata);
 
@@ -329,15 +352,6 @@ namespace CSVOracle.Server.Controllers
 		/// <param name="metadata">Dataset metadata for normalizing</param>
 		private static void NormalizeDatasetMetadata(DatasetMetadata metadata)
 		{
-			if (metadata.AdditionalInfo?.Length == 0)
-			{
-				metadata.AdditionalInfo = null;
-			}
-			if (metadata.AdditionalInfo is not null)
-			{
-				metadata.AdditionalInfo = metadata.AdditionalInfo.Trim();
-			}
-
 			if (metadata.Encoding?.Length == 0)
 			{
 				metadata.Encoding = null;
@@ -360,7 +374,6 @@ namespace CSVOracle.Server.Controllers
 		{
 			public char? Separator { get; set; }
 			public string? Encoding { get; set; }
-			public string? AdditionalInfo { get; set; }
 		}
 	}
 }

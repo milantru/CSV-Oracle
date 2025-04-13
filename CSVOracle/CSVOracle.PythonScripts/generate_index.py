@@ -36,7 +36,7 @@ def main(args):
     # Load documents
     documents = get_documents(files_paths)
 
-    # Save index to disk (chroma db)
+    # Save index to Chroma DB
     index = VectorStoreIndex.from_documents(
         documents, storage_context=storage_context, embed_model=get_embedding_model()
     )

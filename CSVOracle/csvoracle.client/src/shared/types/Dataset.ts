@@ -4,7 +4,8 @@ export enum DatasetStatus {
 	Created,
 	Queued,
 	Processing,
-	Processed
+	Processed,
+	Failed
 };
 
 export type Dataset = {
@@ -12,6 +13,6 @@ export type Dataset = {
 	status: DatasetStatus;
 	separator: string | null; // char or null
 	encoding: string | null;
-	additionalInfo: string | null;
+	isSchemaProvided: boolean;
 	datasetFiles: DatasetFile[];
 };

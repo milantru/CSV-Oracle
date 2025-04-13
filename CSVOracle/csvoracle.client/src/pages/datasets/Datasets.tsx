@@ -76,7 +76,7 @@ function Datasets() {
 				<div className="my-3">
 					{selectedDataset === null ? (<div>No dataset selected</div>) : (
 						<div className="border rounded p-3">
-							Additional info: {selectedDataset.additionalInfo}<br />
+							Schema provided: {selectedDataset.isSchemaProvided ? "Yes" : "No"}<br />
 							Encoding: {selectedDataset.encoding}<br />
 							Separator: {selectedDataset.separator}<br />
 							Dataset files:<br />

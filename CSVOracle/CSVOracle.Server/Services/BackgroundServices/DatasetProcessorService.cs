@@ -1,6 +1,7 @@
 ﻿
 using CSVOracle.Data.Enums;
 using CSVOracle.Data.Interfaces;
+using CSVOracle.Data.Models;
 using CSVOracle.Server.Controllers;
 using System.Collections.Concurrent;
 using System.Text.Json;
@@ -42,7 +43,7 @@ namespace CSVOracle.Server.Services.BackgroundServices
 
 		public static string GetChromaDbCollectionNameForCsvFiles(int userId, int datasetId) => $"{userId}-{datasetId}-csvFiles";
 		public static string GetChromaDbCollectionNameForReports(int userId, int datasetId) => $"{userId}-{datasetId}-reports";
-		public static string GetChromaDbCollectionNameForAdditionalInfo(int userId, int datasetId) => $"{userId}-{datasetId}-additionalInfo";
+		public static string GetChromaDbCollectionNameForSchema(int userId, int datasetId) => $"{userId}-{datasetId}-schema";
 
 		public static void EnqueueDatasetId(int datasetId)
 		{
@@ -63,26 +64,57 @@ namespace CSVOracle.Server.Services.BackgroundServices
 				if (DatasetIdsQueue.TryDequeue(out int datasetId))
 				{
 					this.logger.LogInformation($"Starting processing dataset with id `{datasetId}`.");
-					await ProcessDatasetAsync(datasetId);
+					try
+					{
+						await ProcessDatasetAsync(datasetId);
+						this.logger.LogInformation($"Finished processing dataset with id `{datasetId}`.");
+					}
+					catch (Exception e)
+					{
+						this.logger.LogError(e, $"Failed processing dataset with id `{datasetId}`.");
+
+						var dataset = await GetDatasetAsync(datasetId);
+						await UpdateDatasetStatusAsync(dataset, DatasetStatus.Failed);
+					}
 				}
 			}
+		}
+
+		private async Task<Dataset> GetDatasetAsync(int datasetId)
+		{
+			using var scope = scopeFactory.CreateScope();
+			var datasetRepository = scope.ServiceProvider.GetRequiredService<IDatasetRepository>();
+
+			var dataset = await datasetRepository.GetAsync(datasetId);
+
+			return dataset;
+		}
+
+		private async Task UpdateDatasetStatusAsync(Dataset dataset, DatasetStatus newStatus)
+		{
+			using var scope = scopeFactory.CreateScope();
+			var datasetRepository = scope.ServiceProvider.GetRequiredService<IDatasetRepository>();
+
+			dataset.Status = newStatus;
+			await datasetRepository.UpdateAsync(dataset);
 		}
 
 		private async Task ProcessDatasetAsync(int datasetId)
 		{
 			// Update dataset status to processing
-			using var scope = scopeFactory.CreateScope();
-			var datasetRepository = scope.ServiceProvider.GetRequiredService<IDatasetRepository>();
-
-			var dataset = await datasetRepository.GetAsync(datasetId);
-			dataset.Status = DatasetStatus.Processing;
-			await datasetRepository.UpdateAsync(dataset);
+			var dataset = await GetDatasetAsync(datasetId);
+			await UpdateDatasetStatusAsync(dataset, DatasetStatus.Processing);
 
 			// Prepare paths
 			var datasetFolderPath = Path.Join(dataFolderPath, datasetId.ToString());
 
 			var csvFilesFolderPath = Path.Join(datasetFolderPath, DatasetController.CsvFilesFolderName);
 			var csvFilesPaths = Directory.GetFiles(csvFilesFolderPath, "*.csv");
+
+			// schema is optional, if it is not provided, we won't have path to it
+			string? schemaJsonFilePath = dataset.IsSchemaProvided
+				? Path.Join(datasetFolderPath, DatasetController.SchemaJsonFileName)
+				: null;
 
 			var datasetMetadataJsonFilePath = Path.Join(datasetFolderPath, DatasetController.DatasetMetadataJsonFileName);
 
@@ -97,31 +129,31 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			// Tasks...
 			var tasks = new List<Task>();
 
+			var csvFilesCollectionName = GetChromaDbCollectionNameForCsvFiles(dataset.User.Id, dataset.Id);
+			var reportsCollectionName = GetChromaDbCollectionNameForReports(dataset.User.Id, dataset.Id);
+			var schemaCollectionName = dataset.IsSchemaProvided
+				? GetChromaDbCollectionNameForSchema(dataset.User.Id, dataset.Id)
+				: null;
+
 			tasks.Add(Task.Run(async () =>
 			{
-				var csvFilesCollectionName = GetChromaDbCollectionNameForCsvFiles(dataset.User.Id, dataset.Id);
-				var generateCsvFilesIndexTask = GenerateIndexFile(csvFilesFolderPath, csvFilesCollectionName);
+				var generateCsvFilesIndexTask = GenerateIndex(csvFilesFolderPath, csvFilesCollectionName);
 
-				Task? generateAdditionalInfoIndexTask = null;
-				if (!string.IsNullOrEmpty(dataset.AdditionalInfo))
+				Task? generateSchemaIndexTask = null;
+				if (dataset.IsSchemaProvided)
 				{
-					var additionalInfoFilePath = Path.Join(outputFolderPath, additionalInfoFileName);
-					System.IO.File.WriteAllText(additionalInfoFilePath, dataset.AdditionalInfo);
-
-					var additionalInfoCollectionName = GetChromaDbCollectionNameForAdditionalInfo(dataset.User.Id, dataset.Id);
-					generateAdditionalInfoIndexTask = GenerateIndexFile(additionalInfoFilePath, additionalInfoCollectionName);
+					generateSchemaIndexTask = GenerateIndex(schemaJsonFilePath!, schemaCollectionName!);
 				}
 
 				var generateDataProfilingReportsTasks = GenerateDataProfilingReports(
 					csvFilesPaths, datasetMetadataJsonFilePath, reportsFolderPath);
 				await Task.WhenAll(generateDataProfilingReportsTasks);
 
-				var reportsCollectionName = GetChromaDbCollectionNameForReports(dataset.User.Id, dataset.Id);
 				await Task.WhenAll(
 					GeneratePromptingPhasePrompts(reportsFolderPath, promptingPhasePromptsFilePath),
-					GenerateIndexFile(reportsFolderPath, reportsCollectionName),
+					GenerateIndex(reportsFolderPath, reportsCollectionName),
 					generateCsvFilesIndexTask,
-					generateAdditionalInfoIndexTask ?? Task.CompletedTask
+					generateSchemaIndexTask ?? Task.CompletedTask
 				);
 			}));
 
@@ -130,14 +162,10 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			await Task.WhenAll(tasks);
 			tasks.Clear();
 
-			List<string> collectionNames = [
-				GetChromaDbCollectionNameForCsvFiles(dataset.User.Id, dataset.Id),
-				GetChromaDbCollectionNameForReports(dataset.User.Id, dataset.Id)
-			];
-			if (!string.IsNullOrEmpty(dataset.AdditionalInfo)) {
-				collectionNames.Add(
-					GetChromaDbCollectionNameForAdditionalInfo(dataset.User.Id, dataset.Id)
-				);
+			List<string> collectionNames = [csvFilesCollectionName, reportsCollectionName];
+			if (dataset.IsSchemaProvided)
+			{
+				collectionNames.Add(schemaCollectionName!);
 			}
 			await GenerateInitialDatasetKnowledge(collectionNames, promptingPhasePromptsFilePath,
 					promptingPhaseInstructionsFilePath, initialDatasetKnowledgeFilePath);
@@ -145,8 +173,7 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			// Read output and update dataset
 			dataset.InitialDatasetKnowledgeJson = File.ReadAllText(initialDatasetKnowledgeFilePath);
 
-			dataset.Status = DatasetStatus.Processed;
-			await datasetRepository.UpdateAsync(dataset);
+			await UpdateDatasetStatusAsync(dataset, DatasetStatus.Processed);
 
 			// Delete dataset folder with everything in it
 			Directory.Delete(datasetFolderPath, recursive: true);
@@ -196,11 +223,11 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			return task;
 		}
 
-		private Task GenerateIndexFile(string fileOrFolderPath, string collectionName)
+		private Task GenerateIndex(string fileOrFolderPath, string collectionName)
 		{
 			var args = $"-i \"{fileOrFolderPath}\" -c \"{collectionName}\"";
 
-			var task = pythonExecutor.ExecutePythonScriptAsync("generate_index_file.py", args);
+			var task = pythonExecutor.ExecutePythonScriptAsync("generate_index.py", args);
 
 			return task;
 		}

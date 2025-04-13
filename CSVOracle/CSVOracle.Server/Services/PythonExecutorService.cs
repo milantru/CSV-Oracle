@@ -71,7 +71,7 @@ namespace CSVOracle.Server.Services
 
 			if (!string.IsNullOrEmpty(errResult))
 			{
-				logger.LogError($"Python script error: {errResult}");
+				logger.LogError($"Python script error (or warning): {errResult}");
 			}
 		}
 	}

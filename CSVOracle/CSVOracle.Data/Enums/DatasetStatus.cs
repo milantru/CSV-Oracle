@@ -11,6 +11,7 @@ namespace CSVOracle.Data.Enums
 		Created,
 		Queued,
 		Processing,
-		Processed
+		Processed,
+		Failed
 	}
 }
