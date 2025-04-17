@@ -29,9 +29,11 @@ def main(args):
     files_paths = [input_path] if input_path.is_file() else get_file_paths(input_path)
 
     db = get_chroma_db_client()
+    print("Creating collection ", args.collection_name)
     chroma_collection = db.create_collection(args.collection_name)
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    print("Created collection ", args.collection_name)
     
     # Load documents
     documents = get_documents(files_paths)

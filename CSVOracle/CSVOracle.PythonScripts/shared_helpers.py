@@ -27,8 +27,8 @@ def create_individual_query_engine_tools(collection_names, db, llm, embedding_mo
             description=(
                 "Provides access to the raw dataset in CSV format. "
                 "Use this tool to retrieve the original CSV files. "
-                "Ask specific questions if you want to view or analyze the actual data content. "
-                "Use a detailed plain text question as input to the tool."
+                "Ideal for answering questions about specific values, rows, or patterns in the raw data. "
+                "Input should be a clear, detailed plain-text question."
             ),
             return_direct=return_direct
         ),
@@ -36,19 +36,20 @@ def create_individual_query_engine_tools(collection_names, db, llm, embedding_mo
             name="data_profiling_reports",
             description=(
                 "Provides data profiling reports generated from the CSV files. "
-                "Use this tool to understand data distributions, missing values, unique counts, and other statistics. "
-                "Ask questions related to data quality, patterns, or summary insights. "
-                "Use a detailed plain text question as input to the tool."
+                "Use this tool to access statistics such as distributions, averages, minimum/maximum values, "
+                "standard deviation, missing values count, unique value counts, and correlations. "
+                "Best for understanding overall data quality and statistical patterns. "
+                "Input should be a clear, detailed plain-text question."
             ),
             return_direct=return_direct
         ),
         "schema": ToolMetadata(
             name="csv_schema",
             description=(
-                "Returns the CSVW (CSV on the Web) schema describing the dataset's structure. "
-                "Use this tool to understand metadata such as column definitions, data types, and constraints. "
-                "Ask schema-related questions to explore how the data is organized or validated. "
-                "Use a detailed plain text question as input to the tool."
+                "Provides access to the CSVW (CSV on the Web) schema describing the structure of the dataset. "
+                "Use this tool to understand column definitions, data types, constraints, relationships, and metadata. "
+                "Best suited for schema-related or structural questions. "
+                "Input should be a clear, detailed plain-text question."
             ),
             return_direct=return_direct
         )
@@ -83,22 +84,18 @@ def get_model(model: str, system_prompt: str | None = None, api_key: str | None 
     """
     if model == "mistral:latest" or model == "qwen2.5:14b" or model == "llama3.2:latest" or model == "llama3.3:latest":
         return Ollama(
-            model=model, 
-            system_prompt=system_prompt
+            model=model,
+            system_prompt=system_prompt,
+            request_timeout=60
         )
     elif model == "llama-3.3-70b-versatile" or model == "llama-3.3-70b-specdec" or model == "llama3-70b-8192":
         if not api_key:
             raise Exception("Api key required.")
         return Groq(
-            model=model, 
+            model=model,
+            system_prompt=system_prompt,
+            request_timeout=60,
             api_key=api_key
-        )
-    elif model == "deepseek-r1:8b":
-        return  Ollama(
-            model=model, 
-            system_prompt=system_prompt, 
-            request_timeout=420.0, 
-            is_function_calling_model=False
         )
     else:
         raise Exception("Unknown model required.")

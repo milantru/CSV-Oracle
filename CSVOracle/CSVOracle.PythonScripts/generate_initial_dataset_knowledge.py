@@ -19,7 +19,7 @@ def generate_answer(query_engine, question, max_attempts_count = 3):
             answer = query_engine.query(question).response
             break
         except:
-            print("Failed generating answer.")
+            print("Failed to generate answer.")
             attempts_count += 1
             if attempts_count < max_attempts_count:
                 print("Retrying...")
@@ -58,7 +58,7 @@ def create_initial_dataset_knowledge(prompting_phase_prompts: DatasetKnowledge, 
 
 def main(args):
     llm = get_model(
-        model = "llama3.3:latest", 
+        model = "llama3.2:latest", 
         system_prompt = read_file(args.prompting_phase_instructions_path)
     )
 

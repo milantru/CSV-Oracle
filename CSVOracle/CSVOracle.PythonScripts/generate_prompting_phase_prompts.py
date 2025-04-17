@@ -125,13 +125,13 @@ def add_column_prompts(table_knowledge: TableKnowledge, csv_file_name: str, colu
         column_knowledge = ColumnKnowledge()
         
         column_knowledge.name = col_name
-        column_knowledge.description = f'Provide a brief description of the column {col_name} from table {csv_file_name}. What does it describe or represent? Answer only with the column description, no other text.'
+        column_knowledge.description = f"Briefly describe what the column '{col_name}' from the table '{csv_file_name}' represents. Focus on what the column contains or measures. Respond only with the description - no additional commentary."
 
         # "Missing values count" is expected to always be in col_info, but we check its existience anyway 
         # because of defensive programming. And we do so in case of other properties as well.
         if ("Missing values count" in col_info and col_info["Missing values count"] > 0) \
             and ("Missing values count in %" in col_info and col_info["Missing values count in %"] > 0):
-            column_knowledge.missing_values_explanation = f'The column {col_name} from table {csv_file_name} has {col_info["Missing values count"]} missing values ({col_info["Missing values count in %"]} %). Provide an explanation why the values are missing. Answer only with the explanation, no other text.'
+            column_knowledge.missing_values_explanation = f"The column '{col_name}' from the table '{csv_file_name}' has {col_info["Missing values count"]} missing values ({col_info["Missing values count in %"]}%). Explain why values might be missing in this column. Respond only with the explanation - no additional text."
         
         table_knowledge.column_knowledges.append(column_knowledge)
 
@@ -150,7 +150,7 @@ def add_column_prompts(table_knowledge: TableKnowledge, csv_file_name: str, colu
                 correlation_explanation.column1_name = col1_name
                 correlation_explanation.column2_name = col2_name
                 correlation_explanation.correlation_value = corr_value
-                correlation_explanation.explanation = f'Provide an explanation for why the columns {col1_name} and {col2_name} from table {csv_file_name} are correlated (correlation value: {corr_value}). Answer only with the explanation, no other text.'
+                correlation_explanation.explanation = f"The columns '{col1_name}' and '{col2_name}' from the table '{csv_file_name}' are correlated (correlation value: {corr_value}). Explain why this correlation might exist. Respond only with the explanation - do not use terms like 'former' or 'latter'; refer to the columns by their exact names."
                 
                 table_knowledge.correlation_explanations.append(correlation_explanation)
 
@@ -176,8 +176,8 @@ def main(args):
     # the structure of the knowledge is secured.
     dataset_knowledge = DatasetKnowledge()
 
-    tmp = " " if len(csv_files_names) == 1 else " (as all tables together, prompts about each table separately will come later) "
-    dataset_knowledge.description = f"Summarize what the dataset{tmp}represents and explain what context or domain the data comes from. Be concise."
+    tmp = " " if len(csv_files_names) == 1 else " (considering all tables together) "
+    dataset_knowledge.description = f"Summarize what the dataset{tmp}represents, and explain the context or domain the data comes from. Be concise."
 
     for i in range(len(csv_files_names)):
         table_knowledge = TableKnowledge()
@@ -185,8 +185,8 @@ def main(args):
         dataset_info_from_report = dataset_info_from_reports[i]
 
         table_knowledge.name = csv_file_name
-        table_knowledge.description = f"Summarize what the table {csv_file_name} represents and explain what context or domain the data comes from. Be concise."
-        table_knowledge.row_entity_description = f"What kind of entity or entities does the table row of {csv_file_name} represent? Make the answer concise."
+        table_knowledge.description = f"Summarize what the table '{csv_file_name}' represents and identify the context or domain the data comes from. Keep the response brief and focused."
+        table_knowledge.row_entity_description = f"What kind of entity or entities does a row in the table '{csv_file_name}' represent? Keep the answer concise."
         table_knowledge.sample_head = dataset_info_from_report["Sample head"]
         table_knowledge.sample_tail = dataset_info_from_report["Sample tail"]
         
