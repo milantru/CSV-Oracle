@@ -44,10 +44,9 @@ def create_agent(llm, tools, instructions=None, chat_history=None):
         tools=tools, 
         llm=llm,
         chat_history=chat_history,
-        # context=instructions,
         react_chat_formatter=ReActChatFormatter.from_defaults(
             observation_role=MessageRole.TOOL,
-            context=instructions,
+            context=instructions
         ),
         verbose=False
     )
