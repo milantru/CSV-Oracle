@@ -1,10 +1,11 @@
 import json
 import chromadb
+import re
 from pathlib import Path
 from llama_index.llms.ollama import Ollama
 from llama_index.llms.groq import Groq
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.core import VectorStoreIndex
+from llama_index.core import VectorStoreIndex, Document
 from llama_index.core.tools import QueryEngineTool, ToolMetadata
 from llama_index.core.query_engine import SubQuestionQueryEngine
 from concurrent.futures import ThreadPoolExecutor
@@ -20,15 +21,15 @@ def read_file(file_path, load_as_json=False):
         file_content = json.load(f) if load_as_json else f.read()
     return file_content
 
-def create_individual_query_engine_tools(collection_names, db, llm, embedding_model, return_direct=False):
+def create_individual_query_engine_tools(collection_names, db, llm, embedding_model, return_direct=False, dataset_knowledge=None):
     tool_metadata_provider = {
         "csvFiles": ToolMetadata(
             name="csv_files",
             description=(
                 "Provides access to the raw dataset in CSV format. "
-                "Use this tool to retrieve the original CSV files. "
-                "Ideal for answering questions about specific values, rows, or patterns in the raw data. "
-                "Input should be a clear, detailed plain-text question."
+                "This tool is useful when you want to access actual values from the dataset. "
+                "Input to this tool should be a question or a command. It does not have to be concise, provide as much context as possible. "
+                "Do not use this tool for retrieval of the column names, if you want to retrieve column names, use tool 'datasetKnowledge' instead."
             ),
             return_direct=return_direct
         ),
@@ -39,7 +40,7 @@ def create_individual_query_engine_tools(collection_names, db, llm, embedding_mo
                 "Use this tool to access statistics such as distributions, averages, minimum/maximum values, "
                 "standard deviation, missing values count, unique value counts, and correlations. "
                 "Best for understanding overall data quality and statistical patterns. "
-                "Input should be a clear, detailed plain-text question."
+                "Input to this tool should be a question or a command. It does not have to be concise, provide as much context as possible."
             ),
             return_direct=return_direct
         ),
@@ -49,7 +50,17 @@ def create_individual_query_engine_tools(collection_names, db, llm, embedding_mo
                 "Provides access to the CSVW (CSV on the Web) schema describing the structure of the dataset. "
                 "Use this tool to understand column definitions, data types, constraints, relationships, and metadata. "
                 "Best suited for schema-related or structural questions. "
-                "Input should be a clear, detailed plain-text question."
+                "Input to this tool should be a question or a command. It does not have to be concise, provide as much context as possible."
+            ),
+            return_direct=return_direct
+        ),
+        "datasetKnowledge": ToolMetadata(
+            name="dataset_knowledge",
+            description=(
+                "Provides access to the dataset knowledge. It may contain dataset description, descriptions of tables, column descriptions, descriptions of columns correlation etc. "
+                "This should be the first place to look when searching for some information about the dataset, unless you are 100% sure you should look somewhere else, for example if you want statistical data like average value in some column, you should use 'reports' tool instead. "
+                "You can also use this tool to retrieve column names. "
+                "Input to this tool should be a question or a command. It does not have to be concise, provide as much context as possible."
             ),
             return_direct=return_direct
         )
@@ -66,13 +77,29 @@ def create_individual_query_engine_tools(collection_names, db, llm, embedding_mo
     with ThreadPoolExecutor() as executor:
         query_engine_tools = list(executor.map(create_query_engine_tool, collection_names))
 
-    return query_engine_tools
+    if not dataset_knowledge:
+        return query_engine_tools
+    
+    # Also create and add dataset knowledge tool 
+    # remove lines containing only formatting, we just format and make each line an embedding,
+    # this is part of the code from https://docs.llamaindex.ai/en/stable/api_reference/readers/json/
+    json_output = json.dumps(dataset_knowledge.to_dict(), indent=0, ensure_ascii=False)
+    lines = json_output.split("\n")
+    useful_lines = [line for line in lines if not re.match(r"^[{}\[\],]*$", line)]
+    documents = [Document(text="\n".join(useful_lines), metadata={})]
+    index = VectorStoreIndex.from_documents(documents, embed_model=embedding_model)
+    dataset_knowledge_tool = QueryEngineTool(
+        query_engine=index.as_query_engine(llm=llm), # similarity_top_k=1
+        metadata=tool_metadata_provider["datasetKnowledge"]
+    )
+    
+    return query_engine_tools + [dataset_knowledge_tool]
 
 def create_sub_question_query_engine(query_engine_tools, llm):
     sub_question_query_engine = SubQuestionQueryEngine.from_defaults(
         query_engine_tools=query_engine_tools,
         llm=llm,
-        verbose=False,
+        verbose=True, # TODO change to False
         use_async=True
     )
 
@@ -86,7 +113,7 @@ def get_model(model: str, system_prompt: str | None = None, api_key: str | None 
         return Ollama(
             model=model,
             system_prompt=system_prompt,
-            request_timeout=60
+            request_timeout=420.0
         )
     elif model == "llama-3.3-70b-versatile" or model == "llama-3.3-70b-specdec" or model == "llama3-70b-8192":
         if not api_key:
@@ -94,7 +121,7 @@ def get_model(model: str, system_prompt: str | None = None, api_key: str | None 
         return Groq(
             model=model,
             system_prompt=system_prompt,
-            request_timeout=60,
+            request_timeout=420.0,
             api_key=api_key
         )
     else:

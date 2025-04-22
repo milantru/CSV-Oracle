@@ -450,6 +450,8 @@ namespace CSVOracle.Server.Controllers
 			var content = new StringContent(argsJson, new MediaTypeHeaderValue("application/json"));
 
 			using var client = new HttpClient();
+			// Sometimes the LLM needs more time to think, that's why the timeout is increased here
+			client.Timeout = TimeSpan.FromMinutes(5);
 			_ = await client.PostAsync(this.llmServerUrlForGeneratingAnswer, content);
 		}
 

@@ -125,7 +125,7 @@ def add_column_prompts(table_knowledge: TableKnowledge, csv_file_name: str, colu
         column_knowledge = ColumnKnowledge()
         
         column_knowledge.name = col_name
-        column_knowledge.description = f"Briefly describe what the column '{col_name}' from the table '{csv_file_name}' represents. Focus on what the column contains or measures. Respond only with the description - no additional commentary."
+        column_knowledge.description = f"Briefly describe what the column '{col_name}' from the table '{csv_file_name}' represents. Focus on what the column contains or measures. Respond only with the description - no additional text."
 
         # "Missing values count" is expected to always be in col_info, but we check its existience anyway 
         # because of defensive programming. And we do so in case of other properties as well.
@@ -150,7 +150,7 @@ def add_column_prompts(table_knowledge: TableKnowledge, csv_file_name: str, colu
                 correlation_explanation.column1_name = col1_name
                 correlation_explanation.column2_name = col2_name
                 correlation_explanation.correlation_value = corr_value
-                correlation_explanation.explanation = f"The columns '{col1_name}' and '{col2_name}' from the table '{csv_file_name}' are correlated (correlation value: {corr_value}). Explain why this correlation might exist. Respond only with the explanation - do not use terms like 'former' or 'latter'; refer to the columns by their exact names."
+                correlation_explanation.explanation = f"The columns '{col1_name}' and '{col2_name}' from the table '{csv_file_name}' are correlated (correlation value: {corr_value}). Try to explain why this correlation exists. Respond only with the explanation - no other text. Please do not use terms like 'former' or 'latter', refer to the columns by their exact names."
                 
                 table_knowledge.correlation_explanations.append(correlation_explanation)
 
@@ -185,7 +185,7 @@ def main(args):
         dataset_info_from_report = dataset_info_from_reports[i]
 
         table_knowledge.name = csv_file_name
-        table_knowledge.description = f"Summarize what the table '{csv_file_name}' represents and identify the context or domain the data comes from. Keep the response brief and focused."
+        table_knowledge.description = f"Summarize what the table '{csv_file_name}' is about, what it represents. You can also try to identify what context or domain the data comes from. Be concise."
         table_knowledge.row_entity_description = f"What kind of entity or entities does a row in the table '{csv_file_name}' represent? Keep the answer concise."
         table_knowledge.sample_head = dataset_info_from_report["Sample head"]
         table_knowledge.sample_tail = dataset_info_from_report["Sample tail"]

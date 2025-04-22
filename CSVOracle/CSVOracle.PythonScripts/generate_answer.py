@@ -25,14 +25,20 @@ GLOBALS = {
     "dataset_knowledge": None
 }
 
-def create_sub_question_query_engine_tool(query_engine_tools, llm, return_direct=False):
+def create_sub_question_query_engine_tool(query_engine_tools, llm, schema_provided, return_direct=False):
     sub_question_query_engine = create_sub_question_query_engine(query_engine_tools, llm)
+
+    desc = None
+    if schema_provided:
+        desc = "Useful for when you want to answer queries that require analyzing either csv files, data profiling reports, dataset knowledge, or csvw schema."
+    else:
+        desc = "Useful for when you want to answer queries that require analyzing either csv files, data profiling reports, or dataset knowledge."
 
     sub_question_query_engine_tool = QueryEngineTool(
         query_engine=sub_question_query_engine,
         metadata=ToolMetadata(
             name="sub_question_query_engine",
-            description="Useful for when you want to answer queries that require analyzing all of the dataset information sources",
+            description=desc,
             return_direct=return_direct
         )
     )
@@ -53,12 +59,48 @@ def create_agent(llm, tools, instructions=None, chat_history=None):
     
     return agent
 
-def generate_chat_llm_instructions(user_view = None):
+def get_shared_columns(dataset_knowledge):
+    tmp = {}
+    for table_knowledge in dataset_knowledge.table_knowledges:
+        for column_knowledge in table_knowledge.column_knowledges:
+            if column_knowledge.name not in tmp:
+                tmp[column_knowledge.name] = []
+            if table_knowledge.name in tmp[column_knowledge.name]:
+                # I expect this should never happen, it would mean the table
+                # has at least two columns with the same name. This if was added
+                # because of defense programming, to make sure the same table name would not be
+                # in the list multiple times.
+                continue
+            tmp[column_knowledge.name].append(table_knowledge.name)
+    
+    # Filter to keep only columns that appear in more than one table
+    shared_columns = {column: list(tables) for column, tables in tmp.items() if len(tables) > 1}
+    return shared_columns
+
+def generate_chat_llm_instructions(dataset_knowledge: DatasetKnowledge, user_view = None):    
+    shared_columns_section = ""
+    if len(dataset_knowledge.table_knowledges) > 1:
+        shared_columns = get_shared_columns(dataset_knowledge)
+        if len(shared_columns.items()) > 0:
+            shared_columns_str = "\n".join(
+                f"    - '{col}': {", ".join(tables)}" for col, tables in shared_columns.items()
+            )
+            shared_columns_section = f"""
+Handling Duplicate Column Names Across Files:
+- The following columns appear in more than one CSV file:
+{shared_columns_str}
+- When referencing these columns in your responses, always qualify them with the name of the file they belong to (e.g. id from orders, where id is column name and orders is table name).
+- If a user refers to a column that exists in more than one file without specifying which file they mean, and the context is not clearly disambiguated, ask for clarification before proceeding.
+- Do not assume which file the column belongs to unless it is explicitly stated or strongly implied by the context.
+"""
+
+    table_names = [table_knowledge.name for table_knowledge in dataset_knowledge.table_knowledges]
+
     instructions = f'''\
 INSTRUCTIONS:
 - You are part of an application called CSV Oracle, designed to help software engineers and data analysts understand and work with their datasets.
 - Your primary role is to assist users in exploring, analyzing, and making decisions based on their datasets.
-
+{shared_columns_section}
 About Dataset Knowledge:
 - Dataset Knowledge refers to a structured summary or collection of insights extracted from the uploaded dataset.
 - This knowledge is available at the beginning of the conversation and can be updated dynamically throughout the session.
@@ -72,18 +114,19 @@ During Conversation:
 - Keep the dataset knowledge accurate and up to date. If there is any ambiguity or uncertainty, ask the user for clarification before applying updates.
 - Treat the dataset knowledge as a shared, evolving document that both you and the user can contribute to.
 - You can output the names of the files, but not the full paths.
-
-Tone and Interaction Style:
-- Be concise, insightful, and helpful.
-- Adapt to the user's style: technical when needed, casual when appropriate.
-- Clarify assumptions and ask guiding questions if the user's request is unclear or potentially incomplete.
+- Please do not output table name like "table.csv", use just "table" without ".csv".
+- ALWAYS try to answer the original question!
 '''
     if user_view:
-        instructions += f'''
-User View:
-- The user has provided the following perspective or context for their dataset:
+        user_view_section = f'''
+User View (Background Context Only):
+- The user has provided the following background information about their perspective on the dataset:
 "{user_view}"
+
+IMPORTANT: This user view is for context only. Use it to better understand the user's perspective, but do not act on it unless the user explicitly refers to it in their current message. Always treat the user's latest message as the primary instruction.
 '''
+        instructions += user_view_section
+    
     return instructions
 
 def load_chat_history(chat_history_dicts_path):
@@ -111,14 +154,13 @@ def update_dataset_description(new_description: str) -> None:
     """
     GLOBALS["dataset_knowledge"].description = new_description
 
-def get_all_table_names() -> list[str]:
-    """
-    Retrieves the names of all the tables in the dataset from the dataset knowledge.
-    Returns a list of table names as strings.
-    """
-    return [table_knowledge.name for table_knowledge in GLOBALS["dataset_knowledge"].table_knowledges]
-
 # TableKnowledge functions
+def find_table_knowledge(dataset_knowledge: DatasetKnowledge, table_name: str):
+    for table_knowledge in dataset_knowledge.table_knowledges:
+        if table_knowledge.name == table_name:
+            return table_knowledge
+    return None
+
 def get_table_description(table_name: str) -> str:
     """Retrieves the description of a specified table from the dataset knowledge.
     
@@ -128,10 +170,11 @@ def get_table_description(table_name: str) -> str:
     Returns:
         str: The table description or an error message if the table is not found.
     """
-    for table_knowledge in GLOBALS["dataset_knowledge"].table_knowledges:
-        if table_knowledge.name == table_name:
-            return table_knowledge.description
-    return f"Table with name {table_name} was not found."
+    table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
+    if not table_knowledge:
+        return f"Table with name {table_name} was not found."
+    
+    return table_knowledge.description
 
 def update_table_description(table_name: str, new_description: str) -> None:
     """Updates the description of a specified table in the dataset knowledge.
@@ -147,10 +190,9 @@ def update_table_description(table_name: str, new_description: str) -> None:
         table_name (str): The name of the table.
         new_description (str): The full, updated description for the table.
     """
-    for table_knowledge in GLOBALS["dataset_knowledge"].table_knowledges:
-        if table_knowledge.name == table_name:
-            table_knowledge.description = new_description
-            break
+    table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
+    if table_knowledge:
+        table_knowledge.description = new_description
 
 def get_table_row_entity_description(table_name: str) -> str:
     """Retrieves the row entity description of a specified table from the dataset knowledge.
@@ -161,10 +203,11 @@ def get_table_row_entity_description(table_name: str) -> str:
     Returns:
         str: The row entity description or an error message if the table is not found.
     """
-    for table_knowledge in GLOBALS["dataset_knowledge"].table_knowledges:
-        if table_knowledge.name == table_name:
-            return table_knowledge.row_entity_description
-    return f"Table with name {table_name} was not found."
+    table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
+    if not table_knowledge:
+        return f"Table with name {table_name} was not found."
+
+    return table_knowledge.row_entity_description
 
 def update_table_row_entity_description(table_name: str, new_description: str) -> None:
     """Updates the row entity description of a specified table in the dataset knowledge.
@@ -180,18 +223,20 @@ def update_table_row_entity_description(table_name: str, new_description: str) -
         table_name (str): The name of the table.
         new_description (str): The full, updated row entity description.
     """
-    for table_knowledge in GLOBALS["dataset_knowledge"].table_knowledges:
-        if table_knowledge.name == table_name:
-            table_knowledge.row_entity_description = new_description
-            break
+    table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
+    if table_knowledge:
+        table_knowledge.row_entity_description = new_description
 
 # ColumnKnowledge functions
 def find_column_knowledge(dataset_knowledge: DatasetKnowledge, table_name: str, column_name: str):
-    for table_knowledge in dataset_knowledge.table_knowledges:
-        if table_knowledge.name == table_name:
-            for column_knowledge in table_knowledge.column_knowledges:
-                if column_knowledge.name == column_name:
-                    return column_knowledge
+    table_knowledge = find_table_knowledge(dataset_knowledge, table_name)
+    if not table_knowledge:
+        return None
+    
+    for column_knowledge in table_knowledge.column_knowledges:
+        if column_knowledge.name == column_name:
+            return column_knowledge
+    
     return None
 
 def get_column_description(table_name: str, column_name: str) -> str:
@@ -271,13 +316,16 @@ def get_correlation_explanation(table_name: str, column1_name: str, column2_name
     Returns:
         str: The correlation explanation or an error message if a column is not found.
     """
-    column1_knowledge = find_column_knowledge(GLOBALS["dataset_knowledge"], table_name, column1_name)
-    if not column1_knowledge:
-        return f"Column {column1_name} was not found in table {table_name}."
-    for correlation_explanation in column1_knowledge.correlation_explanations:
-        if correlation_explanation.column2_name == column2_name:
+    table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
+    if not table_knowledge:
+        return f"Table {table_name} not found."
+    
+    for correlation_explanation in table_knowledge.correlation_explanations:
+        if (correlation_explanation.column1_name == column1_name and correlation_explanation.column2_name == column2_name) \
+            or correlation_explanation.column1_name == column2_name and correlation_explanation.column2_name == column1_name:
             return correlation_explanation.explanation
-    return f"Column {column2_name} was not found in table {table_name}."
+    
+    return f"Correlation explanation for columns {column1_name} and {column2_name} was not found in table {table_name}."
 
 def update_correlation_explanation(table_name: str, column1_name: str, column2_name: str, new_explanation: str) -> None:
     """Updates the correlation explanation between two specified columns in the dataset knowledge.
@@ -305,38 +353,38 @@ def update_correlation_explanation(table_name: str, column1_name: str, column2_n
 def create_func_tools():
     func_tools = []
     
-    func_tools.append(FunctionTool.from_defaults(fn=get_dataset_description))
+    # TODO remove commented code
+    # func_tools.append(FunctionTool.from_defaults(fn=get_dataset_description))
     
     func_tools.append(FunctionTool.from_defaults(fn=update_dataset_description))
 
-    func_tools.append(FunctionTool.from_defaults(fn=get_all_table_names))
+    # func_tools.append(FunctionTool.from_defaults(fn=get_all_table_names))
 
-    func_tools.append(FunctionTool.from_defaults(fn=get_table_description))
+    # func_tools.append(FunctionTool.from_defaults(fn=get_table_description))
 
     func_tools.append(FunctionTool.from_defaults(fn=update_table_description))
 
-    func_tools.append(FunctionTool.from_defaults(fn=get_table_row_entity_description))
+    # func_tools.append(FunctionTool.from_defaults(fn=get_table_row_entity_description))
 
     func_tools.append(FunctionTool.from_defaults(fn=update_table_row_entity_description))
     
-    func_tools.append(FunctionTool.from_defaults(fn=get_column_description))
+    # func_tools.append(FunctionTool.from_defaults(fn=get_column_description))
 
     func_tools.append(FunctionTool.from_defaults(fn=update_column_description))
 
-    func_tools.append(FunctionTool.from_defaults(fn=get_missing_values_explanation))
+    # func_tools.append(FunctionTool.from_defaults(fn=get_missing_values_explanation))
 
     func_tools.append(FunctionTool.from_defaults(fn=update_missing_values_explanation))
 
-    func_tools.append(FunctionTool.from_defaults(fn=get_correlation_explanation))
+    # func_tools.append(FunctionTool.from_defaults(fn=get_correlation_explanation))
 
     func_tools.append(FunctionTool.from_defaults(fn=update_correlation_explanation))
     
     return func_tools
 
 def create_query_engine_tools(collection_names, db, chat_llm, embedding_model):
-    # return_direct set to True should speed up answering (unfortunatelly for the price of answer quality)
-    individual_query_engine_tools = create_individual_query_engine_tools(collection_names, db, chat_llm, embedding_model, return_direct=True)
-    sub_question_query_engine_tool = create_sub_question_query_engine_tool(individual_query_engine_tools, chat_llm, return_direct=True)
+    individual_query_engine_tools = create_individual_query_engine_tools(collection_names, db, chat_llm, embedding_model, return_direct=False, dataset_knowledge=GLOBALS["dataset_knowledge"])
+    sub_question_query_engine_tool = create_sub_question_query_engine_tool(individual_query_engine_tools, chat_llm, len(collection_names) == 3, return_direct=False)
     return individual_query_engine_tools + [sub_question_query_engine_tool]
 
 def save_dataset_knowledge(output_file_path: str, dataset_knowledge: DatasetKnowledge):
@@ -351,9 +399,8 @@ def save_chat_history(output_file_path, chat_history):
 def main(args):
     # Load
     user_view = read_file(args.user_view_path) if args.user_view_path else None
-    chat_llm_instructions = generate_chat_llm_instructions(user_view)
-    
     GLOBALS["dataset_knowledge"] = DatasetKnowledge.from_dict(read_file(args.dataset_knowledge_path, load_as_json=True))
+    chat_llm_instructions = generate_chat_llm_instructions(GLOBALS["dataset_knowledge"], user_view)
 
     chat_llm = get_model(model="llama3.3:latest")
 
