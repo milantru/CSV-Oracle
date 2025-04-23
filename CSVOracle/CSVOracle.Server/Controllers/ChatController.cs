@@ -451,7 +451,7 @@ namespace CSVOracle.Server.Controllers
 
 			using var client = new HttpClient();
 			// Sometimes the LLM needs more time to think, that's why the timeout is increased here
-			client.Timeout = TimeSpan.FromMinutes(5);
+			client.Timeout = TimeSpan.FromMinutes(10);
 			_ = await client.PostAsync(this.llmServerUrlForGeneratingAnswer, content);
 		}
 
