@@ -28,8 +28,8 @@
 \def\DepartmentEN{Department of Software Engineering}
 
 % Jedná se o katedru (department) nebo o ústav (institute)?
-\def\DeptType{Katedra softwarového inženýrství}
-\def\DeptTypeEN{Department of Software Engineering}
+\def\DeptType{Katedra}
+\def\DeptTypeEN{Department}
 
 % Vedoucí práce: Jméno a příjmení s~tituly
 \def\Supervisor{doc. Mgr. Martin Nečaský, Ph.D.}
@@ -49,12 +49,16 @@ Rád by som sa poďakoval vedúcemu práce doc. Mgr. Martinovi Nečaskému, Ph.D
 
 % Abstrakt (doporučený rozsah cca 80-200 slov; nejedná se o zadání práce)
 \def\Abstract{%
-Cieľom práce bolo navrhnúť a~vytvoriť webovú aplikáciu pre~dátových analytikov a~ďalších užívateľov, ktorí pracujú s~rôznymi datasetmi. Aplikácia má za~cieľ pomôcť užívateľom porozumieť datasetu a~zistiť, či je vhodný pre~užívateľom zamýšlanú úlohu. Aplikácia umožňuje nahrať dataset, ktorý môže pozostávať z~jedného alebo viacerých CSV~súborov. Po~nahratí prebehne analýza, v~ktorej sa využíva dátové profilovanie datasetu a~veľký jazykový model. Jej výsledkom je ucelený súhrn zistených informácií o~štruktúre a~význame položiek datasetu~-- dataset knowledge. Ten je neskôr prezentovaný užívateľovi. Užívateľ si môže pre~každý analyzovaný dataset vytvoriť chat s~asistentom, v~ktorom je schopný pomocou prirodzeného jazyka dopýtať sa na~detaily týkajúce sa datasetu a~zamýšľanej úlohy, prípadne požiadať asistenta o~úpravu dataset knowledge.
+Cieľom práce bolo navrhnúť a vytvoriť webovú aplikáciu pre dátových analytikov a ďalších užívateľov, ktorí pracujú s rôznymi datasetmi. Aplikácia má za cieľ pomôcť užívateľom porozumieť datasetu a zistiť, či je vhodný pre užívateľom zamýšlanú úlohu.
+
+Aplikácia umožňuje nahrať dataset, ktorý môže pozostávať z jedného alebo viacerých CSV súborov. Po nahratí prebehne analýza, v ktorej sa využíva dátové profilovanie datasetu a veľký jazykový model. Jej výsledkom je ucelený súhrn zistených informácií o štruktúre a významu položiek datasetu\~-- dataset knowledge. Ten je neskôr prezentovaný užívateľovi. Užívateľ si môže pre každý analyzovaný dataset vytvoriť chat s asistentom, v ktorom sa môže prirodzeným jazykom dopytovať na detaily týkajúce sa datasetu a zamýšľanej úlohy, prípadne požiadať asistenta o úpravu dataset knowledge.
 }
 
 % Anglická verze abstraktu
 \def\AbstractEN{%
-The goal of~this master thesis was to~design and~create a~web application for~data analysts and~other users who work with various datasets. The~application aims to~help users understand the dataset and determine whether it is suitable for~the~user's intended task. The~application allows the user to~upload a~dataset, which can consist of one or~more CSV files. After uploading, an~analysis is~performed, which uses data profiling of~the~dataset and~a~large language model. The~result is a~comprehensive summary of~the~information found about the~structure and~meaning of~the~dataset items~-- dataset knowledge. This is later presented to~the~user. The~user can create a~chat with an~assistant for each analyzed dataset, in~which they can ask for~details about the~dataset and~the~intended task in~natural language, or~ask the~assistant to~edit the~dataset knowledge.
+The goal of this master thesis was to design and create a web application for data analysts and other users who work with various datasets. The application aims to help users understand the dataset and determine whether it is suitable for the user's intended task.
+
+The application allows the user to upload a dataset, which can consist of one or more CSV files. After uploading, an analysis is performed, which uses data profiling of the dataset and a large language model. The result is a comprehensive summary of the information found about the structure and meaning of the dataset items\~-- dataset knowledge. This is later presented to the user. The user can create a chat with an assistant for each analyzed dataset, in which they can ask for details about the dataset and the intended task in natural language, or ask the assistant to edit the dataset knowledge.
 }
 
 % 3 až 5 klíčových slov (doporučeno) oddělených \sep
@@ -73,7 +77,7 @@ data analysis\sep data profiling\sep large language model
 % vygenerovaný soubor thesis.xmpdata.
 \def\ThesisAuthorXMP{\ThesisAuthor}
 \def\ThesisTitleXMP{\ThesisTitle}
-\def\ThesisKeywordsXMP{analýza dat, data profiling, velký jazykový model}
+\def\ThesisKeywordsXMP{\ThesisKeywords}
 \def\AbstractXMP{\Abstract}
 
 % Máte-li dlouhý abstrakt a nechceme se mu vejít na informační stranu,

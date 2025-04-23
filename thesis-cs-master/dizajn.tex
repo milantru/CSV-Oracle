@@ -1,0 +1,102 @@
+\chapter{Dizajn aplikácie}
+
+Priebeh využitia základnej funkcionality aplikácie je nasledovný:
+\begin{enumerate}
+\item Používateľ sa zaregistruje a~prihlási do~aplikácie.
+\item Používateľ nahrá dataset pozostavajúci z~jedného alebo~viacerých CSV súborov, prípadne nahrá aj CSVW schému.
+\item Po~nahratí súborov sa vykoná analýza, t.j.:
+\begin{enumerate}
+\item spustí sa data profiling, ktorého výsledkom je report
+\item z~reportu sa vezmú potrebné údaje, napr.~hodnoty korelácie, na~vytvorenie promptov (ďalej už len predpripravené prompty)
+\item predpripravené prompty sú využité na promptovanie veľkého jazykového modelu (LLM), ktorý bude mať prístup k~nahraným CSV súborom, data profiling reportom, príp. aj k~CSVW schéme ak bola nahraná
+\item výsledkom sú informácie o~datasete, pomocou ktorých sa vytvorí DK.
+\end{enumerate}
+\item Po~dokončení anlýzy si používateľ zvolí dataset a~vytvorí chat, alternatívne zvolí existujúci, kde môže klásť otázky ohľadom datasetu a~asistent mu na nich bude odpovedať.
+\item Ak sa pri chatovaní objavia informácie, ktoré by chcel používateľ zapísať do~DK, môže o~to požiadať asistenta, a~ten DK aktualizuje.
+\end{enumerate}
+
+Kvôli lepšej organizácií kódu si aplikáciu rozdelíme na~frontendovú a~backendovú časť. Frontendová časť pokryje používateľské rozhranie navrhnuté v~kap.~\ref{requirements-analysis} a~backendová časť pokryje zbytok logiky systému, napr.~prácu s~databázou.
+
+\section{Frontend}
+
+V~aplikácii, napríklad pri~chatovaní alebo~úprave DK, bude potrebné dynamicky meniť používateľské rozhranie (UI). Štandardným a~populárnym prístupom pri~vývoji webových aplikácií s~dynamickým UI je použitie knižnice~\textit{React}~\cite{popular-frontend-frameworks}. Keďže nemáme žiadne iné požiadavky a~autor už má skúsenosti s~touto technológiou, volíme si práve túto možnosť.
+
+\subsection{Polling}
+
+Po~nahratí datasetu sa spustí jeho analýza, ktorá je časovo náročná. Používateľ bude môcť sledovať stav datasetu na~stránke s~datasetmi. Frontend bude periodicky získavať informáciu o~stave datasetu. Stav datasetu bude zobrazený a~jeho možné hodnoty sú:
+\begin{itemize}
+\item Created~-- dataset je vytvorený, ale~ešte sa nezaradil do~radu na~analýzu
+\item Queued~-- dataset je zaradený do~radu na~analýzu, ale~ešte sa nezačalo s~jeho analýzou
+\item \textit{Processing}~-- dataset sa analyzuje
+\item \textit{Processed}~-- dataset je analyzovaný
+\item \textit{Failed}~-- analýza datasetu skončila s~chybou
+\end{itemize}
+
+\section{Backend}
+
+Kľúčové oblasti, ktoré bude backendová časť systému riešiť sú:
+\begin{enumerate}
+\item Autentifikácia
+\item Analýza datasetu, do~ktorej patrí:
+\begin{itemize}
+\item Data profiling
+\item Promptovanie LLM
+\end{itemize}
+\item Práca s~databázou, napr.~na~vytvorenie alebo~odstránenie chatu
+\end{enumerate}
+
+Backendová časť aplikácie bude rozdelená na~dve časti:
+\begin{itemize}
+\item Aplikačný server~-- rieši prvý a tretí bod
+\item LLM server~-- rieši druhý bod
+\end{itemize}
+
+Dôvod rozdelenia si vysvetlíme ďalej v tejto kapitole.
+
+\section{Výber technológií pre aplikačný server}
+
+Na~implementáciu aplikačného servera je vhodné použiť jazyk~C\# v~kombinácii s~frameworkmi ASP.NET Core a~Entity Framework Core. Ide o~štandardnú a často používanú voľbu v~oblasti vývoja moderných webových aplikácií~\cite{top-backend-languages}, najmä v~prípade potreby silnej typovej kontroly a~integrácie s~relačnými databázami. Táto kombinácia poskytuje výhody v~podobe silného typového systému, ktorý prispieva k~znižovaniu behových chýb, ako aj pohodlného ORM (Object Relational Mapping) prístupu k~databáze. Vďaka využitiu Entity Framework Core a~prístupu \textit{Code First} nie je potrebné manuálne vytvárať SQL schémy~-- databázové tabuľky sú generované automaticky na~základe definícií v~kóde.
+
+Z~pohľadu databázovej vrstvy je vzhľadom na~zvolený .NET stack prirodzenou voľbou relačná databáza Microsoft SQL Server, ktorá sa v praxi často využíva spolu s vyššie uvedenými technológiami. Autor má s jazykmi C\# a~s~technológiami ASP.NET Core a~Entity Framework Core predchádzajúce skúsenosti, čo taktiež prispelo k~výberu tohto riešenia.
+
+\section{Výber technológií pre LLM server}
+
+Pre~implementáciu aplikačného servera v~súvislosti s~tretím bodom však dáva zmysel uvažovať o~použití jazyka Python, keďže ide o~jeden z~najrozšírenejších jazykov v~oblasti dátovej analýzy a~umelej inteligencie~\cite{top-data-science-languages}. Vďaka tomu je k~dispozícii široké spektrum knižníc a~nástrojov, ktoré môžu byť v~rámci implementácie efektívne využité.
+
+\subsection{Výber knižnice pre data profiling}
+
+Medzi najpoužívanejšie knižnice v~jazyku Python určené na~data profiling patria~\cite{data-profiling-packages}:
+
+\begin{itemize}
+\item \textbf{Great Expectations}~-- umožňuje validáciu a~profilovanie údajov~\cite{great-expectations}. Kľúčovým konceptom knižnice sú tzv.~\textit{expectations}, čo predstavujú deklaratívne tvrdenia o~vlastnostiach údajov~\cite{expectations}. Relevantná je najmä funkcionalita automatizovaného \href{https://legacy.017.docs.greatexpectations.io/docs/0.15.50/#automated-data-profiling}{profilovania údajov}. Hoci automatizované profilovanie generuje sadu expectations, medzi preddefinovanými možnosťami chýba analýza korelácií medzi stĺpcami. Tie však podľa analýzy požiadavkov chceme (viď~\ref{vizualizácia-dk}). Tento údaj je síce možné doplniť prostredníctvom vlastných expectations, ale~to vyžaduje prácu navyše. Okrem toho sa zdá má knižnica v~porovnaní s~inými pomerne strmú krivku učenia~\cite{learning-curve}.
+
+\item \textbf{Lux}~-- knižnica zameraná na~uľahčenie rýchlej a~intuitívnej exploratívnej analýzy údajov prostredníctvom automatizovaných vizualizácií. Po~vypísaní \texttt{DataFrame} v~Jupyter Notebooku poskytne knižnica návrhy vizualizácií, ktoré zvýrazňujú zaujímavé vzory v~dátach. Knižnica je vhodná najmä na~vizuálne skúmanie údajov. Vzhľadom na~to, že naším cieľom je získanie štruktúrovaných výstupov, ktoré môžu zlepšiť kvalitu promptovania, nie je táto knižnica pre~náš prípad vhodná.
+
+\item \textbf{DataProfiler}~-- knižnica určená na~jednoduchú analýzu údajov, monitorovanie a~zisťovanie rôznych údajov. Poskytuje štruktúrovaný výstup vo~formáte JSON, ktorý obsahuje požadované dáta, napr. koreláciu.
+
+\item \textbf{YData Profiling} (predošlý názov \textit{Pandas Profiling})~-- popredná knižnica na~profilovanie údajov, ktorá automatizuje tvorbu detailných správ obsahujúcich štatistiky a~vizualizácie. Rovnako ako v~prípade DataProfileru, aj tu je možné získať štruktúrovaný výstup s~relevantnými informáciami. Knižnica sa vyznačuje jednoduchosťou použitia a~možnosťou generovať výstup aj vo forme HTML reportu.
+\end{itemize}
+
+Na~základe uvedenej analýzy vyplýva, že pre naše účely sú najvhodnejšie knižnice \textbf{DataProfiler} a~\textbf{YData Profiling}. YData Profiling má oproti knižnici DataProfiler výhodu v~tom, že okrem JSON výstupu dokáže vygenerovať aj HTML report, ktorý by sa mohol používateľovi ponúknuť na~stiahnutie alebo~mu ho vizualizovať na~stránke. To síce nie je cieľom tejto práce, ale predstavuje to možné rozšírenie do budúcna. Preto sme sa rozhodli využiť knižnicu \textbf{YData Profiling}.
+
+\subsection{Obmedzenie typov knižnice YData Profiling}
+
+Knižnica YData Profiling rozlišuje deväť dátových typov~\cite{ydata-profiling-datatypes}, resp. desať ak rozlišujeme typy \texttt{Date} a~\texttt{DateTime}. V~rámci tejto práce sa obmedzíme len typy numerické, textové, kategorické a~na~dátumy. Typy ako napr. obrázky, neuvažujeme.
+
+\subsection{Výber knižnice pre prácu s LLM a RAG}
+
+Aby mohol asistent odpovedať na~otázky týkajúce sa konkrétneho datasetu, musí mať prístup k informáciám, ktoré o~ňom existujú. Tieto informácie môže získať prostredníctvom prístupu známeho ako \textit{Retrieval-Augmented Generation} (ďalej len RAG). RAG~\cite{rag} predstavuje metódu, ktorá zvyšuje presnosť a spoľahlivosť generatívnych modelov umelej inteligencie tým, že im poskytuje prístup ku~konkrétnym a~relevantným externým zdrojom údajov.
+
+Medzi najpopulárnejšie knižnice v~jazyku Python určené na~prácu s~veľkými jazykovými modelmi (LLM) a~prístupom RAG patria\textit{LlamaIndex} a~\textit{LangChain}. Pre~potreby tejto práce by bolo možné použiť ktorúkoľvek z~nich, prípadne aj ich kombináciu. Autor však nemá predchádzajúce skúsenosti ani s~jednou z~uvedených knižníc, a~preto by využitie kombinovaného riešenia zbytočne zvyšovalo komplexitu projektu.
+
+Z~dôvodu snahy o~zjednodušenie vývoja a~minimalizovanie začiatočnej záťaže bola zvolená len jedna z~možností~-- konkrétne \textit{LlamaIndex}. Tento nástroj sa orientuje predovšetkým na~oblasť efektívneho získavania dát z~rôznych zdrojov (\textit{data retrieval}), čo presne zodpovedá hlavnému prípadu použitia v~rámci tejto aplikácie~\cite{langchain-vs-llamaindex}.
+
+V~prípade, že sú k~dispozícii údaje, napríklad vo~forme CSV súborov ako v~našom prípade, ktoré chceme sprístupniť veľkému jazykovému modelu s~cieľom rozšírenia kontextu pri generovaní odpovedí, je potrebné z~týchto údajov vytvoriť index. Index~\cite{index} je dátová štruktúra, ktorá umožňuje rýchlo získať relevantný kontext pre~LLM na~odpovedanie použivateľského dotazu a~predstavuje základný pilier knižnice \textit{LlamaIndex}.
+
+\section{Výsledná architektúra}
+
+Pôvodným zámerom bolo vytvoriť aplikačný server s~využitím ASP.NET Core, pričom väčšina backendovej logiky mala byť implementovaná v jazyku C\#. V~prípadoch, keď by bolo potrebné interagovať s~veľkým jazykovým modelom (LLM), by C\# kód spúšťal Python skripty, ktoré by pomocou knižnice \textit{LlamaIndex} zabezpečovali komunikáciu s~LLM.
+
+Počas vývoja sa však ukázalo, že prístup volania Python scriptov zo~C\# kódu nie je z~časových dôvodov vhodný pre~niektoré operácie, napr.~generovanie odpovedí v~rámci chatu. Problém spočíva v~tom, že pri~každom spustení Python skriptu dochádza k~opätovnému načítaniu a~inicializácii všetkých potrebných knižníc, čo spôsobuje výrazné spomalenie celej operácie.
+
+Ako riešenie tohto problému bolo navrhnuté vytvorenie samostatného LLM servera, ktorý zabezpečí jednorazové načítanie a~inicializáciu všetkých potrebných knižníc pri~spustení. Vďaka tomu je možné následne obsluhovať jednotlivé požiadavky efektívne, bez zbytočného opakovania úvodných operácií.

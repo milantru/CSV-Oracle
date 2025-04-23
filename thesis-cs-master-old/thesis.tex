@@ -8,12 +8,12 @@
 
 %% Verze pro jednostranný tisk:
 % Okraje: levý 40mm, pravý 25mm, horní a dolní 25mm
-% (ale pozor, LaTeX si k levému a hornímu sám přidává 1in=25.4mm)
+% (ale pozor, LaTeX si sám přidává 1in)
 \documentclass[12pt,a4paper]{report}
 \setlength\textwidth{145mm}
 \setlength\textheight{247mm}
-\setlength\oddsidemargin{14.6mm}
-\setlength\evensidemargin{14.6mm}
+\setlength\oddsidemargin{15mm}
+\setlength\evensidemargin{15mm}
 \setlength\topmargin{0mm}
 \setlength\headsep{0mm}
 \setlength\headheight{0mm}
@@ -24,7 +24,7 @@
 % \documentclass[12pt,a4paper,twoside,openright]{report}
 % \setlength\textwidth{145mm}
 % \setlength\textheight{247mm}
-% \setlength\oddsidemargin{14.6mm}
+% \setlength\oddsidemargin{14.2mm}
 % \setlength\evensidemargin{0mm}
 % \setlength\topmargin{0mm}
 % \setlength\headsep{0mm}
@@ -35,8 +35,8 @@
 % \documentclass[12pt,a4paper]{report}
 % \setlength\textwidth{145mm}
 % \setlength\textheight{247mm}
-% \setlength\oddsidemargin{7.1mm}
-% \setlength\evensidemargin{7.1mm}
+% \setlength\oddsidemargin{10mm}
+% \setlength\evensidemargin{10mm}
 % \setlength\topmargin{0mm}
 % \setlength\headsep{0mm}
 % \setlength\headheight{0mm}
@@ -129,17 +129,10 @@
 
 %%% Jednotlivé kapitoly práce jsou pro přehlednost uloženy v samostatných souborech
 \include{uvod}
-\include{todonazov}
-\include{related-work}
-\include{analyza-poziadavkov}
-\include{dizajn}
-\include{implementacia}
-\include{experimenty}
-
-%\include{kap01}
-%\include{kap02}
-%\include{kap03}
-%\include{kap04}
+\include{kap01}
+\include{kap02}
+\include{kap03}
+\include{kap04}
 
 \include{zaver}
 
@@ -156,12 +149,12 @@
 
 %%% Použité zkratky v práci (opět nemusí být nutné uvádět)
 %%% U matematických prací může být lepší přemístit seznam zkratek na začátek práce.
-%\chapwithtoc{Seznam použitých zkratek}
+\chapwithtoc{Seznam použitých zkratek}
 
 %%% Součástí doktorských prací musí být seznam vlastních publikací
-%\ifx\ThesisType\TypePhD
-%\chapwithtoc{Seznam publikací}
-%\fi
+\ifx\ThesisType\TypePhD
+\chapwithtoc{Seznam publikací}
+\fi
 
 %%% Přílohy k práci, existují-li. Každá příloha musí být alespoň jednou
 %%% odkazována z vlastního textu práce. Přílohy se číslují.
@@ -174,14 +167,8 @@
 %%% Povolené formáty souborů specifikuje opatření rektora č. 72/2017.
 %%% Výjimky schvaluje fakultní koordinátor pro zavěrečné práce.
 \appendix
-\chapter{Prílohy}
+\chapter{Přílohy}
 
-\section{Príloha 1}
-
-TODO: ako naisnalovat, rozbehnut program.
-
-\section{Príloha 2}
-
-TODO: tutorial textovy a obrazky (na tjeobrzovke mas ako ulozis dataset atd).
+\section{První příloha}
 
 \end{document}

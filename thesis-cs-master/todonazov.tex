@@ -1,0 +1,37 @@
+\chapter{Dátové zdroje}
+
+Výsledná aplikácia bude pracovať s~CSV súbormi, teda tabuľkami obsahujúcimi hodnoty oddelené čiarkou. Pre~získanie datasetov využijeme \textit{Open Data}.
+
+\section{Open data}
+
+\textit{Open Data}~\cite{opendata}, alebo otvorené dáta, sú dáta zverejňované spôsobom umožňujúcim diaľkový prístup v~otvorenom a~strojovo čitateľnom formáte, ktorých spôsob ani~účel následného použitia nie je obmedzený. Dáta sú evidované v~Národnom katalógu otvorených dát. Otvorené dáta musia byť predovšetkým:
+
+\begin{enumerate}
+\item Prístupné ako dátové súbory v~strojovo čitateľnom a~otvorenom formáte s~úplným a~aktuálnym obsahom databázy alebo~agregovanou štatistikou
+\item Opatrené neobmedzujúcimi podmienkami použitia
+\item Evidované v~Národnom katalógu otvorených dát~(NKOD) ako priame odkazy na dátové súbory
+\item Opatrené dokumentáciou
+\item Dostupné na~stiahnutie bez~technických prekážok (registrácia, obmedzenie počtu prístupov, CAPTCHA a~pod.)
+\item Pripravené s~cieľom čo najjednoduchšieho strojového spracovania programátormi a~pod.
+\item Opatrené kontaktom na~kurátora pre~spätnú väzbu (chyby, žiadosť o~rozšírenie a~pod.)
+\end{enumerate}
+
+V~tejto práci budeme z~otvorenych dát využívať konkrétne datasety:
+\begin{enumerate}
+\item \href{https://data.gov.cz/datov\%C3\%A1-sada?iri=https\%3A\%2F\%2Fdata.gov.cz\%2Fzdroj\%2Fdatov\%C3\%A9-sady\%2F00024341\%2Fc5b85b8c662a72b9c0c13bea4a098448}{COVID-19 dataset}~-- Dátová sada pozostávajúca z~jedného CSV súboru obsahujúca rôzne typy meraní z~obdobia pandémie ochorenia COVID-19, ako napríklad denné počty nakazených, vyliečených osôb, úmrtí a~ďalšie súvisiace údaje.
+\item \href{https://data.europa.eu/data/datasets/92437de0-a730-428a-921d-1d9c418072d6?locale=en}{Population structure 2011}~-- Táto dátová sada obsahuje rôzne štatistické údaje o~štruktúre obyvateľstva v~Hanseatic a~University City of Rostock.
+\end{enumerate}
+
+Prvý dataset pozostáva z~jedného CSV súboru, ku~ktorému je k dispozícii aj schéma. V~tomto prípade ide konkrétne o~schému vo~formáte CSVW~\cite{csvw} (CSV on the Web). CSVW je štandard určený na opis a štruktúrovanie obsahu CSV tabuliek, čím uľahčuje ich interpretáciu a~spracovanie.
+
+Druhý dataset, ktorý patrí medzi tzv.~high-value datasets, pozostáva z~ viacerých súborov, z~ktorých v~rámci tejto práce budú využité nasledovné štyri:
+\begin{itemize}
+\item \texttt{bevoelkerungsstruktur\_2011\_haushaltsstruktur.csv} (Budget struc\-tu\-re 2011)
+\item \texttt{bevoelkerungsstruktur\_2011\_alter.csv} (Population by age 2011)
+\item \texttt{bevoelkerungsstruktur\_2011\_geschlecht.csv} (Po\-pu\-la\-ti\-on\newline by gen\-der 2011)
+\item \texttt{bevoelkerungsstruktur\_2011\_staatsangehoerigkeit.csv} (Po\-pu\-la\-ti\-on\newline by na\-ti\-o\-na\-li\-ty 2011)
+\end{itemize}
+
+\section{High-value datasety}
+
+\textit{High-value datasety}\cite{highvaluedatasets}, alebo~datasety s~vysokou pridanou hodnotou, sú definované ako údaje, ktorých opätovné použitie prináša významné prínosy pre~spoločnosť a~hospodárstvo. Typicky zahŕňajú geopriestorové údaje, údaje z~pozorovania Zeme a~o~životnom prostredí, meteorologické údaje, štatistické údaje, údaje o~spoločnostiach a~ich vlastníckych vzťahoch, ako aj údaje o~mobilite. Cieľom ich sprístupnenia je výrazne znížiť prekážky vstupu na~európsky trh založený na~údajoch a~zároveň zvýšiť objem opätovne využívaných dát.

@@ -1,0 +1,90 @@
+\chapter*{Úvod}
+\addcontentsline{toc}{chapter}{Úvod}
+
+\section{Cieľ práce}
+
+Cieľom diplomovej práce je navrhnúť a implementovať systém pre softvérových inžinierov, ktorý po nahraní CSV datasetu pomôže jeho lepšiemu pochopeniu a zároveň poskytne podporu pri rozhodovaní, či je daný dataset vhodný na ďalšie použitie. Systém umožní zhodnotiť, či dataset obsahuje relevantné údaje a či ho možno použiť na splnenie zámeru softvérového inžiniera (napr. vytvorenie softvéru).
+
+Priebeh (flow) programu:
+\begin{itemize}
+\item Užívateľ nahrá CSV dataset
+\item Pustí sa naň data profiling
+\item Z výsledku data profilingu si vezmeme potrebné info.
+\item Použijeme predpripravené prompty spolu s výsledkom data profilngu na vympromptovanie ľubovoľného LLM a získame tak info o datasete
+\item Info o datasete zobrazíme užívateľovi a umožníme mu pýtať sa ďalej na otázky ohľadom datasetu
+\item Pri chatovaní sa môžu objaviť nové informácie o datasete, tie sa majú rozpoznať a zobraziť pri už existujúcich (môžu sa prepísať/zhrnúť, aby spolu dávali zmysel, a aby neboli napr. 2 rovnaké vety)
+\end{itemize}
+
+\subsection{Pridaná hodnota}
+
+Prečo využivať OracleCSV, nestačí ChatGPT? Teoreticky áno, stačilo by keby užívateľ využil ChatGPT a dostal by podobný výsledok. Pridaná hodnota OracleCSV spočíta v tom, že v prvej fázy systém pomocou predpripravených promptov získa bohaté info o datasete. Užívateľ si ich nemusí vymýšľať sám a ani nemusí vedieť ako sa robí data profiling, čiže dochádza k úspore času i úsilia. Ďalej užívateľovi umožníme rozprávať sa o dasete, pričom si ńebude musieť robiť poznámky, pretože systém mu ich (dokonca zosuamrizované) spíše zaňho.
+
+\section{High-value datasety}
+
+Otvorené dáta sú XYZ, sú zdarma, môžeme využívať. Existujú datasety, ktoré boli označené, že majú "vysokú hodnotu", volajú sa high-value datasety. Asi využijeme práve nejaký high-value dataset. Plus niekedy teraz v roku 2024 myslím, že vychádza zákon, že štáty EU musia vytvárať také datasety.
+
+\section{Predpoklad anglicky hovoriaceho užívateľa}
+
+Ako zistíme jazyk užívateľa? Predstava: Vykonajú sa predvytvorené prompty, získané info sa zobrazí v angličtine? Jazyk vieme získať z inputu, konkrétne z "Additional info" alebo "User view". Ale "Additional info" nemusí byť v jazyku užívateľa (možno ani view?). Návrhy:
+\begin{itemize}
+\item Užívateľ ako input zadá jazyk (príp. sa vezme z jazyku stránky ak viacjazyčná, ale to asi nebude, lebo to neni náš cieľ)
+\item Prvý sa ozve užívateľ a z toho vydedukujeme jeho jazyk (Ako by užívateľ začal? Čo ak z view sa dá zistiť užívateľova otázka/odpoveď)
+\item Začneme defaultne v angličtine (teda aj zistené info promptami bude vypísané v angličtine) a jazyk zmeníme:
+\begin{itemize}
+\item ak si to užívateľ vyžiada
+\item vždy keď detekujeme zmenu jazyka (príde mi čudné ak by to systém stále text prekladal, čo ak by kvôli neustálym prekladom vznikli chyby?)
+\end{itemize}
+\item Obmedzíme sa len na angličtinu (momentálne je v inštrukciách, že užívateľ hovorí anglicky)
+\end{itemize}
+
+\section{Výber knižnice pre data profiling}
+
+Pre data profiling si volim Python, kvôli množstvu knižníc a kvôli možnosti rýchlo a pohodlne napísať potrebný kód. Medzi najpouzivanejsie Python kniznice patria podla \href{https://medium.com/@seckindinc/data-profiling-with-python-36497d3a1261}{tohto blogu}:
+
+\begin{itemize}
+\item Great expectations -- umoznuje validaciu a data profiling (vid \href{https://legacy.017.docs.greatexpectations.io/docs/0.15.50/}{tu}), hlavnym aspektom, ktory kniznica zavadza su expectations. Ide o tvrdenia o nasich datach (\href{https://legacy.017.docs.greatexpectations.io/docs/0.15.50/#expectations}{vid viac tu}). Nas by zaujimala funkcionalita automatickeho data profilingu (vid \href{https://legacy.017.docs.greatexpectations.io/docs/0.15.50/#automated-data-profiling}{tu}), ktory automaticky vygeneruje sadu tzv. expectations. My by sme okrem ineho potrebovali zistovat korelacie medzi stlpcami, ale nikde medzi expectations nevidim corelacie (vid \href{https://legacy.017.docs.greatexpectations.io/docs/0.15.50/#automated-data-profiling}{tu}). Sice sa daju aj vlastne expectatiosn vyrobit, ale ide o pracu navyse. Okrem sa zda ze pouzivanie tejto kniznice (oproti iným) ma pre nas use case zbytocne strmu learning curve (podoprene vyrokom v Cons \href{https://paul-fry.medium.com/data-profiling-using-great-expectations-17776f140cdc#59d3}{tu}).
+
+\item \href{https://github.com/lux-org/lux}{Lux} -- ide o knižnicu, ktorá uľahčuje rýchle a jednoduché skúmanie údajov automatizáciou procesu vizualizácie a analýzy údajov. Jednoduchým vypísaním `DataFramu` v Jupyter notebooku Lux odporučí súbor vizualizácií, ktoré zvýrazňujú zaujímavé trendy a vzory v súbore údajov. Knižnica sa svojími vizualizáciami hodí skôr na exploráciu dát. Naším cieľom nie sú vizualizácie, ale získanie štrukturovaných informácií, ktorými môžeme zlepšiť kvalitu promptovania. Zdá sa, že knižnica neposkytuje možnosť vypísať analýzu v json formáte. 
+
+\item \href{https://github.com/capitalone/DataProfiler}{DataProfiler} -- knižnica určená na jednoduchú analýzu údajov, monitorovanie a zisťovanie citlivých údajov. Pomocou nej môžeme vytvoriť štrukturovaný report v jsone, ktorý by obsahoval požadované dáta (napr. koreláciu).
+
+\item \href{https://docs.profiling.ydata.ai/latest/}{YData Profiling} (stary nazov Pandas Profiling) -- popredná knižnica na profilovanie údajov, ktorá automatizuje a štandardizuje vytváranie podrobných správ so štatistikami a vizualizáciami. Pomocou nej vieme podobne ako v prípade knižnice DataProfiler vytvoriť štrukturované dáta s dostatočnými informáciami. Knižnica sa ľahko využíva (píšu aj na stránke), navyše vie vygenerovať aj HTML output.
+\end{itemize}
+
+Z analýzy knižníc vyplýva, že na naše účely sa hodia knižnice Data Profiler a YData Profiling. YData Profiling oproti Data Profileru dokáže vygenerovať aj HTML report, ktorý by sme teoreticky mohli užívateľovi ponúknuť na stiahnutie alebo mu ho vizualizovať na separátnej stránke. Pre naše účely si preto vyberáme YData Profiling.
+
+\subsection{Obmedzenia}
+
+Vybrali sme si teda knižnicu YData Profiling. \href{https://docs.profiling.ydata.ai/latest/getting-started/concepts/#data-types}{Podľa dokumentácie} existuje 9 typov (resp. 10 ak rozlišujeme \verb|Date| a \verb|DateTime|). My nebudeme pokrývať všetky typy, napr. Image neuvažujeme. Predpokladáme dáta numerické, textové, kategorické a aj dátumy. Fungovanie s inými typmi sa nevylučuje, ale neboli vyskúšané.
+
+\section{Spracovanie textového stĺpca}
+
+Data profiling nám poskytuje množstvo informáciím Medzi nimi nám pre textové stĺpce poskytuje informáciu aké hodnoty a v akom počte sa v stĺpci vyskytujú. Na základe týchto informácií by mohlo LLM lepšie určiť význam stĺpca. Problémom je, že takáto informácia môže byť teoreticky príliŠ veľká na to, aby sme ju mohli poskytnúť jazykovému modelu (nevojde sa do context window). Avšak existujú rôzne lingvistické metódy, ktoré by nám mohli pomôcť. ChatGPT navrhol tieto možnosti:
+
+\begin{enumerate}
+\item Term Frequency–Inverse Document Frequency (TF-IDF)
+Explanation: TF-IDF is a statistical measure used to evaluate how important a word is to a document in a collection. In your case, it can be used to find the most characteristic words in your text column, helping to highlight what the column is generally about.
+How it helps: By identifying the highest-scoring terms (with high TF-IDF values), you can summarize the most relevant words in the column. You could then take a subset of the top terms and their counts to feed into a language model, making it easier for the model to generate a summary.
+\item Topic Modeling (e.g., LDA)
+Explanation: Topic modeling algorithms, like Latent Dirichlet Allocation (LDA), can identify topics within a collection of documents. Each “topic” is essentially a group of words that frequently occur together.
+How it helps: By extracting a small number of main topics from the column, you can summarize the types of content that are most prevalent. The model would output a set of topics, each with related words, giving you insight into what the column represents. You can further analyze the top few topics to form a meaningful description of the column.
+\item Word Embedding Clustering
+Explanation: Word embeddings, such as those from Word2Vec, GloVe, or more recent embeddings like BERT, represent words as vectors based on their context in a large text corpus. By clustering these embeddings, you can group similar values together.
+How it helps: After clustering similar terms, you can look at representative words from each cluster to get a sense of the main themes. This technique works well when there is a lot of variation in the values, as it helps reduce the data down to clusters that capture the core concepts.
+\item Named Entity Recognition (NER)
+Explanation: Named Entity Recognition is an NLP technique for identifying entities in text, such as names, organizations, dates, locations, etc.
+How it helps: By running NER on your values, you could detect patterns or the types of entities present in the column, which could inform you about its content. For example, if NER reveals that many values are place names or organization names, this could indicate that the column may represent locations or affiliations.
+\item Frequent Pattern Mining
+Explanation: Techniques like Apriori or FP-Growth algorithms are typically used for association rule learning but can also be applied to text data.
+How it helps: These techniques can identify patterns or frequent word combinations within your values. By finding recurring word sequences or frequent co-occurrences, you can highlight core elements in the column that might signify its meaning.
+\item Text Summarization with Extractive Methods
+Explanation: Extractive summarization techniques (e.g., TextRank) can help in summarizing key parts of a text by extracting the most representative phrases.
+How it helps: By running a summarization algorithm on a sample of the values in your column, you can get concise phrases that capture the essence of the column’s content. This can reduce the length and complexity of the data fed into an LLM for further summarization or interpretation.
+\item Similarity Measures for Value Grouping (Cosine Similarity, Levenshtein Distance)
+Explanation: Using similarity measures, you can group text values based on how similar they are, which is particularly useful for categorizing variations of the same term.
+How it helps: Grouped values can be represented by a central or most common value, reducing the number of unique items. This allows you to create a shorter list of representative values to understand what types of information the column holds.
+\end{enumerate}
+
+Teoreticky môžeme techniky aj kombinovať, ale keďže toto nie je hlavným cieľom práce, tak sa obmedzíme na využitie iba jednej techniky.
+
+NER by som vyradil, pretože naco je by nám bolo identifikovanie entít, veď to by pre LLM nemalo byť problém. Modely ako napr. BERT by som tiež nevyužíval, lebo nevieme aký jazyk bude v stĺpci. Síce existujú multilinguálne modely, ale pokrývajú úplne vŠetky jazyky? Asi nie, čo?

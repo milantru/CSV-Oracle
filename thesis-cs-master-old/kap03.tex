@@ -4,7 +4,7 @@
 
 Používání tabulek a grafů v~odborném textu má některá společná
 pravidla a~některá specifická. Tabulky a grafy neuvádíme přímo do
-textu, ale umístíme je buď na samostatné stránky, nebo na vyhrazené
+textu, ale umístíme je buď na samostatné stránky nebo na vyhrazené
 místo v~horní nebo dolní části běžných stránek. \LaTeX\ se o~umístění
 plovoucích grafů a tabulek postará automaticky.
 
@@ -143,7 +143,7 @@ int main(void)
 \Function{IsPrime}{$x$}
 	\State $r \gets \mbox{rovnoměrně náhodné celé číslo mezi 2 a~$x-1$}$
 	\State $z \gets x \bmod r$
-	\If{$z=0$}
+	\If{$z>0$}
 		\State Vrátíme \textsc{ne} \Comment{Našli jsme dělitele}
 	\Else
 		\State Vrátíme \textsc{ano} \Comment{Možná se mýlíme}
