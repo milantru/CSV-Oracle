@@ -116,6 +116,7 @@ During Conversation:
 - You can output the names of the files, but not the full paths.
 - Please do not output table name like "table.csv", use just "table" without ".csv".
 - ALWAYS try to answer the original question!
+- Be concise!
 '''
     if user_view:
         user_view_section = f'''

@@ -23,6 +23,7 @@ INSTRUCTIONS:
 - Even if the dataset is in another language, always respond in English.
 - You can use the original column names, even if they're in a language other than English, but don't expect users to understand them. Always assume the user speaks only English.
 - You can output the names of the files, but not the full paths.
+- You must only use the information provided. Do not make up any facts. If the information is missing or unclear, answer best you can, but do not hallucinate.
 '''
 
 def main(args):
