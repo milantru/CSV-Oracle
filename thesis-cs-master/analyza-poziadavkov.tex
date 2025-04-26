@@ -1,31 +1,16 @@
 \chapter{Analýza požiadaviek}
 \label{requirements-analysis}
 
-V~tejto kapitole budú predstavené funkcionality aplikácie, ktoré bude môcť používateľ využívať. Ide o~popis funkčných požiadaviek systému. V~jednotlivých podkapitolách budú tieto funkcionality špecifikované prostredníctvom \textit{user stories}, pričom v~niektorých prípadoch bude doplnený aj návrh užívateľského rozhrania~(UI).
+V~tejto kapitole budú predstavené požiadavky na~systém. Osobitne budú vymenované funkčné a~nefunkčné požiadavky.
 
-\section{Autentifikácia}
+\section{Funkčné požiadavky}
 
-Každý používateľ bude mať možnosť vytvoriť si vlastný chat o~vlastnom datasete. Na~tento účel však bude potrebné, aby aplikácia rozpoznala o~akého používateľa ide. Preto si definujeme nasledujúce scénare:
+Táto podkapitola predstavuje funkcionality, ktoré bude môcť používateľ využívať v~aplikácii. Požiadavky budú špecifikované prostredníctvom \textit{user stories}.
 
-\begin{enumerate}
-\item Ako \textbf{neprihlásený užívateľ} sa môžem \textbf{registrovať}, aby \textbf{som mohol využívať zbytok funkcionalít aplikácie}.
-\item Ako \textbf{prihlásený užívateľ} sa môžem \textbf{odhlásiť}, aby \textbf{iný užívateľ nevyužíval môj účet a mohol využívať vlastný}.
-\item Ako \textbf{prihlásený užívateľ} môžem \textbf{nahrať dataset}, aby \textbf{iný užívateľ nevyužíval môj účet}.
-\end{enumerate}
+\subsection{Dataset}
+\label{dataset}
 
-Po~príchode na~stránku sa používateľovi zobrazí formulár, ktorý mu umožní prihlásiť sa, prípadne prejsť na~ďalší formulár pre~registráciu. Na~registráciu a~následné prihlásenie bude používateľovi stačiť emailová adresa a~heslo (viď obr.~\ref{csv-oracle-ui-navrh-login}). Po~prihlásení sa bude môcť používateľ odhlásiť kliknutím na~tlačidlo odhlásenia, ktoré sa bude nachádzať vždy v pravom hornom rohu.
-
-Taktiež sa bude v~pravom hornom rohu vždy nachádazať aj odkaz na~stránku profilu používateľa, kde si bude môcť skontrolovať svoj email a~v~prípade potreby ho upraviť. Rovnako bude mať možnosť zmeniť si aj heslo. Hodnota aktuálneho hesla sa však z~bezpečnostných dôvodov zobrazovať nebude.
-
-\begin{figure}[H]\centering
-\includegraphics[width=140mm]{img/csv-oracle-ui-navrh-login}
-\caption{Návrh prihlasovacej obrazovky.}
-\label{csv-oracle-ui-navrh-login}
-\end{figure}
-
-\section{Dataset}
-
-Keďže základom aplikácie je práca s~datasetmi, nasledujú používateľské scenáre, ktoré ilustrujú kľúčové funkcionality systému:
+Jedným zo~základných pilierov aplikácie je práca s~datasetmi. Preto nasledujú používateľské scenáre, ktoré ilustrujú funkcionality systému týkajúce sa datasetov:
 
 \begin{enumerate}
 \item Ako \textbf{prihlásený používateľ} môžem:
@@ -35,27 +20,23 @@ Keďže základom aplikácie je práca s~datasetmi, nasledujú používateľské
 \item \textbf{určiť separátor a~kódovanie súboru},
 \end{itemize}
 aby \textbf{mohla aplikácia dataset analyzovať, a~aby som si ho mohol nechať vysvetliť}.
-\item Ako \textbf{prihlásený používateľ} si môžem \textbf{zobraziť všetky moje datasety}, aby \textbf{som si niektorý z~nich mohol zvoliť}.
+
+\item Ako \textbf{prihlásený používateľ} si môžem \textbf{zobraziť všetky moje nahrané datasety}, aby \textbf{som si niektorý z~nich mohol zvoliť}.
+
 \item Ako \textbf{prihlásený používateľ} si môžem \textbf{zvoliť konkrétny dataset}, aby \textbf{som si zobrazil chaty o~zvolenom datasete}.
+
 \item Ako \textbf{prihlásený používateľ} môžem \textbf{odstrániť dataset}, aby \textbf{som sa zbavil datasetov, ktoré už pre~mňa nie sú relevantné}.
 \end{enumerate}
 
-Formulár pre~vytvorenie datasetu bude umiestnený na~samostatnej stránke. Na~zobrazovanie existujúcich datasetov, ich výber a~mazanie bude slúžiť iná stránka, na~ktorej budú datasety zobrazené v~centrálnom paneli. Na~pravej strane bude umiestnené tlačidlo vedúce k~stránke s~formulárom pre~nahratie nového datasetu. Po~výbere datasetu sa zobrazí jeho detail spolu s~tlačidlom ,,Choose dataset``, ktoré používateľovi umožní prejsť na~stránku obsahujúcu chaty o~zvolenom datasete (viď obr.~\ref{csv-oracle-ui-navrh-datasets}).
-
-\begin{figure}[H]\centering
-\includegraphics[width=140mm]{img/csv-oracle-ui-navrh-datasets}
-\caption{Návrh stránky s datasetmi.}
-\label{csv-oracle-ui-navrh-datasets}
-\end{figure}
-
-\section{Chat}
+\subsection{Chat}
 \label{chat}
 
-Akonáhle užívateľ zvolí dataset, dostane sa na~stránku, kde sa budú nachádzať chaty o~zvolenom datasete. V~tejto časti aplikácie existujú nasledovné scénare:
-
+Akonáhle má používateľ zvolený dataset, bude môcť pracovať s~chatmi týkajúcimi sa zvoleného datasetu. Nasledujú scénare týkajúce sa chatov:
 \begin{enumerate}
 \item Ako \textbf{prihlásený používateľ} si môžem \textbf{vytvoriť chat o~zvolenom datasete}, aby \textbf{som sa mohol rozprávať o~zvolenom datasete}.
+
 \item Ako \textbf{prihlásený používateľ} si môžem \textbf{zobraziť chaty o~zvolenom datasete}, aby \textbf{som sa mohol dostať k~požadovanému chatu}.
+
 \item Ako \textbf{prihlásený používateľ} si môžem \textbf{zvoliť chat}, aby:
 \begin{itemize}
 \item \textbf{som si mohol čítať správy chatu},
@@ -63,42 +44,66 @@ Akonáhle užívateľ zvolí dataset, dostane sa na~stránku, kde sa budú nach�
 \item \textbf{som mohol prezerať DK},
 \item \textbf{som mohol požiadať asistenta o~úpravu DK}.
 \end{itemize}
+
 \item Ako \textbf{prihlásený používateľ} môžem \textbf{odstrániť chat}, aby \textbf{som sa zbavil chatov, ktoré už pre~mňa nie sú relevantné}.
 \end{enumerate}
 
-Formulár pre~vytvorenie chatu bude umiestnený na~samostatnej stránke a~bude obsahovať políčka pre~zadanie názvu a~voliteľného \textit{user view}. Pomocou \textit{user view} môže používateľ špecifikovať ako dataset vníma, ako sa naň pozerá, môže tu špecifikovať na~čo chce daný dataset využiť. Vzorovým príkladom \textit{user view} by mohlo byť napríklad: ,,I want to use this dataset to create a simple dashboard with charts that show how COVID-19 developed over time, e.g. cases, deaths, and recoveries.``
+\subsection{DK}
+\label{dk}
 
-Na~zobrazenie existujúcich chatov, ich výber, mazanie a~samotné chatovanie s~asistentom bude slúžiť iná stránka (viď obr.~\ref{csv-oracle-ui-navrh-chats}). V~ľavej hornej časti tejto stránky sa budú nachádzať tlačidlá ,,Späť``, ktoré vrátia používateľa na~stránku s~datasetmi, a~tlačidlo na~vytvorenie nového chatu nad~zvoleným datasetom. Po~kliknutí naň bude používateľ presmerovaný na~stránku s~formulárom pre~vytvorenie nového chatu. Okrem týchto dvoch tlačidiel sa bude v~ľavej časti stránky zobrazovať zoznam existujúcich chatov nad aktuálne vybraným datasetom. Každý záznam v~zozname bude obsahovať aj tlačidlo na~jeho odstránenie. Po~výbere konkrétneho chatu sa budú v~pravej časti stránky zobrazovať správy tohto chatu. V~spodnej časti stránky sa bude nachádzať políčko a~tlačidlo na~napísanie a~odoslanie novej správy. Taktiež sa tu bude nachádzať tlačidlo na~zobrazenie/skrytie DK. V~prípade, že bude DK zobrazená, priestor pre~chat sa obmedzí na hornú polovicu obrazovky, zatiaľ čo dolnú polovicu zaberie DK (viď obr.~\ref{csv-oracle-ui-navrh-chats}).
-
-\begin{figure}[H]\centering
-\includegraphics[width=140mm]{img/csv-oracle-ui-navrh-chats}
-\caption{Návrh stránky s chatmi.}
-\label{csv-oracle-ui-navrh-chats}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=140mm]{img/csv-oracle-ui-navrh-datasets}
-\caption{Návrh stránky s chatmi (DK zobrazená). \textbf{TODO}}
-\label{csv-oracle-ui-navrh-datasets}
-\end{figure}
-
-\subsection{Vizualizácia DK}
-\label{vizualizácia-dk}
-
-Vizualizácia by mala ideálne obsahovať:
+DK by mala ideálne obsahovať:
 \begin{itemize}
 \item opis datasetu ako celku, teda o~čom je a~čo reprezentuje
+
 \item pre~každú tabuľku:
 \begin{itemize}
 \item opis tabuľky
 \item vzorové riadky, teda reálne hodnoty z~tabuliek
 \item pre~každý stĺpec:
 \begin{itemize}
+
 \item opis stĺpca, aké hodnoty reprezentuje
+
 \item dôvod prečo v~stĺpci chýbajú hodnoty, ak chýbajú
+
 \item hodnota a~dôvod korelácie, ak hodnota korelácie s~iným stĺpcom prekročí hodnotu~$0,5$
 \end{itemize}
 \end{itemize}
 \end{itemize}
 
-Údaje budú výsledkom analýzy, ktorá prebehne po~nahratí datasetu. Konkrétne budú generované pomocou data profilovania a~promptovania veľkého jazykového modelu (LLM) s~využitím predpripravených promptov. LLM pritom bude mať prístup k~samotným tabuľkám aj k~reportu z~data profilingu. Môže sa stať, že model nebude schopný vygenerovať relevantnú odpoveď a~daný údaj bude preto vo~vizualizácii chýbať. Tento údaj však môže byť doplnený neskôr počas chatovania medzi používateľom a~asistentom.
+\section{Nefunkčné požiadavky}
+
+V nasledujúcom texte sú predstavené nefunkčné požiadavky.
+
+\subsection{Autentifikácia a~autorizácia}
+\label{auth-n-auth}
+
+Každý používateľ bude mať možnosť vytvoriť si vlastný chat o~vlastnom datasete. Na~tento účel však bude potrebné, aby aplikácia rozpoznala o~akého používateľa ide. Zároveň nie je žiadúce, aby aplikácia umožnila jednému používateľovi prístup k~obsahu patriacemu inému používatelovi. Preto potrebujeme, aby systém umožnil:
+\begin{enumerate}
+\item neprihlásenému používateľovi registráciu,
+\item registrovanému, ale~neprihlásenému, používateľovi prihlásenie,
+\item a~prihlásenému používateľovi odhlásenie.
+\end{enumerate}
+
+\section{Dátové profilovanie}
+
+V~kapitole~\ref{limitacie-llm} bolo spomenuté, že LLM majú obmedzené schopnosti uvažovania. Ak by sa používateľ opýtal na~otázky využívajúce výpočty, napr.~na~ priemernú hodnotu v~určitom stĺpci, asistent by nemusel odpovedať správne.
+
+Jedným z~riešení by bolo umožniť asistentovi využívať nástroj na~výpočet priemeru. Ak by však užívateľ chcel viac podobných údajov vyŽadujúcich výpočet, muselo by byť pridaných viacero nástrojov. Vysoký počet nástrojov by mohol spôsobovať LLM problémy pri výbere správneho nástroja~\cite{too-many-tools}. Ďalšou potenciálnou nevýhodou môže byť dĺžka výpočtu niektorých požadovaných údajov. V~prípade, že by sa hodnota vypočítavala pri každej požiadavke používateľa, mohlo by to negatívne ovplyvniť používateľskú skúsenosť.
+
+Ďalším možným riešením je vykonanie dátového profilovania, ktoré predstavuje proces analyzovania a~hodnotenia kvality, štruktúry a~obsahu dát. Výsledkom profilovania môžu byť údaje, ako napríklad minimálne a~maximálne hodnoty, priemerné hodnoty, korelácie, najčastejšie sa vyskytujúce hodnoty a~podobne. V~prípade zvolenia tejto možnosti by postačovalo vykonať dátové profilovanie iba raz a~výsledky uložiť. Pri~požiadavke používateľa na~niektorú hodnotu by tak bolo možné výsledok jednoducho načítať, bez potreby pridávania viacerých nástrojov asistentovi a~bez zdržania spôsobeného opakovanými výpočtami. Na~základe uvedených skutočností volíme toto riešenie.
+
+\section{Očakávaný priebeh využitia aplikácie}
+
+Po~vymenovaní požiadaviek na~systém sa teraz zameriame na~priebeh využitia základnej funkcionality aplikácie. Tento priebeh je nasledovný:
+\begin{enumerate}
+\item Používateľ sa zaregistruje a~prihlási do~aplikácie.
+\item Používateľ nahrá dataset pozostavajúci z~jedného alebo~viacerých CSV súborov, prípadne nahrá aj CSVW schému.
+\item Po~nahratí súborov sa vykoná analýza, t.j.:
+\begin{enumerate}
+\item spustí sa data profiling, ktorého výsledkom je report,
+\item z~reportu sa vezmú potrebné údaje, napr.~hodnoty korelácie, na~vytvorenie promptov (ďalej už len predpripravené prompty),
+\item predpripravené prompty sú využité na~promptovanie LLM, ktorý bude mať prístup k~nahraným CSV súborom, reportom, príp. aj k~CSVW schéme ak bola nahraná,
+\item výsledkom sú informácie o~datasete, pomocou ktorých sa vytvorí DK. \end{enumerate}
+\item Po~dokončení analýzy si používateľ zvolí dataset a~vytvorí nový chat, alternatívne zvolí existujúci, kde môže klásť otázky ohľadom datasetu a~asistent mu na~nich bude odpovedať.
+\item Ak sa pri~chatovaní objavia informácie, ktoré by chcel používateľ zapísať do~DK, môže o~to požiadať asistenta, a~ten DK aktualizuje. \end{enumerate}

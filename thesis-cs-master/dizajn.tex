@@ -1,25 +1,75 @@
 \chapter{Dizajn aplikácie}
 
-Priebeh využitia základnej funkcionality aplikácie je nasledovný:
-\begin{enumerate}
-\item Používateľ sa zaregistruje a~prihlási do~aplikácie.
-\item Používateľ nahrá dataset pozostavajúci z~jedného alebo~viacerých CSV súborov, prípadne nahrá aj CSVW schému.
-\item Po~nahratí súborov sa vykoná analýza, t.j.:
-\begin{enumerate}
-\item spustí sa data profiling, ktorého výsledkom je report
-\item z~reportu sa vezmú potrebné údaje, napr.~hodnoty korelácie, na~vytvorenie promptov (ďalej už len predpripravené prompty)
-\item predpripravené prompty sú využité na promptovanie veľkého jazykového modelu (LLM), ktorý bude mať prístup k~nahraným CSV súborom, data profiling reportom, príp. aj k~CSVW schéme ak bola nahraná
-\item výsledkom sú informácie o~datasete, pomocou ktorých sa vytvorí DK.
-\end{enumerate}
-\item Po~dokončení anlýzy si používateľ zvolí dataset a~vytvorí chat, alternatívne zvolí existujúci, kde môže klásť otázky ohľadom datasetu a~asistent mu na nich bude odpovedať.
-\item Ak sa pri chatovaní objavia informácie, ktoré by chcel používateľ zapísať do~DK, môže o~to požiadať asistenta, a~ten DK aktualizuje.
-\end{enumerate}
+Kvôli lepšej organizácií kódu bude aplikácia rozdelená na~viacero častí (viď obr.~\ref{containers}). Konkrétne pôjde o:
+\begin{itemize}
+\item \textbf{Frontend}\-- Užívateľské rozhranie, ktoré je prezentované používateľovi a~u\-mo\-žní mu interakciu so~systémom.
 
-Kvôli lepšej organizácií kódu si aplikáciu rozdelíme na~frontendovú a~backendovú časť. Frontendová časť pokryje používateľské rozhranie navrhnuté v~kap.~\ref{requirements-analysis} a~backendová časť pokryje zbytok logiky systému, napr.~prácu s~databázou.
+\item \textbf{Aplikačný server}\-- Prijíma používateľské žiadosti, ktoré prichádzajú z~Frontendu, tie spracuje a~vráti odpoveď. Spracovanie žiadosti môže zahŕňať čítanie dát z~databázy alebo~ich zápis do~databázy. Okrem toho môže spracovanie žiadostí vyžadovať využitie Python skriptov alebo~LLM Servera.
 
-\section{Frontend}
+\item \textbf{Databáza}\-- Slúži na~perzistentné uloženie dát ako sú napr.~emaily užívateľov, ich datasety a~chaty so~správami a~DK.
 
-V~aplikácii, napríklad pri~chatovaní alebo~úprave DK, bude potrebné dynamicky meniť používateľské rozhranie (UI). Štandardným a~populárnym prístupom pri~vývoji webových aplikácií s~dynamickým UI je použitie knižnice~\textit{React}~\cite{popular-frontend-frameworks}. Keďže nemáme žiadne iné požiadavky a~autor už má skúsenosti s~touto technológiou, volíme si práve túto možnosť.
+\item \textbf{Python skripty}\-- Skripty plniace rôzne funkcie, napr.~generovanie promptov využívaných v~analýze, práca s~LLM~atď.
+
+\item \textbf{LLM server}\-- Slúži predovšetkým na~generovanie odpovede asistenta.
+
+\item \textbf{Úložisko kolekcií}\-- Slúži na~uloženie zdrojov informácií z~používateľom nahraných dát.
+\end{itemize}
+
+\begin{figure}[H]\centering
+\includegraphics[height=100mm]{img/containers}
+\caption{Návrh architektúry systému.}
+\label{containers}
+\end{figure}
+
+\section{Návrh obrazoviek}
+
+Podkapitola predstavuje návrhy jednotlivých obrazoviek, resp.~stránok. Podrobnejšie opisy stránok obsahujúcich iba formulár budú vzhľadom na~ich jednoduchosť vynechané.
+
+\subsection{Registrácia, prihlásenie a~odhlásenie}
+
+V~časti~\ref{auth-n-auth} je špecifikované, že systém má používateľovi umožniť registráciu, prihlásenie a odhlásenie. Po~príchode na~úvodnú stránku sa preto používateľovi zobrazí formulár, ktorý mu umožní prihlásiť sa, prípadne prejsť na~ďalší formulár pre~registráciu. Na~registráciu a~následné prihlásenie bude používateľovi stačiť emailová adresa a~heslo (viď obr.~\ref{csv-oracle-ui-navrh-login}). Po~prihlásení sa bude môcť používateľ odhlásiť kliknutím na~tlačidlo odhlásenia, ktoré sa bude nachádzať vždy v~pravom hornom rohu.
+
+Taktiež sa bude v~pravom hornom rohu vždy nachádazať aj odkaz na~stránku profilu používateľa, kde si bude môcť skontrolovať svoj email a~v~prípade potreby ho upraviť. Rovnako bude mať možnosť zmeniť si aj heslo. Hodnota aktuálneho hesla sa však z~bezpečnostných dôvodov zobrazovať nebude.
+
+\begin{figure}[H]\centering
+\includegraphics[width=140mm]{img/csv-oracle-ui-navrh-login}
+\caption{Návrh prihlasovacej obrazovky.}
+\label{csv-oracle-ui-navrh-login}
+\end{figure}
+
+\subsection{Datasety}
+
+V~časti~\ref{dataset} bolo špecifikované, že používateľ bude môcť nahrať dataset s~ďalšími voliteľnými údajmi, že si bude môcť zobraziť všetky svoje nahrané datasety, zvoliť si nejaký z~nich, prípadne nejaký z~nich odstrániť. Preto bude existovať formulár pre~vytvorenie datasetu a~bude umiestnený na~samostatnej stránke. Na~zobrazovanie existujúcich datasetov, ich výber a~mazanie bude slúžiť iná stránka, na~ktorej budú datasety zobrazené v~centrálnom paneli. Na~pravej strane bude umiestnené tlačidlo vedúce k~stránke s~formulárom pre~nahratie nového datasetu. Po~výbere datasetu sa zobrazí jeho detail spolu s~tlačidlom ,,Choose dataset``, ktoré používateľovi umožní prejsť na~stránku obsahujúcu chaty o~zvolenom datasete (viď obr.~\ref{csv-oracle-ui-navrh-datasets}).
+
+\begin{figure}[H]\centering
+\includegraphics[width=140mm]{img/csv-oracle-ui-navrh-datasets}
+\caption{Návrh stránky s datasetmi.}
+\label{csv-oracle-ui-navrh-datasets}
+\end{figure}
+
+\subsection{Chaty}
+
+V~časti~\ref{chat} bolo špecifikované, že používateľ bude môcť vytvoriť chat o~zvolenom datasete, že si bude môcť nechať zobraziť všetky chaty o~zvolenom datasete, zvoliť a~využívať nejaký z~nich, čo zahŕňa okrem konverzovania s~asistentom i~používanie DK, príp.~nejaký z~chatov odstrániť.
+
+Preto bude existovať formulár pre~vytvorenie chatu a~bude umiestnený na~samostatnej stránke. Formulár bude obsahovať políčka pre~zadanie názvu a~voliteľného \textit{user view}. Pomocou \textit{user view} môže používateľ špecifikovať ako dataset vníma, ako sa naň pozerá, môže tu špecifikovať na~čo chce daný dataset využiť. Vzorovým príkladom \textit{user view} by mohlo byť napríklad: ,,I want to use this dataset to create a simple dashboard with charts that show how COVID-19 developed over time, e.g. cases, deaths, and recoveries.``
+
+Na~zobrazenie existujúcich chatov, ich výber, mazanie a~samotné chatovanie s~asistentom bude slúžiť iná stránka (viď obr.~\ref{csv-oracle-ui-navrh-chats}). V~ľavej hornej časti tejto stránky sa budú nachádzať tlačidlá ,,Späť``, ktoré vrátia používateľa na~stránku s~datasetmi, a~tlačidlo na~vytvorenie nového chatu nad~zvoleným datasetom. Po~kliknutí naň bude používateľ presmerovaný na~stránku s~formulárom pre~vytvorenie nového chatu. Okrem týchto dvoch tlačidiel sa bude v~ľavej časti stránky zobrazovať zoznam existujúcich chatov nad aktuálne vybraným datasetom. Každý záznam v~zozname bude obsahovať aj tlačidlo na~jeho odstránenie. Po~výbere konkrétneho chatu sa budú v~pravej časti stránky zobrazovať správy tohto chatu. V~spodnej časti stránky sa bude nachádzať políčko a~tlačidlo na~napísanie a~odoslanie novej správy. Taktiež sa tu bude nachádzať tlačidlo na~zobrazenie/skrytie DK. V~prípade, že bude DK zobrazená, priestor pre~chat sa obmedzí na hornú polovicu obrazovky, zatiaľ čo dolnú polovicu zaberie DK (viď obr.~\ref{csv-oracle-ui-navrh-chats-dk}).
+
+\begin{figure}[H]\centering
+\includegraphics[width=140mm]{img/csv-oracle-ui-navrh-chats}
+\caption{Návrh stránky s chatmi.}
+\label{csv-oracle-ui-navrh-chats}
+\end{figure}
+
+\begin{figure}[H]\centering
+\includegraphics[width=140mm]{img/csv-oracle-ui-navrh-chats}
+\caption{Návrh stránky s chatmi (DK zobrazená). \textbf{TODO}}
+\label{csv-oracle-ui-navrh-chats-dk}
+\end{figure}
+
+\section{Výber technológie pre Frontend}
+
+Z~predchádzajúceho textu vyplýva, že v~aplikácii, napríklad pri~chatovaní alebo~úprave DK, bude potrebné dynamicky meniť používateľské rozhranie (UI). Existuje mnoho frameworkov, ktoré by sa na~túto prácu hodilo. Medzi najpopulárnejšie patria~\cite{popular-frontend-frameworks}: \textit{React}, \textit{Vue}, \textit{Angular}, \textit{Svelte} atď. Nepotrebujeme žiadnu špecifickú funkcionalitu, ktorá by bola limitovaná výlučne na~jeden z~uvedených frameworkov. Požadovaný výsledok by bolo možné dosiahnuť použitím ktoréhokoľvek z~nich. Keďže autor má predchádzajúce skúsenosti s~knižnicou \textit{React}, bola zvolená práve táto možnosť.
 
 \subsection{Polling}
 

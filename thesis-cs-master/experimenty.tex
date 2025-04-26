@@ -1,10 +1,28 @@
 \chapter{Experimenty}
 
-Táto kapitola najprv predstavuje štruktúru experimentov, po ktorej nasleduje analýza meraní a prezentácia výsledkov.
+Táto kapitola najprv predstavuje využité datasety, štruktúru experimentov, analýzu meraní a následne prezentáciu výsledkov.
+
+\section{Využité datasety}
+
+V~tejto práci budeme z~otvorenych dát využívať konkrétne datasety:
+\begin{enumerate}
+\item \href{https://data.gov.cz/datov\%C3\%A1-sada?iri=https\%3A\%2F\%2Fdata.gov.cz\%2Fzdroj\%2Fdatov\%C3\%A9-sady\%2F00024341\%2Fc5b85b8c662a72b9c0c13bea4a098448}{COVID-19 dataset}~-- Dátová sada pozostávajúca z~jedného CSV súboru obsahujúca rôzne typy meraní z~obdobia pandémie ochorenia COVID-19, ako napríklad denné počty nakazených, vyliečených osôb, úmrtí a~ďalšie súvisiace údaje.
+\item \href{https://data.europa.eu/data/datasets/92437de0-a730-428a-921d-1d9c418072d6?locale=en}{Population structure 2011}~-- Táto dátová sada obsahuje rôzne štatistické údaje o~štruktúre obyvateľstva v~Hanseatic a~University City of Rostock.
+\end{enumerate}
+
+Prvý dataset pozostáva z~jedného CSV súboru, ku~ktorému je k dispozícii aj schéma. V~tomto prípade ide konkrétne o~schému vo~formáte CSVW~\cite{csvw} (CSV on the Web). CSVW je štandard určený na opis a štruktúrovanie obsahu CSV tabuliek, čím uľahčuje ich interpretáciu a~spracovanie.
+
+Druhý dataset, ktorý patrí medzi tzv.~high-value datasets, pozostáva z~ viacerých súborov, z~ktorých v~rámci tejto práce budú využité nasledovné štyri:
+\begin{itemize}
+\item \texttt{bevoelkerungsstruktur\_2011\_haushaltsstruktur.csv} (Budget struc\-tu\-re 2011)
+\item \texttt{bevoelkerungsstruktur\_2011\_alter.csv} (Population by age 2011)
+\item \texttt{bevoelkerungsstruktur\_2011\_geschlecht.csv} (Po\-pu\-la\-ti\-on\newline by gen\-der 2011)
+\item \texttt{bevoelkerungsstruktur\_2011\_staatsangehoerigkeit.csv} (Po\-pu\-la\-ti\-on\newline by na\-ti\-o\-na\-li\-ty 2011)
+\end{itemize}
 
 \section{Štruktúra experimentov}
 
-Budeme pracovať s dvoma datasetmi:
+Budeme teda pracovať s dvoma datasetmi:
 \begin{enumerate}
 \item COVID-19 dataset
 \item Population structure 2011
@@ -12,101 +30,137 @@ Budeme pracovať s dvoma datasetmi:
 
 Pre prvý dataset máme k dispozícii schému. Druhý patrí medzi high-value datasety a~pozostáva z~viacerých CSV súborov, schému nemáme.
 
-V experimentoch budeme testovať ako sa zmení kvalita odpovedí asistenta keď je prítomná schéma. Okrem toho, budeme takisto sledovať ako sa zmení kvalita odpovedí asistenta pri poskytnutí rôznych variant nástrojov.
+V experimentoch budeme testovať ako sa zmení kvalita odpovedí asistenta keď je prítomná schéma. Okrem toho, budeme takisto sledovať ako sa zmení kvalita odpovedí asistenta pri poskytnutí rôznych variant nástrojov:
+\begin{itemize}
+\item individuálne query tooly + sub question query engine tool, ktorý je nimi tvorený (varianta experimentu 1)
+\item iba individuálne query tooly (varianta experimentu 2)
+\item iba sub question query engine tool tvorený individuálnymi toolmi (varianta experimentu 3)
+\end{itemize}
 
-Vytvoríme si varianty experimentov:
+\texttt{QueryEngineTool} (ďalej len QET) je nástroj využívajúci \texttt{QueryEngine}. \texttt{QueryEngine} je koncept z knižnice LlamaIndex, ktorý umožní používateľovi pýtať sa na otázky nad poskytnutými dátami. Používateľ mu môže zadať otázku v prirozdenom jazyku a nástroj vráti odpoveď. V aplikácii sú vytvorené nástroje pre zdroj informácií: CSV súbory, data profiling reporty, dataset knowledge, prípadne aj schéma ak pre používateľom poskytnutá. Každý QET vieme využívať individuálne ale takisto z nich vieme vytvoriť \texttt{SubQuestionQueryEngineTool}.
+
+\texttt{SubQuestionQueryEngineTool} (ďalej len SQQET) tool je tvorený viacerými QET. V aplikácii je tvorený všetkými QET, jeden pre každý zdroj spomenutý skôr v texte. SQQET Takisto dostane otázku, vytvorí jednu alebo viacero podotázok, ktoré predá jednému alebo viacerým QET, ktoré má k dispozícii. Tie mu vrátia odpovede a na základe nich vytvorí odpoveď na pôvodnú otázku.
+
+Varianta experimentu 1 používa kombináciu QET a SQQET, ktorý je z nich vytvorený. Využitie akéhokoľvek query engine toolu, či uŽ samostatného QET alebo SQQET, trvá. Experimentami je snaha zistiť, či by sa zlepšila kvalita odpovede keby zmením tooly podľa opisu vyššie.
+
+Celkovo budeme mať varianty experimentov:
 \begin{enumerate}
-\item COVID-19 dataset bez schémy, využijeme všetky indexy (CSV súbory, data profiling reporty, schéma), 
+\item COVID-19 dataset bez schémy, varianta experimentu 1
+\item COVID-19 dataset bez schémy, varianta experimentu 2
+\item COVID-19 dataset bez schémy, varianta experimentu 3
+\item COVID-19 dataset so schémov, varianta experimentu 1
+\item COVID-19 dataset so schémov, varianta experimentu 2
+\item COVID-19 dataset so schémov, varianta experimentu 3
+\item Population structure 2011, varianta experimentu 1
+\item Population structure 2011, varianta experimentu 2
+\item Population structure 2011, varianta experimentu 3
+\end{enumerate}
+
+\section{Priebeh experimentov}
+
+Nahráme dataset (príp. aj schému). Akonáhle program dokončí analýzu a vytvorí DK, tak vďaka pevnej predom definovanej štruktúre DK môžeme skontrolovať vyplnenosť DK.
+
+Ďalej pre každý dataset existuje predpripravená séria otázok a očakávaných odpovedí. Keďže pracujeme s dvoma datasetmi, budeme mať celkovo 2 série otázok. Každú odpoveď asistenta porovnáme s predpripravenou odpoveďou.
+
+\subsection{Séria otázok č.~1}
+
+Táto séria otázok sa využije pri datasete COVID-19. Pri vytváraní nového chatu bude špecifikovaný \textit{user view}: ,,I want to use this dataset to create a simple dashboard with charts that show how COVID-19 developed over time, e.g. cases, deaths, and recoveries.``
+
+Predpripravené otázky a odpovede:
 \begin{enumerate}
-\item 
-\item 
+\item Is it possible to show total infections, deaths, and recoveries in my app using this dataset? Which columns contain that information?
+
+\textit{Yes, it's possible. To show the total number of infections, use \textbf{\texttt{ku\-mu\-lo\-va\-ny\_po\-cet\_na\-ka\-ze\-nych}}. For total deaths, use \textbf{\texttt{kumulovany\_pocet\_umrti}}, and for total recoveries, use \textbf{\texttt{kumulovany\_pocet\_vylecenych}}. These columns contain cumulative values, so they reflect the total counts up to each date.}
+
+\item Is it possible to calculate active COVID-19 cases from this dataset? If so, how?
+
+\textit{Active cases can be calculated as: \newline\textbf{\texttt{active\_cases = ku\-mu\-lo\-va\-ny\_po\-cet\_na\-ka\-ze\-nych \newline- ku\-mu\-lo\-va\-ny\_po\-cet\_vy\-le\-ce\-nych \newline- ku\-mu\-lo\-va\-ny\_po\-cet\_u\-mr\-ti}}. This gives the total number of people still infected at a given point.}
+
+\item Is it possible to detect spikes or anomalies in the daily case numbers using this dataset? If so, how?
+
+\textit{Spikes can be detected by calculating the daily differences using \textbf{\texttt{pri\-rust\-ko\-vy\_po\-cet\_na\-ka\-ze\-nych}} and flagging days where the daily change exceeds a predefined threshold (e.g. 2x the rolling average of daily cases).}
+
+\item Can I estimate the test positivity rate from this data? If so, how can I calculate it, and which columns should I use?
+
+\textit{Yes, the test positivity rate can be calculated as: test positivity rate = (\textbf{\textit{pri\-rust\-ko\-vy\_po\-cet\_na\-ka\-ze\-nych}} / \textbf{\textit{pri\-rust\-ko\-vy\_po\-cet\_pro\-ve\-de\-nych\_testu}}) * 100 This gives the percentage of tests that resulted in positive cases.}
+
+\item Can I estimate the fatality rate from this data? If so, how can I calculate it, and which columns should I use?
+
+\textit{Yes, the fatality rate can be calculated as: fatality rate = (\textbf{\textit{ku\-mu\-lo\-va\-ny\_po\-cet\_u\-mr\-ti}} / \textbf{\textit{ku\-mu\-lo\-va\-ny\_po\-cet\_na\-ka\-ze\-nych}}) * 100 This gives the percentage of tests that resulted in positive cases.}
+
+\item What column shows how many COVID-19 tests were done each day?
+
+\textit{You should use the column \textbf{\texttt{prirustkovy\_pocet\_provedenych\_testu}} to see how many PCR tests were done each day. If you also want to include antigen tests, use \textbf{\texttt{prirustkovy\_pocet\_provedenych\_ag\_testu}}. To get the total number of tests per day, you can sum both columns.}
+
+\item Can I use this dataset to analyze which weekdays have the most and fewest COVID-19 tests performed?
+
+\textit{Yes. is is possible.}
+
+\item Can you please add this last information to the dataset knowledge to the mentioned column?
+
+\textit{Yes, the dataset knowledge has been updated. [It really is updated correctly with the mentioned information.]}
 \end{enumerate}
-\item COVID-19 dataset so schémou
-\item Population structure 2011
+
+\subsection{Séria otázok č.~2}
+
+Táto séria otázok sa využije pri datasete Population structure 2011. Pri vytváraní nového chatu bude špecifikovaný \textit{user view}: ,,I want to use this dataset to create a simple dashboard with charts that show how COVID-19 developed over time, e.g. cases, deaths, and recoveries.``
+
+\begin{enumerate}
+\item Can I calculate the average age for each urban area using this dataset? If so, which columns could I use for that?
+
+\textit{Yes, you can calculate the average age for each urban area. The relevant column for this calculation is \textbf{\texttt{durchschnittsalter}}, which provides the average age for each urban area.}
+
+\item Is it possible to create a heatmap that shows areas with the highest and lowest youth and elderly population ratios? If so, which columns should I use?
+
+\textit{Yes, you can. You would use the \textbf{\texttt{jugendquotient}} column for youth population ratio and the \textbf{\texttt{altenquotient}} column for elderly population ratio. These will help identify areas with the highest and lowest ratios.}
+
+\item Is it possible to view the areas and their percentages of households with children? If so, which columns should I use?
+
+\textit{Yes, you can. The relevant column is \textbf{\texttt{anteil\_mit\_kindern}}, which shows the percentage of households with children in each urban area.}
+
+\item Is it possible to identify which urban areas have a higher concentration of younger populations (under 30)? Which columns should I use?
+
+\textit{Yes, you can. The best columns to use are \textbf{\texttt{anzahl\_juenger\_3}}, \textbf{\texttt{anzahl\_3\_6}}, \textbf{\texttt{anzahl\_6\_15}}, and \textbf{\texttt{anzahl\_15\_25}} to identify the number of younger people in specific age ranges. You can then calculate the concentration of younger populations in each area.}
+
+\item Is it possible to visualize areas with the percentages of men and women? If so, which columns should I use?
+
+\textit{Yes, it is possible. You can use the columns \textbf{\texttt{anteil\_maennlich}} (percentage of male population) and \textbf{\texttt{anteil\_weiblich}} (percentage of female population) from the ,,Population by gender 2011`` table. You can also include the corresponding urban area from \textbf{\texttt{stadtbereich\_bezeichnung}}.}
+
+\item Can I display the proportion of foreign vs. German residents by area? Which columns should I use?
+
+\textit{Yes, you can use \textbf{\texttt{anteil\_deutsch}} (percentage of German residents) and \textbf{\texttt{anteil\_auslaendisch}} (percentage of foreign residents) from the ,,Spatial Population Movement 2011`` table.}
+
+\item Can you add this last information to the dataset knowledge to the referenced columns?
+
+\textit{Yes, the dataset knowledge has been updated. [It really is updated correctly with the mentioned information.]}
 \end{enumerate}
 
+\section{Hodnotenie}
 
-Môžeme skúsiť využiť:
-všetky 3 indexy (csv files, data profiling reports, schema)
-2 indexy (csv files, data profiling reports)
+Každú odpoveď LLM, už či pri analýze alebo pri chatovaní, ohodnotíme čislom:
+\begin{itemize}
+\item 0\-- odpoveď neexistuje alebo neobsahuje požadované informácie, nezhoduje sa s očakávaným výsledkom
+\item 1\-- odpoveď sa zhoduje s očakávaným výsledkom do istej miery, ale nie je úplna, napr. očakávaná odpoveď obsahuje viacero častí a jedna z nich chýba
+\item 2\-- odpoveď sa zhoduje s očakávaným výsledkom
+\end{itemize}
 
-Ďalšia možnosť:
-využiť individuálne query tooly [exp 2]
-využiť sub question query engine tool tvorený individuálnymi toolmi [exp 3]
-využiť individuálne tooly + sub question query engine tool, ktorý je nimi tvorený [exp1]
+Ako bolo v úvode spomenuté po dokončení analýzy vytvoríme percentuálne vyhodnotenie naplnenosti DK, pričom Asistent bude bodovaný za každú odpoveď
 
-Kontext pre ďalšiu možnosť:
-Query tool dostane otázku a vráti odpoveď, využíva 1 zdroj informácií (napr. raw csv files).
-Sub question query engine tool je tvorený viacerými query toolmi. Takisto dostane otázku, vytvorí podotázky, ktoré dá query toolom (môže všetkým, ktoré má k dispozícii alebo len niektorým), tie mu vrátia odpovede a na základe nich vytvorí odpoveď na pôvodnú otázku.
-Momentálne používam len poslednú možnosť (kombináciu query toolov + sub question query engine). Využitie nejakého query toolu trvá. Mám za to, že ak by sa využil iba sub question query engine tool, generovanie odpovede by trvalo dlho, ale teoreticky by to malo zlepšiť kvalitu (pravdou je, že som objavil situáciu kedy tomu tak byť nemusí, ale skôr šlo o veľmi špeciálny edge case, tým chcem povedať, že to nie je také jednoznačné). Aby som zrýchlil generovanie odpovede dávam LLMku k dispozícii aj individuálne query tooly. Ale ako som spomínal, sub queston query engine tool nemusí využiť všetky tooly, ktoré má k dispozícii. Asi je tam síce stále overhead generovania podotázky, ale možno by to z časového hľadiska nebolo tak zlé. Každopádne, zaujímalo by ma, či by sa zlepšila kvalita odpovede keby zmením tooly tak ako som to opísal vyššie.
-
-Ak by sme zahrnuli aj poslednú možnosť, bolo by 18 experimentov.
-
-Ako by experiment prebiehal?
-Nahráme dataset (príp. aj schému). Akonáhle program dokončí analýzu a vytvorí dataset knowledge, keďže má dataset knowledge pevnú štruktúru, môžeme skontrolovať ako dobre je vytvorená, či nechýbajú nejaké “políčka” (To by sa malo dať vyjadriť napr. v percentách.)
-Ďalej pre každý dataset si pripravíme sériu otázok/promptov a očakávaných odpovedí/reakcií (celkovo budeme mať teda 2 série). V každom experimente sa budeme pýtať predpripravené otázky a porovnáme odpovede (resp. reakcie ak budeme chcieť testovať aj update dataset knowledge, čo predpokladám, že budeme).
-
-Séria otázok 1:
-User view: “I want to use this dataset to create a simple dashboard with charts that show how COVID-19 developed over time, e.g. cases, deaths, and recoveries.”
-
-Is it possible to show total infections, deaths, and recoveries in my app using this dataset? Which columns contain that information?
-Yes, it’s possible. To show the total number of infections, use kumulovany_pocet_nakazenych. For total deaths, use kumulovany_pocet_umrti, and for total recoveries, use kumulovany_pocet_vylecenych. These columns contain cumulative values, so they reflect the total counts up to each date.
-
-Is it possible to calculate active COVID-19 cases from this dataset? If so, how?
-Active cases can be calculated as: active_cases = kumulovany_pocet_nakazenych - kumulovany_pocet_vylecenych - kumulovany_pocet_umrti. This gives the total number of people still infected at a given point.
-
-Is it possible to detect spikes or anomalies in the daily case numbers using this dataset? If so, how?
-Spikes can be detected by calculating the daily differences using prirustkovy_pocet_nakazenych and flagging days where the daily change exceeds a predefined threshold (e.g. 2x the rolling average of daily cases).
-
-What are some interesting metrics I could derive from this dataset and display in charts? // TODO Asi 4. prepíš na jednotlivé otázky ako v alternatíve k 4. máš
-Test Positivity Rate: test positivity = (prirustkovy_pocet_nakazenych / prirustkovy_pocet_provedenych_testu) * 100
-Recovery Rate: recovery rate = (kumulovany_pocet_vylecenych / kumulovany_pocet_nakazenych) * 100 
-Fatality Rate: fatality rate = (kumulovany_pocet_umrti / kumulovany_pocet_nakazenych) * 100 
-Testing Efficiency: testing efficiency = (prirustkovy_pocet_nakazenych / prirustkovy_pocet_provedenych_testu)th
-
-(Alternatíva k 4.) Can I estimate the test positivity rate from this data? If so, how can I calculate it, and which columns should I use?
-Yes, the test positivity rate can be calculated as: test positivity rate = (prirustkovy_pocet_nakazenych / prirustkovy_pocet_provedenych_testu) * 100 This gives the percentage of tests that resulted in positive cases.
-OTÁZKA: Čo ak využije kumulatívny namiesto prírastkový? Asi tiež brať ako validné, alebo nie?
-
-What column shows how many COVID-19 tests were done each day?
-You should use the column prirustkovy_pocet_provedenych_testu to see how many PCR tests were done each day. If you also want to include antigen tests, use prirustkovy_pocet_provedenych_ag_testu. To get the total number of tests per day, you can sum both columns.
-
-Can I use this dataset to analyze which weekdays have the most and fewest COVID-19 tests performed?
-Yes. is is possible.
-
-Can you please add this last information to the dataset knowledge to the mentioned column?
-Yes, the dataset knowledge has been updated. [It really is updated correctly with the mentioned information.]
-
-Séria otázok 2:
-User view: I would like to use this dataset to create an application that visualizes the population structure of different urban areas, allowing users to explore demographic details such as average age and youth and elderly population ratios.
-
-Can I calculate the average age for each urban area using this dataset? If so, which columns could I use for that?
-Yes, you can calculate the average age for each urban area. The relevant column for this calculation is durchschnittsalter, which provides the average age for each urban area.
-
-Is it possible to create a heatmap that shows areas with the highest and lowest youth and elderly population ratios? If so, which columns should I use?
-Yes, you can. You would use the jugendquotient column for youth population ratio and the altenquotient column for elderly population ratio. These will help identify areas with the highest and lowest ratios.
-
-Is it possible to view the areas and their percentages of households with children? If so, which columns should I use?
-Yes, you can. The relevant column is anteil_mit_kindern, which shows the percentage of households with children in each urban area.
-
-Is it possible to identify which urban areas have a higher concentration of younger populations (under 30)? Which columns should I use?
-Yes, you can. The best columns to use are anzahl_juenger_3, anzahl_3_6, anzahl_6_15, and anzahl_15_25 to identify the number of younger people in specific age ranges. You can then calculate the concentration of younger populations in each area.
-
-Is it possible to visualize areas with the percentages of men and women? If so, which columns should I use?
-Yes, it is possible. You can use the columns anteil_maennlich (percentage of male population) and anteil_weiblich (percentage of female population) from the "Population by gender 2011" table. You can also include the corresponding urban area from stadtbereich_bezeichnung.
-
-Can I display the proportion of foreign vs. German residents by area? Which columns should I use?
-Yes, you can use anteil_deutsch (percentage of German residents) and anteil_auslaendisch (percentage of foreign residents) from the "Spatial Population Movement 2011" table.
-
-Can you add this last information to the dataset knowledge to the referenced columns?
-Yes, the dataset knowledge has been updated. [It really is updated correctly with the mentioned information.]
-
-// TODO/OTÁZKA Séria 2 je k datasetu, ktorý má viaceré csv súbory (nevyužívame všetky, pravdepodobne len 4). Pri posledných odpovediach je spomenutý nie len názov stĺpca, ale aj názov tabuľky. Ako budeme vyhodnocovať? Ak užívateľ nešpecifikuje, ze chce aj názov tabuľky, nemusí tam byť?
+Dataset pozostáva z viacerých CSV súborov. Pri niektorých odpovediach je spomenutý nie len názov stĺpca, ale aj názov tabuľky. Ako budeme vyhodnocovať? Ak užívateľ nešpecifikuje, ze chce aj názov tabuľky, nemusí tam byť?
 // TODO 0,1,2
 
-Dimenzie experimentov by sa dali rozšíriť s:
-viacero datasetmi (líšiacimi sa obsahom, veľkosťou súboru, počtom súborov)
-viacerými kombináciami indexov (napr. iba csv files)
-rôznymi promptovacími technikami (zmena system promptov, promptov pri analýze)
-viacerými rôznymi LLMs, čo do typu alebo veľkosti (gpt-3.5, llama 3.2, llama 3.3…)
-viacerými otázkami
+OTÁZKA: Čo ak využije kumulatívny namiesto prírastkový? Asi tiež brať ako validné, alebo nie?
+
+
+\section{Ďalšie experimenty}
+
+Existuje mnoho ďalších smerov akými by sme mohli experimenty rozšíriť. Experimenty by sme mohli rozšíriť:
+
+\begin{itemize}
+\item viacerými rôznymi datasetmi líšiacimi sa obsahom, veľkosťou súboru, počtom súborov
+\item viacerými kombináciami indexov, napr. využiť iba index nad CSV súbormi
+\item rôznymi promptovacími technikami a zmenou promptov, či už system promptov alebo promptov pri analýze
+\item viacerými LLM rôzneho typu alebo veľkosti
+\item viacerými otázkami
+\item atď.
+\end{itemize}

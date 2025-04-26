@@ -1,8 +1,12 @@
 \chapter{Súvisiace práce}
 
-Vo výslednej aplikácii budeme využívať AI (artificial intelligence) agenta, ktorý bude schopný narábať s~rôznymi nástrojmi. Konkrétne pôjde o~\textit{ReAct} agenta, ktorý bol predstavený v~práci \textit{ReAct: Synergizing Reasoning and Acting in Language Models}~\cite{reactpaper}
+Táto kapitola sa venuje prehľadu relevantných prác a článkov v danej oblasti.
 
-Práca predstavuje \textit{ReAct}, novú paradigmu, ktorá spája uvažovanie (\textbf{re}asoning) a~konanie (\textbf{act}ing) vo~veľkých jazykových modeloch (LLM) s~cieľom zlepšiť schopnosti riešenia úloh v~rôznych doménach. \textit{ReAct} umožňuje LLM generovať stopy uvažovania a~akcie špecifické pre~danú úlohu prekladaným spôsobom, čo umožňuje vytvárať, udržiavať a~upravovať plány popri interagovaní s~externými nástrojmi. 
+\iffalse
+
+\section{Uvažovanie a konanie LLM}
+
+Práca \textit{ReAct: Synergizing Reasoning and Acting in Language Models}~\cite{reactpaper} predstavuje \textit{ReAct}, novú paradigmu, ktorá spája uvažovanie (\textbf{re}asoning) a~konanie (\textbf{act}ing) vo~veľkých jazykových modeloch (LLM) s~cieľom zlepšiť schopnosti riešenia úloh v~rôznych doménach. \textit{ReAct} umožňuje LLM generovať stopy uvažovania a~akcie špecifické pre~danú úlohu prekladaným spôsobom, čo umožňuje vytvárať, udržiavať a~upravovať plány popri interagovaní s~externými nástrojmi.
 Medzi kľúčové príspevky a zistenia patria:
 
 \begin{itemize}
@@ -13,3 +17,47 @@ Medzi kľúčové príspevky a zistenia patria:
 \end{itemize}
 
 \textit{ReAct} predstavuje významný krok smerom k~integrácii uvažovania a~konania v~rámci veľkých jazykových modelov pre~spoľahlivé rozhodovanie a~úlohy vyžadujúce uvažovanie.
+
+\fi
+
+\section{Štúdia o~skúmaní efektivity dátovej analýzy založenej na~využití LLM nástroja}
+
+V~práci~\cite{de2024effective} sa autori zameriavajú konkrétne na~nástroj \textit{ChatGPT's Data Analyst}. Štúdia hodnotí jeho účinnosť pri automatizácii úloh dátovej analýzy. Bolo definovaných 36 otázok rozdelených do štyroch kategórií:
+\begin{itemize}
+\item \textbf{Popisná (,,Descriptive``) analýza}~-- poskytuje porozumenie údajom tým, že ich detailne opisuje, a zvyčajne predstavuje počiatočný krok v procese analýzy dát,
+
+\item \textbf{Diagnostická (,,Diagnostic``) analýza}~-- zvyčajne nasleduje po popisnej analýze a jej cieľom je určiť základné príčiny pozorovaných javov,
+
+\item \textbf{Prediktívna (,,Predictive``) analýza}~-- zameriava sa na predpovedanie budúcich udalostí,
+
+\item \textbf{Predpisujúca (,,Prescriptive``) analýza}~-- predpovedá potenciálne budúce scenáre a navrhuje konkrétne kroky na zlepšenie výsledkov.
+\end{itemize}
+
+Každá kategória obsahovala tri úrovne obtiažnosti:
+\begin{itemize}
+\item Základná (,,Basic``)
+\item Stredná (,,Moderate``)
+\item Náročná (,,Challenging``)
+\end{itemize}
+
+Celková miera efektívnosti dosiahla $86,11\,\rm \%$. Nástroj dosahoval dobré výsledky pri popisných a diagnostických úlohách, ale čelil výzvam pri prediktívnych a predpisujúcich analýzach. Medzi kľúčové obmedzenia patrí limit spracovania dát na úrovni $10\,\rm MB$ a absencia podpory pre robustné knižnice ako \textit{hmmlearn}, \textit{imblearn}, \textit{Keras} a \textit{TensorFlow}. Okrem toho nástroj trpel halucináciami a prevádzkovými zlyhaniami, ktoré mohli vyžadovať reštartovanie relácií, čím sa ovplyvňovala efektivita a účinnosť analytického procesu. Práca vyjadruje potenciál aj výzvy pri používaní veľkých jazykových modelov na automatizáciu dátovej analýzy.
+
+\section{Článok predstavujúci systém na~automatické označovanie dát využívajúci LLM}
+
+Článok~\cite{data-labeling-llm} predstavuje systém na automatické označovanie dát (,,data labeling``). Konkrétne sa zameriava na analýzu sentimentu, ale taktiež podotýka, že spomínaný prístup je možné zovšeobecniť aj na iné NLP (,,natural language processing``) úlohy. Systém kombinuje aktívne učenie (,,active learning``), slabú supervíziu (,,weak supervision``), LLM a optimalizáciu promptov. Cieľom je generovať vysoko kvalitné označené dátové sady s minimálnym ľudským úsilím. Systém funguje nasledovne:
+\begin{enumerate}
+\item \textbf{Označovanie viacerými promptmi:} V prvom kroku sa dáta označujú pomocou viacerých starostlivo vybraných optimalizovaných promptov. V tejto fáze sa používal model \textit{GPT-3.5-turbo} od \textit{OpenAI}. Počas optimalizácie promptov bola prioritizovaná presnosť (,,precision``) pred úplnosťou (,,recall``).
+
+\item \textbf{Výpočet dohody:} Označené dáta sú zoskupené na základe úrovne dohody, ktorá pochádza z rôznych promptov použitých v predchádzajúcej fáze. Tieto zoskupenia slúžia ako úrovne dôvery pre označenia.
+
+\item \textbf{Aplikácia heuristík:} Rôzne heuristiky sa aplikujú podľa úrovne dohody, čo umožňuje efektívne riešenie rôznych scenárov:
+\begin{itemize}
+\item \textbf{Záznamy s plnou dohodou (skóre dohody 3 z 3)} predstavujú najspoľahlivejšie označenia a nevyžadujú ďalšie spracovanie.
+
+\item \textbf{Záznamy s nízkou dohodou (1/3)} sú označené ako potenciálne problémové a vyžadujú ľudskú pozornosť.
+
+\item \textbf{Záznamy s čiastočnou dohodou (2/3)} prechádzajú dvojstupňovým heuristickým procesom, aby sa určila správnosť väčšinového alebo menšinového hlasovania (z pôvodného označenia promptov). Táto fáza znižuje zložitosť problému z viac tried na binárnu. Toto zjednodušenie umožňuje používanie promptov špecifických pre konkrétnu triedu. Napríklad, ak výsledkom väčšinového hlasovania je ,,neutral``, prompt sa opýta, či je daný text ozaj neutrálny, pričom podrobne vysvetlí, čo neutrálny znamená. Táto fáza využíva model \textit{GPT-4o}.
+\end{itemize}
+\end{enumerate}
+
+Prostredníctvom tohto viacstupňového procesu je možné automaticky označiť približne $75\,\rm \%$ údajov s vysokou mierou istoty. Zvyšných $25\,\rm \%$ je odoslaných na manuálne označovanie človekom, aby sa zabezpečilo, že len tie najnáročnejšie prípady dostanú ľudskú pozornosť. Čo sa týka kvality označovania, článok spomína, že súbor približne 300 záznamov bol manuálne overený jedným anotátorom, ktorému bola položená otázka: ,,Je označenie správne?\kern-0.1em{}`` Celková presnosť, teda kedy odpovedal ,,áno``, bola vyššia ako $90\,\rm \%$.
