@@ -38,8 +38,9 @@ Taktiež sa bude v~pravom hornom rohu vždy nachádazať aj odkaz na~stránku pr
 \end{figure}
 
 \subsection{Datasety}
+\label{datasety-navrh}
 
-V~časti~\ref{dataset} bolo špecifikované, že používateľ bude môcť nahrať dataset s~ďalšími voliteľnými údajmi, že si bude môcť zobraziť všetky svoje nahrané datasety, zvoliť si nejaký z~nich, prípadne nejaký z~nich odstrániť. Preto bude existovať formulár pre~vytvorenie datasetu a~bude umiestnený na~samostatnej stránke. Na~zobrazovanie existujúcich datasetov, ich výber a~mazanie bude slúžiť iná stránka, na~ktorej budú datasety zobrazené v~centrálnom paneli. Na~pravej strane bude umiestnené tlačidlo vedúce k~stránke s~formulárom pre~nahratie nového datasetu. Po~výbere datasetu sa zobrazí jeho detail spolu s~tlačidlom ,,Choose dataset``, ktoré používateľovi umožní prejsť na~stránku obsahujúcu chaty o~zvolenom datasete (viď obr.~\ref{csv-oracle-ui-navrh-datasets}).
+V~časti~\ref{dataset} bolo špecifikované, že používateľ bude môcť nahrať dataset s~ďalšími voliteľnými údajmi, že si bude môcť zobraziť všetky svoje nahrané datasety i~s ich stavmi, zvoliť si nejaký z~nich, prípadne nejaký z~nich odstrániť. Preto bude existovať formulár pre~vytvorenie datasetu a~bude umiestnený na~samostatnej stránke. Na~zobrazovanie existujúcich datasetov, ich výber a~mazanie bude slúžiť iná stránka, na~ktorej budú datasety zobrazené v~centrálnom paneli. V~tejto časti bude môcť používateľ zároveň sledovať stav datasetov, teda či sú už analyzované alebo~sa analyzujú. Na~pravej strane bude umiestnené tlačidlo vedúce k~stránke s~formulárom pre~nahratie nového datasetu. Po~výbere datasetu sa zobrazí jeho detail spolu s~tlačidlom ,,Choose dataset``, ktoré používateľovi umožní prejsť na~stránku obsahujúcu chaty o~zvolenom datasete (viď obr.~\ref{csv-oracle-ui-navrh-datasets}).
 
 \begin{figure}[H]\centering
 \includegraphics[width=140mm]{img/csv-oracle-ui-navrh-datasets}
@@ -153,7 +154,6 @@ Aby mohol asistent odpovedať na~otázky vyžadujúce údaje z~CSV súborov, rep
 
 Na~základe vyššie uvedených skutočností možno konštatovať, že pre~dané účely je najvhodnejšou technikou práve metóda RAG. Pri~zmene DK bude potrebné vytvoriť nové vektory alebo~aktualizovať existujúce záznamy vo~vektorovej databáze, pričom však nebude nutné pri~každej zmene pretrénovávať celý model a~do~kontextu budú vložené iba relevantné údaje. Napriek uvedenej nevýhode sa táto možnosť javí ako najefektívnejšie riešenie, a~preto si ju volíme.
 
-
 \subsection{Výber frameworku pre~prácu s~LLM}
 
 Pre~naše účely bude potrebný framework umožňujúci prácu s~LLM tak, aby bolo možné viesť konverzáciu a~zachovávať históriu predchádzajúcej komunikácie. Ako bolo uvedené v~podkapitole~\ref{limitacie-llm}, LLM si predchádzajúce správy bez~externého riadenia nepamätá. Zároveň musí framework podporovať vyhľadávanie údajov pre~účely implementácie techniky~RAG. Ideálne by mal tiež umožňovať abstraktnú prácu s~LLM, aby systém nebol naviazaný na~konkrétny model a~nebol obmedzený jeho používaním.
@@ -166,24 +166,19 @@ Pre~potreby tejto práce by bolo možné použiť ktorýkoľvek z~nich, dokonca 
 
 \subsection{Index a jeho uloženie}
 
-V~prípade, že sú k~dispozícii údaje, napríklad vo~forme CSV súborov, ako v~našom prípade, ktoré chceme sprístupniť veľkému jazykovému modelu s~cieľom rozšírenia kontextu pri~generovaní odpovedí, je potrebné z~týchto údajov vytvoriť index. Index~\cite{index} je dátová štruktúra, ktorá umožňuje rýchlo získať relevantný kontext pre~LLM na~odpovedanie používateľského dotazu a~predstavuje základný pilier knižnice \textit{LlamaIndex}.
+V~prípade, že sú k~dispozícii údaje, napríklad vo~forme CSV súborov, ako v~našom prípade, ktoré chceme sprístupniť veľkému jazykovému modelu s~cieľom rozšírenia kontextu pri~generovaní odpovedí, je potrebné z~týchto údajov vytvoriť index. Index~\cite{index} je dátová štruktúra, ktorá umožňuje rýchlo získať relevantný kontext pre~LLM na~odpovedanie používateľského dotazu a~predstavuje základný pilier knižnice LlamaIndex.
 
-TODO:
-- vytvaranie moze byt narocne na cas, chceme preto ulozit
-- da sa ukladat vselikde, aj na disk, ale to sa neodporuca preto vsetko v ramke
-- akekolvek externe ulozisko uz bude ok
-- nemam extra skusenosti ziadne s tymi, ani ziadnu spesl featuru netreba, cize volime viac-menej nahodne chroam db
+Aby sme nemuseli index vytvárať zakaždým keď bude potrebný, je vhodné si ho niekam uložiť. Vektorové úložiská (,,Vector Stores``) sú kľúčovou súčasťou pre~využívanie techniky RAG. Vektorové úložisko príjima zoznam tzv.~uzlov (,,Nodes``) a~vybuduje z~nich index. Uzol~\cite{documents-and-nodes} predstavuje časť \textit{dokumentu}, či už ide o~textovú časť, obrázok alebo niečo iné. \textit{Dokument} je všeobecný kontajner okolo akéhokoľvek zdroja dát~-- napríklad PDF súboru, CSV súboru, JSON súboru atď. Trieda pre~praću s~vektorovým úložiskom v~LlamaIndexe sa nazýva \texttt{VectorStoreIndex}. Predvolene \texttt{VectorStoreIndex} ukladá všetko do~pamäte~\cite{vector-store-index}. Ak nechceme nahrávať všetky dokumenty do~pamäte pri~využívani indexu, ale~len tie najpodobnejšie, budeme musieť využiť službu externého vektorového úložiska~\cite{external-vector-store-service}.
 
+LlamaIndex poskytuje podporu pre~viac ako 20 rôznych vektorových úložisk, napr.~Chroma, DuckDB, Pinecone atď. Keďže nevyžadujeme žiadnu špeciálnu funkcionalitu, a~keďže autor nemá rozsiahle skúseností so~žiadnou z~možností, vyberáme si možnosť Chroma. Ide o~open-source vektorovú databázu~\cite{chroma2}, ktorá nám umožní vektorové vyhľadávanie a~uloženie dokumentov~\cite{chroma}. V~knižnici LlamaIndex sa s~databázou pracuje pomocou triedy \texttt{ChromaVectorStore}, ktorá zabezpečí, že počas dotazovania index využije ChromaDB na~vyhľadanie len určitý počet najpodobnejších uzlov~\cite{chroma-vector-store}.
 
+\section{Komunikácia}
 
-
-
-
-
+V~tejto kapitole si predstavíme komunikáciu medzi jednotlivými časťami systému.
 
 \subsection{Polling}
 
-Po~nahratí datasetu sa spustí jeho analýza, ktorá je časovo náročná. Používateľ bude môcť sledovať stav datasetu na~stránke s~datasetmi. Frontend bude periodicky získavať informáciu o~stave datasetu. Stav datasetu bude zobrazený a~jeho možné hodnoty sú:
+Po~nahratí datasetu sa spustí jeho analýza, ktorá je časovo náročná. Podľa opisu návrhu UI z~časti~\ref{datasety-navrh} bude môcť používateľ sledovať stav datasetu na~stránke s~datasetmi. Aby bola aplikácia schopná zobraziť aktuálny stav datasetu, bude Frontend periodicky získavať informáciu o~jeho stave od~Aplikačného servera, ktorý informáciu čerpá z~databázy (viď obr.~\ref{polling}). Možné hodnoty stavu datasetu budú:
 \begin{itemize}
 \item Created~-- dataset je vytvorený, ale~ešte sa nezaradil do~radu na~analýzu
 \item Queued~-- dataset je zaradený do~radu na~analýzu, ale~ešte sa nezačalo s~jeho analýzou
@@ -191,6 +186,18 @@ Po~nahratí datasetu sa spustí jeho analýza, ktorá je časovo náročná. Pou
 \item \textit{Processed}~-- dataset je analyzovaný
 \item \textit{Failed}~-- analýza datasetu skončila s~chybou
 \end{itemize}
+
+\begin{figure}[H]\centering
+\includegraphics[width=140mm]{img/polling}
+\caption{Polling stavu datasetu.}
+\label{polling}
+\end{figure}
+
+
+
+--- \textbf{POZOR!} Do konca kapitoly nasleduje starý text ---
+
+
 
 \section{Backend}
 
@@ -218,8 +225,6 @@ Dôvod rozdelenia si vysvetlíme ďalej v tejto kapitole.
 Na~implementáciu aplikačného servera je vhodné použiť jazyk~C\# v~kombinácii s~frameworkmi ASP.NET Core a~Entity Framework Core. Ide o~štandardnú a často používanú voľbu v~oblasti vývoja moderných webových aplikácií~\cite{top-backend-languages}, najmä v~prípade potreby silnej typovej kontroly a~integrácie s~relačnými databázami. Táto kombinácia poskytuje výhody v~podobe silného typového systému, ktorý prispieva k~znižovaniu behových chýb, ako aj pohodlného ORM (Object Relational Mapping) prístupu k~databáze. Vďaka využitiu Entity Framework Core a~prístupu \textit{Code First} nie je potrebné manuálne vytvárať SQL schémy~-- databázové tabuľky sú generované automaticky na~základe definícií v~kóde.
 
 Z~pohľadu databázovej vrstvy je vzhľadom na~zvolený .NET stack prirodzenou voľbou relačná databáza Microsoft SQL Server, ktorá sa v praxi často využíva spolu s vyššie uvedenými technológiami. Autor má s jazykmi C\# a~s~technológiami ASP.NET Core a~Entity Framework Core predchádzajúce skúsenosti, čo taktiež prispelo k~výberu tohto riešenia.
-
-
 
 \section{Výsledná architektúra}
 

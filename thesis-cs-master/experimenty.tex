@@ -137,14 +137,14 @@ Táto séria otázok sa využije pri datasete Population structure 2011. Pri vyt
 
 \section{Hodnotenie}
 
-Každú odpoveď LLM, už či pri analýze alebo pri chatovaní, ohodnotíme čislom:
+Každú odpoveď LLM, už či pri analýze alebo pri chatovaní, ohodnotíme číslom:
 \begin{itemize}
 \item 0\-- odpoveď neexistuje alebo neobsahuje požadované informácie, nezhoduje sa s očakávaným výsledkom
 \item 1\-- odpoveď sa zhoduje s očakávaným výsledkom do istej miery, ale nie je úplna, napr. očakávaná odpoveď obsahuje viacero častí a jedna z nich chýba
 \item 2\-- odpoveď sa zhoduje s očakávaným výsledkom
 \end{itemize}
 
-Ako bolo v úvode spomenuté po dokončení analýzy vytvoríme percentuálne vyhodnotenie naplnenosti DK, pričom Asistent bude bodovaný za každú odpoveď
+Ako bolo v úvode spomenuté po dokončení analýzy vytvoríme percentuálne vyhodnotenie naplnenosti DK. Celkovo budeme mať teda výsledok naplenia DK, výsledok úspešnosti.
 
 Dataset pozostáva z viacerých CSV súborov. Pri niektorých odpovediach je spomenutý nie len názov stĺpca, ale aj názov tabuľky. Ako budeme vyhodnocovať? Ak užívateľ nešpecifikuje, ze chce aj názov tabuľky, nemusí tam byť?
 // TODO 0,1,2
