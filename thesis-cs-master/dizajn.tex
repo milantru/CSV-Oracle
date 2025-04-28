@@ -71,6 +71,116 @@ Na~zobrazenie existujúcich chatov, ich výber, mazanie a~samotné chatovanie s~
 
 Z~predchádzajúceho textu vyplýva, že v~aplikácii, napríklad pri~chatovaní alebo~úprave DK, bude potrebné dynamicky meniť používateľské rozhranie (UI). Existuje mnoho frameworkov, ktoré by sa na~túto prácu hodilo. Medzi najpopulárnejšie patria~\cite{popular-frontend-frameworks}: \textit{React}, \textit{Vue}, \textit{Angular}, \textit{Svelte} atď. Nepotrebujeme žiadnu špecifickú funkcionalitu, ktorá by bola limitovaná výlučne na~jeden z~uvedených frameworkov. Požadovaný výsledok by bolo možné dosiahnuť použitím ktoréhokoľvek z~nich. Keďže autor má predchádzajúce skúsenosti s~knižnicou \textit{React}, bola zvolená práve táto možnosť.
 
+\section{Analýza}
+
+V~\ref{ocakavany-priebeh-vyuzitia-aplikacie} bol opísaný očakávaný priebeh využitia aplikácie, ktorého súčasťou bola analýza datasetu. Jej výsledkom je DK. Analýza sa skladá z:
+\begin{itemize}
+\item dátového profilovania, ktorého výsledkom je report
+\item vytvorenia promptov s~využitím reportov
+\item promptovania LLM, ktoré bude mať prístup k~CSV súborom, reportom, príp.~aj k~CSVW schéme ak bola nahraná
+\end{itemize}
+
+\subsection{Výber knižnice pre~dátové profilovanie}
+
+Medzi najpoužívanejšie knižnice určené na~data profiling patria~\cite{data-profiling-packages}:
+\begin{itemize}
+\item \textbf{Great Expectations}~-- umožňuje validáciu a~profilovanie údajov~\cite{great-expectations}. Kľúčovým konceptom knižnice sú tzv.~\textit{expectations}, čo predstavujú deklaratívne tvrdenia o~vlastnostiach údajov~\cite{expectations}. Relevantná je najmä funkcionalita automatizovaného profilovania údajov~\cite{automated-data-profiling}. Hoci automatizované profilovanie generuje sadu expectations, medzi preddefinovanými možnosťami chýba analýza korelácií medzi stĺpcami. Tie však podľa analýzy požiadavkov chceme (viď~\ref{vizualizácia-dk}). Tento údaj je síce možné doplniť prostredníctvom vlastných expectations, ale~to vyžaduje prácu navyše. Okrem toho sa zdá má knižnica v~porovnaní s~inými pomerne strmú krivku učenia~\cite{learning-curve}.
+
+\item \textbf{Lux}~-- knižnica zameraná na~uľahčenie rýchlej a~intuitívnej exploratívnej analýzy údajov prostredníctvom automatizovaných vizualizácií. Po~vypísaní \texttt{DataFrame} v~Jupyter Notebooku poskytne knižnica návrhy vizualizácií, ktoré zvýrazňujú zaujímavé vzory v~dátach. Knižnica je vhodná najmä na~vizuálne skúmanie údajov. Vzhľadom na~to, že naším cieľom je získanie štruktúrovaných výstupov, ktoré môžu zlepšiť kvalitu promptovania, nie je táto knižnica pre~náš prípad vhodná.
+
+\item \textbf{DataProfiler}~-- knižnica určená na~jednoduchú analýzu údajov, monitorovanie a~zisťovanie rôznych údajov. Poskytuje štruktúrovaný výstup vo~formáte JSON, ktorý obsahuje požadované dáta, napr.~koreláciu.
+
+\item \textbf{YData Profiling} (predošlý názov \textit{Pandas Profiling})~-- popredná knižnica na~profilovanie údajov, ktorá automatizuje tvorbu detailných správ obsahujúcich štatistiky a~vizualizácie. Rovnako ako v~prípade DataProfileru, aj tu je možné získať štruktúrovaný výstup vo~formáte JSON s~požadovanými údajmi. Knižnica sa vyznačuje jednoduchosťou použitia a~možnosťou generovať výstup aj vo~forme HTML reportu.
+\end{itemize}
+
+Na~základe uvedenej analýzy vyplýva, že pre naše účely sú najvhodnejšie knižnice \textbf{DataProfiler} a~\textbf{YData Profiling}. YData Profiling má oproti knižnici DataProfiler výhodu v~tom, že okrem JSON výstupu dokáže vygenerovať aj HTML report, ktorý by sa mohol používateľovi ponúknuť na~stiahnutie alebo~mu ho vizualizovať na~stránke. To síce nie je cieľom tejto práce, ale~predstavuje to možné rozšírenie do~budúcna. Preto sme sa rozhodli využiť knižnicu \textbf{YData Profiling}.
+
+Knižnica YData Profiling rozlišuje deväť dátových typov~\cite{ydata-profiling-datatypes}, resp. desať ak rozlišujeme typy \texttt{Date} a~\texttt{DateTime}. V~rámci tejto práce sa obmedzíme len typy numerické, textové, kategorické a~na~dátumy. Typy ako napr.~obrázky, neuvažujeme.
+
+\subsection{Vytvorenie promptov}
+\label{vytvorenie-promptov}
+
+Táto časť predstaví prompty určené na~získanie informácií o~datasete podľa požiadaviek špecifikovaných v~\ref{dk}, ktoré budú ďalej využité v~DK.
+
+\begin{itemize}
+\item \textbf{Prompt pre~získanie opisu datasetu ak ho tvorí jeden súbor:}
+
+,,Write description of~the~dataset , and~try to~explain the~context or~domain the~data comes from.``
+
+\item \textbf{Prompt pre~získanie opisu datasetu ak ho tvorí viacero súborov:}
+
+,,Write description of~the~dataset (considering all tables together) , and~try to~explain the~context or~domain the~data comes from.``
+
+\item \textbf{Prompt pre~získanie opisu tabuľky:}
+
+,,Write description of~the~table '{NÁZOV TABUĽKY}', what kind of~data does the~table contain?``
+
+\item \textbf{Prompt pre~získanie charakteristiky entity alebo~skupiny entít reprezentovaných riadkom tabuľky:}
+
+,,Write what kind of~entity or~entities a~row in~the~table '{NÁZOV TABUĽKY}' represent.``
+
+\item \textbf{Prompt pre~získanie opisu stĺpca:}
+
+,,Write description of~the~column '{NÁZOV STĹPCA}' from the~table '{NÁZOV TABUĽKY}'. Focus on what the~column contains or~measures. Respond only with the~description, no additional text.``
+
+\item \textbf{Prompt pre~získanie vysvetlenie chýbajúcich hodnôt:}
+
+,,The column '{NÁZOV STĹPCA}' from the~table '{NÁZOV TABUĽKY}' has {POČET CHÝBAJÚCICH HODNÔT} missing values ({POČET CHÝ\-BA\-JÚ\-CICH HODNÔT V~PERCENTÁCH}\%). Explain why values might be missing in~this column. Respond only with~the~explanation, no additional text.``
+
+\item \textbf{Prompt pre~získanie vysvetlenie korelácie dvoch stĺpcov:}
+
+,,The~columns '{NÁZOV PRVÉHO STĹPCA}' and~'{NÁZOV DRUHÉHO STĹPCA}' from~the~table '{NÁZOV TABUĽKY}' are~correlated (correlation value: {HODNOTA KORELÁCIE}). Try to~explain why this correlation exists. Respond only with~the~explanation, no additional text. Please do not use terms like 'former' or~'latter', refer to~the~columns by their exact names.``
+\end{itemize}
+
+Získanie vzorových riadkov si nevyžaduje použitie promptu. Ide o~informáciu, ktorú nie je potrebné vysvetľovať ani~získavať iným komplexným spôsobom. Stačí riadky prečítať buď z~poskytnutých CSV súborov alebo~z~reportu vygenerovaného dátovým profilovaním, keďže knižnica YData Profiling poskytuje aj túto informáciu.
+
+\subsection{Práca s~LLM}
+
+Poslednou časťou analýzy je promptovanie LLM, ktoré by malo mať prístup k~CSV súborom, reportom a~prípadne aj k~CSVW schéme, ak bola nahraná. Tento prístup je potrebný na~to, aby model mohol odpovedať na~predpripravené prompty definované v~predchádzajúcej časti (viď~\ref{vytvorenie-promptov}).
+
+Analýza však nie je jediným miestom, kde je potrebné využiť LLM s~prístupom k~spomínaným dátam. Podľa požiadaviek uvedených v~časti~\ref{chat} má byť používateľ schopný komunikovať s~asistentom, teda s~LLM, o~datasete. Okrem toho z~požiadaviek vyplýva, že asistent by mal mať schopnosť upravovať DK, čo zahŕňa aj využívanie nástrojov.
+
+Pre~lepšiu prehľadnosť môžeme zhrnúť, že vo~fáze analýzy musí mať LLM prístup k~dátam ako sú CSV súbory, reporty a~prípadne aj k~CSVW schéme, ak bola nahraná, aby mohol odpovedať na~otázky týkajúce sa datasetu. Rovnako tak musí mať LLM prístup k~týmto dátam aj vo~fáze komunikácie s~používateľom. V~tejto fáze však musí byť schopný navyše udržiavať stav konverzácie a~využívať nástroje na~úpravu DK.
+
+Aby mohol asistent odpovedať na~otázky vyžadujúce údaje z~CSV súborov, reportov alebo~schémy, potrebujeme mu tieto údaje nejakým spôsobom predať. Naskytujú sa možnosti~\cite{giving-llm-context}:
+\begin{enumerate}
+\item Fine-tuning~-- Ide o~proces prispôsobenia predtrénovaného modelu na~konkrétne úlohy alebo~použitia~\cite{fine-tuning}. Tento proces upravuje váhy modelu, čo implikuje nutnosť prístupu k~týmto váham. Táto požiadavka preto~obmedzuje výber modelov, keďže nie všetky váhy sú verejne dostupné. Navyše, ak by sme chceli, aby asistent vedel využívať znalosti z~DK podobne ako napríklad z~CSV súborov alebo~reportov, bolo by potrebné model zakaždým po~úprave DK pretrénovať, čo by mohlo byť z~časového hľadiska nepraktické (záleží od~viacerých faktorov, napr.~veľkost modelu, veľkosť DK).
+
+\item In-Context Learning~-- Proces, pri~ktotom sa požadovaná znalosť vloží v~promptoch do~modelu počas inferencie~\cite{in-context-learning}. Pre~naše úcely je táto možnosť vysoko nepraktická vzhľadom na~potenciálnu veľkosť dát. Dáta by sa nemuseli vôjsť do~kontextového okna modelu.
+
+\item Retrieval-Augmented Generation (ďalej len RAG)~-- Metóda zvyšujúca presnosť a~spoľahlivosť generatívnych modelov tým, že im poskytuje prístup ku~konkrétnym a~relevantným externým zdrojom údajov~\cite{rag}. Ide o~techniku podobnú In-Context Learningu. Dáta, v~našom prípade napr.~CSV súbory, sú rozdelené na~menšie časti, z~ktorých sa vytvárajú vektorové reprezentácie. Tieto vektory sú následne uložené vo~vektorovej databáze. Pri~spracovaní používateľského dotazu sa najprv vygeneruje vektorová reprezentácia dotazu, tzv.~query vektor. Následne sa v~databáze vyhľadá určitý počet vektorov, ktoré sú najpodobnejšie query vektoru a~ich prislúchajúce texty sa použijú ako kontext pri~generovaní odpovede na~používateľský dotaz~\cite{vector-dbs-as-context-source}.
+\end{enumerate}
+
+Na~základe vyššie uvedených skutočností možno konštatovať, že pre~dané účely je najvhodnejšou technikou práve metóda RAG. Pri~zmene DK bude potrebné vytvoriť nové vektory alebo~aktualizovať existujúce záznamy vo~vektorovej databáze, pričom však nebude nutné pri~každej zmene pretrénovávať celý model a~do~kontextu budú vložené iba relevantné údaje. Napriek uvedenej nevýhode sa táto možnosť javí ako najefektívnejšie riešenie, a~preto si ju volíme.
+
+
+\subsection{Výber frameworku pre~prácu s~LLM}
+
+Pre~naše účely bude potrebný framework umožňujúci prácu s~LLM tak, aby bolo možné viesť konverzáciu a~zachovávať históriu predchádzajúcej komunikácie. Ako bolo uvedené v~podkapitole~\ref{limitacie-llm}, LLM si predchádzajúce správy bez~externého riadenia nepamätá. Zároveň musí framework podporovať vyhľadávanie údajov pre~účely implementácie techniky~RAG. Ideálne by mal tiež umožňovať abstraktnú prácu s~LLM, aby systém nebol naviazaný na~konkrétny model a~nebol obmedzený jeho používaním.
+
+Najpopulárnejšími frameworkmi, ktoré spĺňajú vyššie uvedené kritériá sú LangChain a LlamaIndex~\cite{top-rag-frameworks}. Obe frameworky možno využívať v jazykoch Python alebo TypeScript. Python je jedným z~najrozšírenejších jazykov v~oblasti dátovej analýzy a~umelej inteligencie~\cite{top-data-science-languages}, to môže implikovať vyššiu podporu či už v oblasti kódu alebo dokumentácie, ale takisto aj vyššie množstvo knižníc a nástrojov v danej oblasti v prípade potreby.
+
+Medzi najpopulárnejšie frameworky, ktoré spĺňajú všetky uvedené kritériá patrí LangChain a~LlamaIndex~\cite{top-rag-frameworks}. Obidva frameworky sú dostupné pre~programovacie jazyky Python a~TypeScript. Python patrí medzi najrozšírenejšie jazyky v~oblasti dátovej analýzy a~umelej inteligencie~\cite{top-data-science-languages}, čo môže naznačovať vyššiu podporu v~oblasti kódu a~dokumentácie, ako aj širšiu dostupnosť knižníc a~nástrojov v~prípade potreby.
+
+Pre~potreby tejto práce by bolo možné použiť ktorýkoľvek z~nich, dokonca aj ich kombináciu. Autor však nemá predchádzajúce skúsenosti ani s~jedným z~uvedených frameworkov, a~preto by využitie kombinovaného riešenia zbytočne zvyšovalo komplexitu projektu. Z~dôvodu snahy o~zjednodušenie vývoja a~minimalizovanie začiatočnej záťaže bola zvolená len jedna z~možností~-- LlamaIndex. Tento nástroj sa orientuje predovšetkým na~oblasť efektívneho získavania dát z~rôznych zdrojov, tzv.~,,data retrieval``, čo presne zodpovedá hlavnému prípadu použitia v~rámci tejto aplikácie~\cite{langchain-vs-llamaindex}.
+
+\subsection{Index a jeho uloženie}
+
+V~prípade, že sú k~dispozícii údaje, napríklad vo~forme CSV súborov, ako v~našom prípade, ktoré chceme sprístupniť veľkému jazykovému modelu s~cieľom rozšírenia kontextu pri~generovaní odpovedí, je potrebné z~týchto údajov vytvoriť index. Index~\cite{index} je dátová štruktúra, ktorá umožňuje rýchlo získať relevantný kontext pre~LLM na~odpovedanie používateľského dotazu a~predstavuje základný pilier knižnice \textit{LlamaIndex}.
+
+TODO:
+- vytvaranie moze byt narocne na cas, chceme preto ulozit
+- da sa ukladat vselikde, aj na disk, ale to sa neodporuca preto vsetko v ramke
+- akekolvek externe ulozisko uz bude ok
+- nemam extra skusenosti ziadne s tymi, ani ziadnu spesl featuru netreba, cize volime viac-menej nahodne chroam db
+
+
+
+
+
+
+
+
 \subsection{Polling}
 
 Po~nahratí datasetu sa spustí jeho analýza, ktorá je časovo náročná. Používateľ bude môcť sledovať stav datasetu na~stránke s~datasetmi. Frontend bude periodicky získavať informáciu o~stave datasetu. Stav datasetu bude zobrazený a~jeho možné hodnoty sú:
@@ -109,39 +219,7 @@ Na~implementáciu aplikačného servera je vhodné použiť jazyk~C\# v~kombiná
 
 Z~pohľadu databázovej vrstvy je vzhľadom na~zvolený .NET stack prirodzenou voľbou relačná databáza Microsoft SQL Server, ktorá sa v praxi často využíva spolu s vyššie uvedenými technológiami. Autor má s jazykmi C\# a~s~technológiami ASP.NET Core a~Entity Framework Core predchádzajúce skúsenosti, čo taktiež prispelo k~výberu tohto riešenia.
 
-\section{Výber technológií pre LLM server}
 
-Pre~implementáciu aplikačného servera v~súvislosti s~tretím bodom však dáva zmysel uvažovať o~použití jazyka Python, keďže ide o~jeden z~najrozšírenejších jazykov v~oblasti dátovej analýzy a~umelej inteligencie~\cite{top-data-science-languages}. Vďaka tomu je k~dispozícii široké spektrum knižníc a~nástrojov, ktoré môžu byť v~rámci implementácie efektívne využité.
-
-\subsection{Výber knižnice pre data profiling}
-
-Medzi najpoužívanejšie knižnice v~jazyku Python určené na~data profiling patria~\cite{data-profiling-packages}:
-
-\begin{itemize}
-\item \textbf{Great Expectations}~-- umožňuje validáciu a~profilovanie údajov~\cite{great-expectations}. Kľúčovým konceptom knižnice sú tzv.~\textit{expectations}, čo predstavujú deklaratívne tvrdenia o~vlastnostiach údajov~\cite{expectations}. Relevantná je najmä funkcionalita automatizovaného \href{https://legacy.017.docs.greatexpectations.io/docs/0.15.50/#automated-data-profiling}{profilovania údajov}. Hoci automatizované profilovanie generuje sadu expectations, medzi preddefinovanými možnosťami chýba analýza korelácií medzi stĺpcami. Tie však podľa analýzy požiadavkov chceme (viď~\ref{vizualizácia-dk}). Tento údaj je síce možné doplniť prostredníctvom vlastných expectations, ale~to vyžaduje prácu navyše. Okrem toho sa zdá má knižnica v~porovnaní s~inými pomerne strmú krivku učenia~\cite{learning-curve}.
-
-\item \textbf{Lux}~-- knižnica zameraná na~uľahčenie rýchlej a~intuitívnej exploratívnej analýzy údajov prostredníctvom automatizovaných vizualizácií. Po~vypísaní \texttt{DataFrame} v~Jupyter Notebooku poskytne knižnica návrhy vizualizácií, ktoré zvýrazňujú zaujímavé vzory v~dátach. Knižnica je vhodná najmä na~vizuálne skúmanie údajov. Vzhľadom na~to, že naším cieľom je získanie štruktúrovaných výstupov, ktoré môžu zlepšiť kvalitu promptovania, nie je táto knižnica pre~náš prípad vhodná.
-
-\item \textbf{DataProfiler}~-- knižnica určená na~jednoduchú analýzu údajov, monitorovanie a~zisťovanie rôznych údajov. Poskytuje štruktúrovaný výstup vo~formáte JSON, ktorý obsahuje požadované dáta, napr. koreláciu.
-
-\item \textbf{YData Profiling} (predošlý názov \textit{Pandas Profiling})~-- popredná knižnica na~profilovanie údajov, ktorá automatizuje tvorbu detailných správ obsahujúcich štatistiky a~vizualizácie. Rovnako ako v~prípade DataProfileru, aj tu je možné získať štruktúrovaný výstup s~relevantnými informáciami. Knižnica sa vyznačuje jednoduchosťou použitia a~možnosťou generovať výstup aj vo forme HTML reportu.
-\end{itemize}
-
-Na~základe uvedenej analýzy vyplýva, že pre naše účely sú najvhodnejšie knižnice \textbf{DataProfiler} a~\textbf{YData Profiling}. YData Profiling má oproti knižnici DataProfiler výhodu v~tom, že okrem JSON výstupu dokáže vygenerovať aj HTML report, ktorý by sa mohol používateľovi ponúknuť na~stiahnutie alebo~mu ho vizualizovať na~stránke. To síce nie je cieľom tejto práce, ale predstavuje to možné rozšírenie do budúcna. Preto sme sa rozhodli využiť knižnicu \textbf{YData Profiling}.
-
-\subsection{Obmedzenie typov knižnice YData Profiling}
-
-Knižnica YData Profiling rozlišuje deväť dátových typov~\cite{ydata-profiling-datatypes}, resp. desať ak rozlišujeme typy \texttt{Date} a~\texttt{DateTime}. V~rámci tejto práce sa obmedzíme len typy numerické, textové, kategorické a~na~dátumy. Typy ako napr. obrázky, neuvažujeme.
-
-\subsection{Výber knižnice pre prácu s LLM a RAG}
-
-Aby mohol asistent odpovedať na~otázky týkajúce sa konkrétneho datasetu, musí mať prístup k informáciám, ktoré o~ňom existujú. Tieto informácie môže získať prostredníctvom prístupu známeho ako \textit{Retrieval-Augmented Generation} (ďalej len RAG). RAG~\cite{rag} predstavuje metódu, ktorá zvyšuje presnosť a spoľahlivosť generatívnych modelov umelej inteligencie tým, že im poskytuje prístup ku~konkrétnym a~relevantným externým zdrojom údajov.
-
-Medzi najpopulárnejšie knižnice v~jazyku Python určené na~prácu s~veľkými jazykovými modelmi (LLM) a~prístupom RAG patria\textit{LlamaIndex} a~\textit{LangChain}. Pre~potreby tejto práce by bolo možné použiť ktorúkoľvek z~nich, prípadne aj ich kombináciu. Autor však nemá predchádzajúce skúsenosti ani s~jednou z~uvedených knižníc, a~preto by využitie kombinovaného riešenia zbytočne zvyšovalo komplexitu projektu.
-
-Z~dôvodu snahy o~zjednodušenie vývoja a~minimalizovanie začiatočnej záťaže bola zvolená len jedna z~možností~-- konkrétne \textit{LlamaIndex}. Tento nástroj sa orientuje predovšetkým na~oblasť efektívneho získavania dát z~rôznych zdrojov (\textit{data retrieval}), čo presne zodpovedá hlavnému prípadu použitia v~rámci tejto aplikácie~\cite{langchain-vs-llamaindex}.
-
-V~prípade, že sú k~dispozícii údaje, napríklad vo~forme CSV súborov ako v~našom prípade, ktoré chceme sprístupniť veľkému jazykovému modelu s~cieľom rozšírenia kontextu pri generovaní odpovedí, je potrebné z~týchto údajov vytvoriť index. Index~\cite{index} je dátová štruktúra, ktorá umožňuje rýchlo získať relevantný kontext pre~LLM na~odpovedanie použivateľského dotazu a~predstavuje základný pilier knižnice \textit{LlamaIndex}.
 
 \section{Výsledná architektúra}
 

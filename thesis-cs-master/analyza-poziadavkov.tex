@@ -57,8 +57,9 @@ DK by mala ideálne obsahovať:
 
 \item pre~každú tabuľku:
 \begin{itemize}
-\item opis tabuľky
 \item vzorové riadky, teda reálne hodnoty z~tabuliek
+\item opis tabuľky
+\item charakteristiku entity alebo~skupiny entít reprezentovaných riadkom tabuľky
 \item pre~každý stĺpec:
 \begin{itemize}
 
@@ -87,13 +88,14 @@ Každý používateľ bude mať možnosť vytvoriť si vlastný chat o~vlastnom 
 
 \section{Dátové profilovanie}
 
-V~kapitole~\ref{limitacie-llm} bolo spomenuté, že LLM majú obmedzené schopnosti uvažovania. Ak by sa používateľ opýtal na~otázky využívajúce výpočty, napr.~na~ priemernú hodnotu v~určitom stĺpci, asistent by nemusel odpovedať správne.
+V~kapitole~\ref{limitacie-llm} bolo spomenuté, že LLM majú obmedzené schopnosti uvažovania. Ak by sa používateľ opýtal na~otázky využívajúce výpočty, napr.~na~priemernú hodnotu v~určitom stĺpci, asistent by nemusel odpovedať správne. Navyše, ako bolo spomenuté v~\ref{dk}, prítomnosť niektorých údajov v~DK bude podmienená~-- budeme vyžadovať vysvetlenie chýbajúcich hodnôt len ak nejaké chýbajú a~vysvetlenie korelácie len ak jej hodnota presiahne $0,5$.
 
-Jedným z~riešení by bolo umožniť asistentovi využívať nástroj na~výpočet priemeru. Ak by však užívateľ chcel viac podobných údajov vyŽadujúcich výpočet, muselo by byť pridaných viacero nástrojov. Vysoký počet nástrojov by mohol spôsobovať LLM problémy pri výbere správneho nástroja~\cite{too-many-tools}. Ďalšou potenciálnou nevýhodou môže byť dĺžka výpočtu niektorých požadovaných údajov. V~prípade, že by sa hodnota vypočítavala pri každej požiadavke používateľa, mohlo by to negatívne ovplyvniť používateľskú skúsenosť.
+Jedným zo~spôsobov ako získať potrebné údaje by bolo umožniť asistentovi využívať nástroj na~výpočet priemeru, príp.~iných hodnôt. Ak by však užívateľ chcel viac podobných údajov vyžadujúcich výpočet, muselo by byť pridaných viacero nástrojov. Vysoký počet nástrojov by mohol spôsobovať LLM problémy pri~výbere správneho nástroja~\cite{too-many-tools}. Ďalšou potenciálnou nevýhodou môže byť dĺžka výpočtu niektorých požadovaných údajov. V~prípade, že by sa hodnota vypočítavala pri~každej požiadavke používateľa, mohlo by to negatívne ovplyvniť používateľskú skúsenosť.
 
-Ďalším možným riešením je vykonanie dátového profilovania, ktoré predstavuje proces analyzovania a~hodnotenia kvality, štruktúry a~obsahu dát. Výsledkom profilovania môžu byť údaje, ako napríklad minimálne a~maximálne hodnoty, priemerné hodnoty, korelácie, najčastejšie sa vyskytujúce hodnoty a~podobne. V~prípade zvolenia tejto možnosti by postačovalo vykonať dátové profilovanie iba raz a~výsledky uložiť. Pri~požiadavke používateľa na~niektorú hodnotu by tak bolo možné výsledok jednoducho načítať, bez potreby pridávania viacerých nástrojov asistentovi a~bez zdržania spôsobeného opakovanými výpočtami. Na~základe uvedených skutočností volíme toto riešenie.
+Ďalším možným riešením je vykonanie dátového profilovania (,,data profiling``). Ide o~proces analyzovania a~hodnotenia kvality, štruktúry a~obsahu dát. Výsledkom profilovania môžu byť údaje, ako napríklad minimálne a~maximálne hodnoty v~stĺpcoch, priemerné hodnoty, korelácie, najčastejšie sa vyskytujúce hodnoty a~podobne. V~prípade zvolenia tejto možnosti by postačovalo vykonať dátové profilovanie iba raz a~výsledky uložiť. Pri~požiadavke používateľa na~získanie určitej hodnoty alebo~pri~analýze datasetu by bolo možné výsledok jednoducho načítať, bez~potreby pridávania ďalších nástrojov asistentovi a~bez zdržania spôsobeného opakovanými výpočtami. Na~základe uvedených skutočností volíme toto riešenie.
 
 \section{Očakávaný priebeh využitia aplikácie}
+\label{ocakavany-priebeh-vyuzitia-aplikacie}
 
 Po~vymenovaní požiadaviek na~systém sa teraz zameriame na~priebeh využitia základnej funkcionality aplikácie. Tento priebeh je nasledovný:
 \begin{enumerate}
@@ -101,9 +103,9 @@ Po~vymenovaní požiadaviek na~systém sa teraz zameriame na~priebeh využitia z
 \item Používateľ nahrá dataset pozostavajúci z~jedného alebo~viacerých CSV súborov, prípadne nahrá aj CSVW schému.
 \item Po~nahratí súborov sa vykoná analýza, t.j.:
 \begin{enumerate}
-\item spustí sa data profiling, ktorého výsledkom je report,
+\item spustí sa dátové profilovanie, ktorého výsledkom je report,
 \item z~reportu sa vezmú potrebné údaje, napr.~hodnoty korelácie, na~vytvorenie promptov (ďalej už len predpripravené prompty),
-\item predpripravené prompty sú využité na~promptovanie LLM, ktorý bude mať prístup k~nahraným CSV súborom, reportom, príp. aj k~CSVW schéme ak bola nahraná,
+\item predpripravené prompty sú využité na~promptovanie LLM, ktorý bude mať prístup k~nahraným CSV súborom, reportom, príp.~aj k~CSVW schéme ak bola nahraná,
 \item výsledkom sú informácie o~datasete, pomocou ktorých sa vytvorí DK. \end{enumerate}
 \item Po~dokončení analýzy si používateľ zvolí dataset a~vytvorí nový chat, alternatívne zvolí existujúci, kde môže klásť otázky ohľadom datasetu a~asistent mu na~nich bude odpovedať.
 \item Ak sa pri~chatovaní objavia informácie, ktoré by chcel používateľ zapísať do~DK, môže o~to požiadať asistenta, a~ten DK aktualizuje. \end{enumerate}
