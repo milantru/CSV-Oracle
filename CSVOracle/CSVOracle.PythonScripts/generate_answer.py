@@ -1,4 +1,3 @@
-import re
 import json
 import argparse
 from llama_index.core.tools import QueryEngineTool, ToolMetadata, FunctionTool
@@ -140,7 +139,7 @@ def get_dataset_description() -> str:
     """Retrieves the description of the dataset from the dataset knowledge."""
     return GLOBALS["dataset_knowledge"].description
 
-def update_dataset_description(new_description: str) -> None:
+def update_dataset_description(new_description: str) -> str:
     """Updates the description of the dataset in the dataset knowledge.
 
     IMPORTANT:
@@ -152,8 +151,12 @@ def update_dataset_description(new_description: str) -> None:
 
     Args:
         new_description (str): The full, updated description for the dataset.
+
+    Returns:
+        str: A confirmation message indicating the description was successfully updated.
     """
     GLOBALS["dataset_knowledge"].description = new_description
+    return "Dataset description updated successfully."
 
 # TableKnowledge functions
 def find_table_knowledge(dataset_knowledge: DatasetKnowledge, table_name: str):
@@ -172,12 +175,12 @@ def get_table_description(table_name: str) -> str:
         str: The table description or an error message if the table is not found.
     """
     table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
-    if not table_knowledge:
-        return f"Table with name {table_name} was not found."
-    
-    return table_knowledge.description
+    if table_knowledge:
+        return table_knowledge.description
+    else:
+        return f"Error: Table with name '{table_name}' not found. Invalid table name provided."
 
-def update_table_description(table_name: str, new_description: str) -> None:
+def update_table_description(table_name: str, new_description: str) -> str:
     """Updates the description of a specified table in the dataset knowledge.
 
     IMPORTANT:
@@ -190,10 +193,16 @@ def update_table_description(table_name: str, new_description: str) -> None:
     Args:
         table_name (str): The name of the table.
         new_description (str): The full, updated description for the table.
+
+    Returns:
+        str: A message indicating success or failure.
     """
     table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
     if table_knowledge:
         table_knowledge.description = new_description
+        return f"Description for table '{table_name}' updated successfully."
+    else:
+        return f"Error: Table with name '{table_name}' not found. Invalid table name provided."
 
 def get_table_row_entity_description(table_name: str) -> str:
     """Retrieves the row entity description of a specified table from the dataset knowledge.
@@ -205,12 +214,12 @@ def get_table_row_entity_description(table_name: str) -> str:
         str: The row entity description or an error message if the table is not found.
     """
     table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
-    if not table_knowledge:
-        return f"Table with name {table_name} was not found."
+    if table_knowledge:
+        return table_knowledge.row_entity_description
+    else:
+        return f"Error: Table with name '{table_name}' not found. Invalid table name provided."
 
-    return table_knowledge.row_entity_description
-
-def update_table_row_entity_description(table_name: str, new_description: str) -> None:
+def update_table_row_entity_description(table_name: str, new_description: str) -> str:
     """Updates the row entity description of a specified table in the dataset knowledge.
 
     IMPORTANT:
@@ -223,10 +232,16 @@ def update_table_row_entity_description(table_name: str, new_description: str) -
     Args:
         table_name (str): The name of the table.
         new_description (str): The full, updated row entity description.
+
+    Returns:
+        str: A message indicating success or failure.
     """
     table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
     if table_knowledge:
         table_knowledge.row_entity_description = new_description
+        return f"Row entity description for table '{table_name}' updated successfully."
+    else:
+        return f"Error: Table with name '{table_name}' not found. Invalid table name provided."
 
 # ColumnKnowledge functions
 def find_column_knowledge(dataset_knowledge: DatasetKnowledge, table_name: str, column_name: str):
@@ -240,6 +255,14 @@ def find_column_knowledge(dataset_knowledge: DatasetKnowledge, table_name: str, 
     
     return None
 
+def get_err_msg(column_name, table_name):
+    err_msg = f"Error: Column '{column_name}' not found in table '{table_name}'."
+    table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
+    if table_knowledge:
+        return err_msg + " Invalid column name provided."
+    else:
+        return err_msg + " Invalid table name provided." # Column name could be also wrong, should find out in next iteration if so 
+
 def get_column_description(table_name: str, column_name: str) -> str:
     """Retrieves the description of a specified column from the dataset knowledge.
     
@@ -251,10 +274,12 @@ def get_column_description(table_name: str, column_name: str) -> str:
         str: The column description or an error message if the column is not found.
     """
     column_knowledge = find_column_knowledge(GLOBALS["dataset_knowledge"], table_name, column_name)
-    return column_knowledge.description if column_knowledge else \
-        f"Column {column_name} was not found in table {table_name}."
+    if column_knowledge:
+        return column_knowledge.description
+    else:
+        return get_err_msg(column_name, table_name)
 
-def update_column_description(table_name: str, column_name: str, new_description: str) -> None:
+def update_column_description(table_name: str, column_name: str, new_description: str) -> str:
     """Updates the description of a specified column in the dataset knowledge.
 
     IMPORTANT:
@@ -268,10 +293,16 @@ def update_column_description(table_name: str, column_name: str, new_description
         table_name (str): The name of the table.
         column_name (str): The name of the column.
         new_description (str): The full, updated description for the column.
+
+    Returns:
+        str: A message indicating success or failure.
     """
     column_knowledge = find_column_knowledge(GLOBALS["dataset_knowledge"], table_name, column_name)
     if column_knowledge:
         column_knowledge.description = new_description
+        return f"Description of column '{column_name}' in table '{table_name}' updated successfully."
+    else:
+        return get_err_msg(column_name, table_name)
 
 def get_missing_values_explanation(table_name: str, column_name: str) -> str:
     """Retrieves the explanation for missing values in a specified column from the dataset knowledge.
@@ -284,10 +315,12 @@ def get_missing_values_explanation(table_name: str, column_name: str) -> str:
         str: The missing values explanation or an error message if the column is not found.
     """
     column_knowledge = find_column_knowledge(GLOBALS["dataset_knowledge"], table_name, column_name)
-    return column_knowledge.missing_values_explanation if column_knowledge else \
-        f"Column {column_name} was not found in table {table_name}."
+    if column_knowledge:
+        return column_knowledge.missing_values_explanation
+    else:
+        return get_err_msg(column_name, table_name)
 
-def update_missing_values_explanation(table_name: str, column_name: str, new_missing_values_explanation: str) -> None:
+def update_missing_values_explanation(table_name: str, column_name: str, new_missing_values_explanation: str) -> str:
     """Updates the explanation for missing values in a specified column in the dataset knowledge.
 
     IMPORTANT:
@@ -301,10 +334,41 @@ def update_missing_values_explanation(table_name: str, column_name: str, new_mis
         table_name (str): The name of the table.
         column_name (str): The name of the column.
         new_missing_values_explanation (str): The full, updated explanation for missing values.
+
+    Returns:
+        str: A message indicating success or failure.
     """
     column_knowledge = find_column_knowledge(GLOBALS["dataset_knowledge"], table_name, column_name)
     if column_knowledge:
         column_knowledge.missing_values_explanation = new_missing_values_explanation
+        return f"Explanation for missing values in column '{column_name}' in table '{table_name}' updated successfully."
+    else:
+        return get_err_msg(column_name, table_name)
+
+# CorrelationExplanation functions
+def try_find_correlation_explanation(dataset_knowledge: DatasetKnowledge, table_name: str, column1_name: str, column2_name: str):
+    table_knowledge = find_table_knowledge(dataset_knowledge, table_name)
+    
+    err_msg = f"Error: Correlation explanation for columns '{column1_name}' and '{column2_name}' not found in table '{table_name}.'"
+    if not table_knowledge:
+        return (err_msg + " Invalid table name provided.", False) # Colum names could be also wrong, should find out in next iteration if so
+    
+    for correlation_explanation in table_knowledge.correlation_explanations:
+        if (correlation_explanation.column1_name == column1_name and correlation_explanation.column2_name == column2_name) \
+            or correlation_explanation.column1_name == column2_name and correlation_explanation.column2_name == column1_name:
+            return (correlation_explanation, True)
+
+    # Explanation was not returned, now we try to find out why 
+    column1_knowledge = find_column_knowledge(dataset_knowledge, table_name, column1_name)
+    column2_knowledge = find_column_knowledge(dataset_knowledge, table_name, column2_name)
+    if column1_knowledge is None and column2_knowledge is None:
+        return (err_msg + " Both 'column1_name' and 'column2_name' are invalid.", False)
+    elif column1_knowledge is not None and column2_knowledge is None:
+        return (err_msg + " Column 'column2_name' is invalid.", False)
+    elif column1_knowledge is None and column2_knowledge is not None:
+        return (err_msg + " Column 'column1_name' is invalid.", False)
+    else:
+        return (err_msg, False) # This should never happen, but for the sake of defensive programming, this code is present
 
 def get_correlation_explanation(table_name: str, column1_name: str, column2_name: str) -> str:
     """Retrieves the correlation explanation between two specified columns from the dataset knowledge.
@@ -317,18 +381,15 @@ def get_correlation_explanation(table_name: str, column1_name: str, column2_name
     Returns:
         str: The correlation explanation or an error message if a column is not found.
     """
-    table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
-    if not table_knowledge:
-        return f"Table {table_name} not found."
+    correlation_explanation_or_err_msg, is_found = try_find_correlation_explanation(
+        GLOBALS["dataset_knowledge"], table_name, column1_name, column2_name)
     
-    for correlation_explanation in table_knowledge.correlation_explanations:
-        if (correlation_explanation.column1_name == column1_name and correlation_explanation.column2_name == column2_name) \
-            or correlation_explanation.column1_name == column2_name and correlation_explanation.column2_name == column1_name:
-            return correlation_explanation.explanation
-    
-    return f"Correlation explanation for columns {column1_name} and {column2_name} was not found in table {table_name}."
+    if is_found:
+        return correlation_explanation_or_err_msg.explanation
+    else:
+        return correlation_explanation_or_err_msg
 
-def update_correlation_explanation(table_name: str, column1_name: str, column2_name: str, new_explanation: str) -> None:
+def update_correlation_explanation(table_name: str, column1_name: str, column2_name: str, new_explanation: str) -> str:
     """Updates the correlation explanation between two specified columns in the dataset knowledge.
 
     IMPORTANT:
@@ -343,13 +404,18 @@ def update_correlation_explanation(table_name: str, column1_name: str, column2_n
         column1_name (str): The name of the first column.
         column2_name (str): The name of the second column.
         new_explanation (str): The full, updated correlation explanation.
+
+    Returns:
+        str: A message indicating success or failure.
     """
-    column1_knowledge = find_column_knowledge(GLOBALS["dataset_knowledge"], table_name, column1_name)
-    if not column1_knowledge:
-        return
-    for correlation_explanation in column1_knowledge.correlation_explanations:
-        if correlation_explanation.column2_name == column2_name:
-            correlation_explanation.explanation = new_explanation
+    correlation_explanation_or_err_msg, is_found = try_find_correlation_explanation(
+        GLOBALS["dataset_knowledge"], table_name, column1_name, column2_name)
+    
+    if is_found:
+        correlation_explanation_or_err_msg.explanation = new_explanation
+        return f"Explanation for correlation of columns '{column1_name}' and '{column2_name}' in table '{table_name}' updated successfully."
+    else:
+        return correlation_explanation_or_err_msg
 
 def create_func_tools():
     func_tools = []
