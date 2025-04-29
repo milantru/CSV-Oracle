@@ -74,7 +74,7 @@ namespace CSVOracle.Server.Services.BackgroundServices
 						this.logger.LogError(e, $"Failed processing dataset with id `{datasetId}`.");
 
 						var dataset = await GetDatasetAsync(datasetId);
-						await UpdateDatasetStatusAsync(dataset, DatasetStatus.Failed);
+						await UpdateDatasetAsync(dataset, DatasetStatus.Failed);
 					}
 				}
 			}
@@ -90,12 +90,16 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			return dataset;
 		}
 
-		private async Task UpdateDatasetStatusAsync(Dataset dataset, DatasetStatus newStatus)
+		private async Task UpdateDatasetAsync(Dataset dataset, DatasetStatus newStatus, string? initialDatasetKnowledgeJson = null)
 		{
 			using var scope = scopeFactory.CreateScope();
 			var datasetRepository = scope.ServiceProvider.GetRequiredService<IDatasetRepository>();
 
 			dataset.Status = newStatus;
+			if (initialDatasetKnowledgeJson is not null)
+			{
+				dataset.InitialDatasetKnowledgeJson = initialDatasetKnowledgeJson;
+			}
 			await datasetRepository.UpdateAsync(dataset);
 		}
 
@@ -103,7 +107,7 @@ namespace CSVOracle.Server.Services.BackgroundServices
 		{
 			// Update dataset status to processing
 			var dataset = await GetDatasetAsync(datasetId);
-			await UpdateDatasetStatusAsync(dataset, DatasetStatus.Processing);
+			await UpdateDatasetAsync(dataset, DatasetStatus.Processing);
 
 			// Prepare paths
 			var datasetFolderPath = Path.Join(dataFolderPath, datasetId.ToString());
@@ -171,9 +175,9 @@ namespace CSVOracle.Server.Services.BackgroundServices
 					promptingPhaseInstructionsFilePath, initialDatasetKnowledgeFilePath);
 
 			// Read output and update dataset
-			dataset.InitialDatasetKnowledgeJson = File.ReadAllText(initialDatasetKnowledgeFilePath);
+			var initialDatasetKnowledgeJson = File.ReadAllText(initialDatasetKnowledgeFilePath);
 
-			await UpdateDatasetStatusAsync(dataset, DatasetStatus.Processed);
+			await UpdateDatasetAsync(dataset, DatasetStatus.Processed, initialDatasetKnowledgeJson);
 
 			// Delete dataset folder with everything in it
 			Directory.Delete(datasetFolderPath, recursive: true);
