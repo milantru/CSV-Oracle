@@ -48,7 +48,6 @@ namespace CSVOracle.Data.Repositories
 			storedDataset.Separator = dataset.Separator;
 			storedDataset.Encoding = dataset.Encoding;
 			storedDataset.InitialDatasetKnowledgeJson = dataset.InitialDatasetKnowledgeJson;
-			storedDataset.ChatLlmInstructions = dataset.ChatLlmInstructions;
 
 			// User is not updated because once the dataset is assigned to the user (when creating dataset), it is final.
 
