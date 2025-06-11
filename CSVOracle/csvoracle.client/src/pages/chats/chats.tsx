@@ -9,6 +9,7 @@ import DatasetKnowledgeDisplay from "./components/DatasetKnowledgeDisplay";
 import { DatasetKnowledge } from "./types";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css";
+import "./chats.tsx.css";
 
 function Chats() {
 	const { datasetId } = useParams();
@@ -51,10 +52,10 @@ function Chats() {
 	return (
 		<div className="d-flex position-relative" style={{ width: "100vw", height: "100vh" }}>
 			{/* Side bar with chats and buttons */}
-			<aside className="w-25 position-absolute d-flex flex-column border" style={{ height: "100%" }}>
-				<div className="text-center">
-					<Link to="/datasets" className="btn btn-primary my-2 mr-2">Back to datasets</Link>
-					<Link to={`/chats/${datasetId}/new`} className="btn btn-primary my-2">New dataset chat</Link>
+			<aside className="w-25 position-absolute d-flex flex-column border" style={{ height: "100%", minWidth: "175px" }}>
+				<div className="sidebar-btns d-flex align-items center justify-content-center text-center">
+					<Link to="/datasets" className="btn btn-primary my-2">Back to datasets</Link>
+					<Link to={`/chats/${datasetId}/new`} className="new-chat-btn btn btn-primary my-2">New dataset chat</Link>
 				</div>
 				<div className="overflow-auto border border-top" style={{ flexGrow: 1 }}>
 					{isLoadingChats ? (
