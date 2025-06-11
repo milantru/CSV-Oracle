@@ -141,7 +141,6 @@ namespace CSVOracle.Server.Controllers
 				return StatusCode(StatusCodes.Status400BadRequest, message);
 			}
 
-			// TODO Refactor
 			var userView = NormalizeUserView(request.UserView);
 
 			string? chatHistoryJson = null;
@@ -234,7 +233,6 @@ namespace CSVOracle.Server.Controllers
 				return StatusCode(StatusCodes.Status404NotFound, message);
 			}
 
-			// TODO Refactor
 			var chatFolderPath = Path.Join(this.dataFolderPath, Guid.NewGuid().ToString());
 			Directory.CreateDirectory(chatFolderPath);
 
@@ -350,6 +348,13 @@ namespace CSVOracle.Server.Controllers
 			 * because they can be updated only when chatting. */
 		}
 
+		/// <summary>
+		/// Normalizes a user view string by trimming whitespace and converting empty or whitespace-only strings to null.
+		/// </summary>
+		/// <param name="userView">The input user view string to normalize. May be null or contain whitespace.</param>
+		/// <returns>
+		/// A trimmed, non-empty string if the input is not null or whitespace-only; otherwise, returns null.
+		/// </returns>
 		private static string? NormalizeUserView(string? userView)
 		{
 			string? userViewTrimmedOrNull = userView?.Trim();
@@ -427,8 +432,6 @@ namespace CSVOracle.Server.Controllers
 			{
 				chatHistoryJson = System.IO.File.ReadAllText(updatedChatHistoryFilePath);
 			}
-			// TODO remove?
-			//string answer = System.IO.File.ReadAllText(answerFilePath); // TODO Do we need answer?
 
 			await Task.WhenAll(readingTasks);
 			return (chatHistoryJson, updatedDatasetKnowledgeJson);
@@ -444,7 +447,6 @@ namespace CSVOracle.Server.Controllers
 			// Prepare paths for outputs
 			string updatedChatHistoryFilePath = Path.Join(chatFolderPath, "updated_chat_history.json");
 			string updatedDatasetKnowledgeFilePath = Path.Join(chatFolderPath, "updated_dataset_knowledge.json");
-			string answerFilePath = Path.Join(chatFolderPath, "answer.txt");
 
 			// Generate answer
 			var options = new JsonSerializerOptions { WriteIndented = false };
@@ -459,7 +461,6 @@ namespace CSVOracle.Server.Controllers
 				message_path = messageFilePath,
 				updated_chat_history_path = updatedChatHistoryFilePath,
 				updated_dataset_knowledge_path = updatedDatasetKnowledgeFilePath,
-				answer_path = answerFilePath,
 				api_keys = apiKeysJson
 			};
 			var argsJson = JsonConvert.SerializeObject(args);

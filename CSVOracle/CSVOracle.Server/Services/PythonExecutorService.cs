@@ -21,7 +21,7 @@ namespace CSVOracle.Server.Services
 		/// <param name="scriptFileName">Name of the python script (with extension).</param>
 		/// <param name="arguments">Cmd arguments used when executing the script.</param>
 		/// <returns></returns>
-		public Task ExecutePythonScriptAsync(string scriptFileName, string arguments = "", bool verbose = true) // TODO change verbose to false
+		public Task ExecutePythonScriptAsync(string scriptFileName, string arguments = "", bool verbose = false)
 		{
 			var scriptPath = Path.Join(this.pythonScriptsFolderPath, scriptFileName);
 

@@ -21,7 +21,6 @@ def generate_answer():
         "message_path": data.get("message_path"),
         "updated_chat_history_path": data.get("updated_chat_history_path"),
         "updated_dataset_knowledge_path": data.get("updated_dataset_knowledge_path"),
-        "answer_path": data.get("answer_path"),
         "api_keys": json.loads(data.get("api_keys")),
     })
 

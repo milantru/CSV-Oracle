@@ -13,9 +13,6 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 
 CHROMA_DB_FOLDER_PATH = str(Path(__file__).parent / Path("../Data/chroma_db"))
 
-def get_file_paths(folder_path):
-    return [file_path for file_path in folder_path.iterdir() if file_path.is_file()]
-
 def read_file(file_path, load_as_json=False):
     with open(file_path, "r") as f:
         file_content = json.load(f) if load_as_json else f.read()
@@ -99,7 +96,7 @@ def create_sub_question_query_engine(query_engine_tools, llm):
     sub_question_query_engine = SubQuestionQueryEngine.from_defaults(
         query_engine_tools=query_engine_tools,
         llm=llm,
-        verbose=True, # TODO change to False
+        verbose=False,
         use_async=True
     )
 
@@ -240,8 +237,6 @@ class DatasetKnowledge:
     def __init__(self):
         self.description = ""
         self.table_knowledges = []
-        # TODO might add "other" (not only to dataset knowledge)
-        # self.other = "" # Reserved for other info, e.g. info about frameworks that can be used for work with dataset
 
     def to_dict(self):
         return {

@@ -6,11 +6,14 @@ from llama_index.readers.file import CSVReader
 from llama_index.readers.json import JSONReader
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import StorageContext
-from shared_helpers import get_embedding_model, get_file_paths, get_chroma_db_client
+from shared_helpers import get_embedding_model, get_chroma_db_client
 
 parser = argparse.ArgumentParser(description="Script for creating and storing index in Chroma DB collection either from .txt, .csv, or .json file(s). If input is a folder, it cannot be empty and all files must share the same extension.")
 parser.add_argument("-i", "--input_path", type=str, required=True, help="Path to the input file or non-empty folder containing input files sharing the same extension.")
 parser.add_argument("-c", "--collection_name", type=str, required=True, help="Name of the ChromaDB collection where index will be stored.")
+
+def get_file_paths(folder_path):
+    return [file_path for file_path in folder_path.iterdir() if file_path.is_file()]
 
 def get_documents(files_paths: list[Path]):
     extension = files_paths[0].suffix
@@ -19,14 +22,11 @@ def get_documents(files_paths: list[Path]):
         documents = []
         for file_path in files_paths:
             csv_docs = csv_reader.load_data(file=file_path)
-            # TODO remove comments?
             if len(csv_docs) > 1:
                 print("Warning: number of csv file docs is more than 1.")
             for i, doc in enumerate(csv_docs):
                 table_name = file_path.stem
                 doc.metadata["table_name"] = table_name
-                # doc.metadata["row_index"] = i
-                # doc.metadata["contains_all_column_names"] = i == 0
             documents.extend(csv_docs)
     elif extension == ".json":
         json_reader = JSONReader()

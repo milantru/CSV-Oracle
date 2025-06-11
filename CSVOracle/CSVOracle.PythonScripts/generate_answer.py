@@ -15,11 +15,9 @@ parser.add_argument("-r", "--chat_history_path", type=str, default=None, help="(
 parser.add_argument("-m", "--message_path", type=str, required=True, help="Path to the file containing the new message sent by the user to the chat.")
 parser.add_argument("-s", "--updated_chat_history_path", type=str, required=True, help="Path to the file where the updated chat history should be stored. The new file will be created, or overwritten if already exists.")
 parser.add_argument("-t", "--updated_dataset_knowledge_path", type=str, required=True, help="Path to the file where the updated dataset knowledge should be stored. The new file will be created, or overwritten if already exists.")
-# TODO Do we need answer_path?
-parser.add_argument("-a", "--answer_path", type=str, required=True, help="Path to the file where the answer to the message should be stored. The new file will be created, or overwritten if already exists.")
+# if model requires api key, following argument can be used to retrieve the key and one can pass it to get_model later in code
 parser.add_argument("-k", "--api_keys", type=json.loads, required=True, help="A dictionary as a JSON string containing api keys as values. Currently supported keys are GROQ_API_KEY")
 
-# TODO probably does not have to be global, can be done using capturing
 GLOBALS = {
     "dataset_knowledge": None
 }
@@ -93,8 +91,6 @@ Handling Duplicate Column Names Across Files:
 - Do not assume which file the column belongs to unless it is explicitly stated or strongly implied by the context.
 """
 
-    table_names = [table_knowledge.name for table_knowledge in dataset_knowledge.table_knowledges]
-
     instructions = f'''\
 INSTRUCTIONS:
 - You are part of an application called CSV Oracle, designed to help software engineers and data analysts understand and work with their datasets.
@@ -135,19 +131,13 @@ def load_chat_history(chat_history_dicts_path):
     return chat_history
 
 # DatasetKnowledge functions
-def get_dataset_description() -> str:
-    """Retrieves the description of the dataset from the dataset knowledge."""
-    return GLOBALS["dataset_knowledge"].description
-
 def update_dataset_description(new_description: str) -> str:
     """Updates the description of the dataset in the dataset knowledge.
 
     IMPORTANT:
     - This function will overwrite the current description.
-    - To modify or append to the existing description, first call `get_dataset_description()`.
+    - To modify or append to the existing description, first retrieve current dataset description using `dataset_knowledge` tool.
       Then update that value as needed, and pass the complete, modified version into this function.
-    - If `get_dataset_description()` returns an empty string, it might simply mean no description
-      has been added yet. You can proceed to write the full initial description.
 
     Args:
         new_description (str): The full, updated description for the dataset.
@@ -165,30 +155,13 @@ def find_table_knowledge(dataset_knowledge: DatasetKnowledge, table_name: str):
             return table_knowledge
     return None
 
-def get_table_description(table_name: str) -> str:
-    """Retrieves the description of a specified table from the dataset knowledge.
-    
-    Args:
-        table_name (str): The name of the table.
-    
-    Returns:
-        str: The table description or an error message if the table is not found.
-    """
-    table_knowledge = find_table_knowledge(GLOBALS["dataset_knowledge"], table_name)
-    if table_knowledge:
-        return table_knowledge.description
-    else:
-        return f"Error: Table with name '{table_name}' not found. Invalid table name provided."
-
 def update_table_description(table_name: str, new_description: str) -> str:
     """Updates the description of a specified table in the dataset knowledge.
 
     IMPORTANT:
     - This function will overwrite the current table description.
-    - To modify or append to the existing description, first call `get_table_description(table_name)`.
+    - To modify or append to the existing description, first retrieve current table description using `dataset_knowledge` tool.
       Then update that value as needed, and pass the complete, modified version into this function.
-    - If `get_table_description(table_name)` returns an empty string, it might simply mean no description
-      has been added yet. You can proceed to write the full initial description.
 
     Args:
         table_name (str): The name of the table.
@@ -224,10 +197,8 @@ def update_table_row_entity_description(table_name: str, new_description: str) -
 
     IMPORTANT:
     - This function will overwrite the current row entity description.
-    - To modify or append to the existing description, first call `get_table_row_entity_description(table_name)`.
+    - To modify or append to the existing description, first retrieve table row entity description using `dataset_knowledge` tool.
       Then update that value as needed, and pass the complete, modified version into this function.
-    - If `get_table_row_entity_description(table_name)` returns an empty string, it might simply mean no description
-      has been added yet. You can proceed to write the full initial description.
 
     Args:
         table_name (str): The name of the table.
@@ -263,31 +234,13 @@ def get_err_msg(column_name, table_name):
     else:
         return err_msg + " Invalid table name provided." # Column name could be also wrong, should find out in next iteration if so 
 
-def get_column_description(table_name: str, column_name: str) -> str:
-    """Retrieves the description of a specified column from the dataset knowledge.
-    
-    Args:
-        table_name (str): The name of the table.
-        column_name (str): The name of the column.
-    
-    Returns:
-        str: The column description or an error message if the column is not found.
-    """
-    column_knowledge = find_column_knowledge(GLOBALS["dataset_knowledge"], table_name, column_name)
-    if column_knowledge:
-        return column_knowledge.description
-    else:
-        return get_err_msg(column_name, table_name)
-
 def update_column_description(table_name: str, column_name: str, new_description: str) -> str:
     """Updates the description of a specified column in the dataset knowledge.
 
     IMPORTANT:
     - This function will overwrite the current column description.
-    - To modify or append to the existing description, first call `get_column_description(table_name, column_name)`.
+    - To modify or append to the existing description, first retrieve column description using `dataset_knowledge` tool.
       Then update that value as needed, and pass the complete, modified version into this function.
-    - If `get_column_description(table_name, column_name)` returns an empty string, it might simply mean no description
-      has been added yet. You can proceed to write the full initial description.
 
     Args:
         table_name (str): The name of the table.
@@ -304,31 +257,13 @@ def update_column_description(table_name: str, column_name: str, new_description
     else:
         return get_err_msg(column_name, table_name)
 
-def get_missing_values_explanation(table_name: str, column_name: str) -> str:
-    """Retrieves the explanation for missing values in a specified column from the dataset knowledge.
-    
-    Args:
-        table_name (str): The name of the table.
-        column_name (str): The name of the column.
-    
-    Returns:
-        str: The missing values explanation or an error message if the column is not found.
-    """
-    column_knowledge = find_column_knowledge(GLOBALS["dataset_knowledge"], table_name, column_name)
-    if column_knowledge:
-        return column_knowledge.missing_values_explanation
-    else:
-        return get_err_msg(column_name, table_name)
-
 def update_missing_values_explanation(table_name: str, column_name: str, new_missing_values_explanation: str) -> str:
     """Updates the explanation for missing values in a specified column in the dataset knowledge.
 
     IMPORTANT:
     - This function will overwrite the current explanation.
-    - To modify or append to the existing explanation, first call `get_missing_values_explanation(table_name, column_name)`.
+    - To modify or append to the existing explanation, first retrieve missing values explanation using `dataset_knowledge` tool.
       Then update that value as needed, and pass the complete, modified version into this function.
-    - If `get_missing_values_explanation(table_name, column_name)` returns an empty string, it might simply mean no explanation
-      has been added yet. You can proceed to write the full initial version.
 
     Args:
         table_name (str): The name of the table.
@@ -370,34 +305,13 @@ def try_find_correlation_explanation(dataset_knowledge: DatasetKnowledge, table_
     else:
         return (err_msg, False) # This should never happen, but for the sake of defensive programming, this code is present
 
-def get_correlation_explanation(table_name: str, column1_name: str, column2_name: str) -> str:
-    """Retrieves the correlation explanation between two specified columns from the dataset knowledge.
-    
-    Args:
-        table_name (str): The name of the table.
-        column1_name (str): The name of the first column.
-        column2_name (str): The name of the second column.
-    
-    Returns:
-        str: The correlation explanation or an error message if a column is not found.
-    """
-    correlation_explanation_or_err_msg, is_found = try_find_correlation_explanation(
-        GLOBALS["dataset_knowledge"], table_name, column1_name, column2_name)
-    
-    if is_found:
-        return correlation_explanation_or_err_msg.explanation
-    else:
-        return correlation_explanation_or_err_msg
-
 def update_correlation_explanation(table_name: str, column1_name: str, column2_name: str, new_explanation: str) -> str:
     """Updates the correlation explanation between two specified columns in the dataset knowledge.
 
     IMPORTANT:
     - This function will overwrite the current correlation explanation between the two columns.
-    - To modify or append to the existing explanation, first call `get_correlation_explanation(table_name, column1_name, column2_name)`.
+    - To modify or append to the existing explanation, first retrieve correlation explanation using `dataset_knowledge` tool.
       Then update that value as needed, and pass the complete, modified version into this function.
-    - If `get_correlation_explanation(table_name, column1_name, column2_name)` returns an empty string, it might simply mean no explanation
-      has been added yet. You can proceed to write the full initial version.
 
     Args:
         table_name (str): The name of the table.
@@ -420,30 +334,15 @@ def update_correlation_explanation(table_name: str, column1_name: str, column2_n
 def create_func_tools():
     func_tools = []
     
-    # TODO remove commented code
-    # func_tools.append(FunctionTool.from_defaults(fn=get_dataset_description))
-    
     func_tools.append(FunctionTool.from_defaults(fn=update_dataset_description))
-
-    # func_tools.append(FunctionTool.from_defaults(fn=get_all_table_names))
-
-    # func_tools.append(FunctionTool.from_defaults(fn=get_table_description))
 
     func_tools.append(FunctionTool.from_defaults(fn=update_table_description))
 
-    # func_tools.append(FunctionTool.from_defaults(fn=get_table_row_entity_description))
-
     func_tools.append(FunctionTool.from_defaults(fn=update_table_row_entity_description))
     
-    # func_tools.append(FunctionTool.from_defaults(fn=get_column_description))
-
     func_tools.append(FunctionTool.from_defaults(fn=update_column_description))
 
-    # func_tools.append(FunctionTool.from_defaults(fn=get_missing_values_explanation))
-
     func_tools.append(FunctionTool.from_defaults(fn=update_missing_values_explanation))
-
-    # func_tools.append(FunctionTool.from_defaults(fn=get_correlation_explanation))
 
     func_tools.append(FunctionTool.from_defaults(fn=update_correlation_explanation))
     
@@ -497,11 +396,6 @@ def main(args):
         # Wait for writing results to complete
         future1.result()
         future2.result()
-
-        # TODO Do we need this?
-        # answer = str(answer)
-        # with open(args.answer_path, 'w') as f:
-        #     f.write(answer)
 
 if __name__ == "__main__":
     args = parser.parse_args()

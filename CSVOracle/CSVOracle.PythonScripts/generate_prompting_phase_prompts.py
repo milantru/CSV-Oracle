@@ -11,7 +11,6 @@ def to_percentage(num):
     return round(num * 100, 2)
 
 def process_column_data(column_data):
-    # TODO What if more types?
     processed_column_data = {}
 
     # In general (also type Unsupported)
@@ -45,11 +44,13 @@ def process_column_data(column_data):
     if "median_length" in column_data: processed_column_data["Median length"] = column_data["median_length"]
         
     # type Categorical
-    # Seems no categorical data is needed
+    # Seems no specific data for categorical column is required
 
     # type DateTime
+    # ...same as with Categorical type
+
     # Comments like Numerical, Text, etc. are for guidance only, 
-    # for example DateTime also contains "min" and "max", as the Numerical does, 
+    # for example DateTime also contains "min" and "max" as the Numerical does, 
     # but the code is not written here for these properties to avoid code duplicity
     return processed_column_data
 
@@ -153,10 +154,6 @@ def add_column_prompts(table_knowledge: TableKnowledge, csv_file_name: str, colu
                 correlation_explanation.explanation = f"The columns '{col1_name}' and '{col2_name}' from the table '{csv_file_name}' are correlated (correlation value: {corr_value}). Try to explain why this correlation exists. Respond only with the explanation, no additional text. Please do not use terms like 'former' or 'latter', refer to the columns by their exact names."
                 
                 table_knowledge.correlation_explanations.append(correlation_explanation)
-
-        # TODO (schema) for each column, if schema provided; chcelo by to schemu...
-        # column_prompt_schema = 'Why does this constraint exist? Explain the reasoning behind the given constraint or rule in the schema.'
-        # prompts.append(column_prompt_schema)
 
 def main(args):
     reports_files_paths = list(Path(args.input_reports_folder_path).glob("*.json"))
