@@ -73,19 +73,22 @@ namespace CSVOracle.Server.Services.BackgroundServices
 					{
 						this.logger.LogError(e, $"Failed processing dataset with id `{datasetId}`.");
 
-						var dataset = await GetDatasetAsync(datasetId);
-						await UpdateDatasetAsync(dataset, DatasetStatus.Failed);
+						var dataset = await TryGetDatasetAsync(datasetId);
+						if (dataset is not null) // User might delete dataset
+						{
+							await UpdateDatasetAsync(dataset, DatasetStatus.Failed);
+						}
 					}
 				}
 			}
 		}
 
-		private async Task<Dataset> GetDatasetAsync(int datasetId)
+		private async Task<Dataset?> TryGetDatasetAsync(int datasetId)
 		{
 			using var scope = scopeFactory.CreateScope();
 			var datasetRepository = scope.ServiceProvider.GetRequiredService<IDatasetRepository>();
 
-			var dataset = await datasetRepository.GetAsync(datasetId);
+			var dataset = await datasetRepository.TryGetAsync(datasetId);
 
 			return dataset;
 		}
@@ -106,7 +109,11 @@ namespace CSVOracle.Server.Services.BackgroundServices
 		private async Task ProcessDatasetAsync(int datasetId)
 		{
 			// Update dataset status to processing
-			var dataset = await GetDatasetAsync(datasetId);
+			var dataset = await TryGetDatasetAsync(datasetId);
+			if (dataset is null) // User deleted dataset
+			{
+				return;
+			}
 			await UpdateDatasetAsync(dataset, DatasetStatus.Processing);
 
 			// Prepare paths

@@ -10,6 +10,7 @@ namespace CSVOracle.Data.Interfaces
 {
 	public interface IDatasetRepository : IRepository<Dataset>
 	{
+		public Task<Dataset?> TryGetAsync(int datasetId);
 		public Task<List<Dataset>> GetDatasetsByUserIdAsync(int userId);
 	}
 }

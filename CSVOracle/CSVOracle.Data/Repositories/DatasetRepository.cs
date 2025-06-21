@@ -71,6 +71,16 @@ namespace CSVOracle.Data.Repositories
 				.First(d => d.Id == datasetId);
 		}
 
+		public async Task<Dataset?> TryGetAsync(int datasetId)
+		{
+			await Task.CompletedTask;
+			return CsvOracleDbContext.Datasets.AsNoTracking()
+				.Include(d => d.DatasetFiles)
+				.Include(d => d.User)
+				.Include(d => d.Chats)
+				.FirstOrDefault(d => d.Id == datasetId);
+		}
+
 		public async Task<List<Dataset>> GetDatasetsByUserIdAsync(int userId)
 		{
 			await Task.CompletedTask;
