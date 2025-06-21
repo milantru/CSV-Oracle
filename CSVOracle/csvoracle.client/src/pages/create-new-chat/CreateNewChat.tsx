@@ -24,7 +24,7 @@ function CreateNewChat() {
 
 	return (
 		<>
-			<h1 className="text-center mb-2">Create new chat</h1>
+			<h1 className="text-center py-4">Create new chat</h1>
 
 			<form onSubmit={handleSubmit} className="mx-auto p-4 border rounded shadow" style={{ maxWidth: "720px" }}>
 				<ErrorsDisplay errorMessages={errorMessages} />
@@ -36,7 +36,7 @@ function CreateNewChat() {
 				</div>
 
 				<div className="form-outline">
-					<label className="form-label" htmlFor="user-view">User view</label>
+					<label className="form-label" htmlFor="user-view">User view (optional)</label>
 					<input type="text" id="user-view" className="form-control border" value={formState.userView}
 						onChange={e => setFormState(prevState => ({ ...prevState, userView: e.target.value }))} />
 				</div>

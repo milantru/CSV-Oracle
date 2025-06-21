@@ -12,6 +12,8 @@ type DatasetFormState = {
 };
 
 function CreateNewDataset() {
+	const defaultSeparatorValue = ",";
+	const defaultEncodingValue = "utf-8";
 	const [formState, setFormState] = useState<DatasetFormState>(createInitialFormState());
 	const [isUploading, setIsUploading] = useState<boolean>(false);
 	const [errorMessages, setErrorMessages] = useState<string[]>([]);
@@ -20,7 +22,7 @@ function CreateNewDataset() {
 
 	return (
 		<>
-			<h1 className="text-center mb-2">Create new dataset</h1>
+			<h1 className="text-center py-4">Create new dataset</h1>
 
 			<form onSubmit={handleSubmit} className="mx-auto p-4 border rounded shadow" style={{ maxWidth: "720px" }}>
 				<ErrorsDisplay errorMessages={errorMessages} />
@@ -42,24 +44,25 @@ function CreateNewDataset() {
 				</div>
 
 				<div className="mb-2">
-					<label className="form-label" htmlFor="schema">CSV schema (CSVW)</label>
+					<label className="form-label" htmlFor="schema">CSVW schema (optional)</label>
 					<input id="schema" className="form-control" type="file" accept=".json" onChange={handleSchemaFileChange} />
 				</div>
 
 				<div className="form-outline mb-2">
 					<label className="form-label" htmlFor="separator">Separator</label>
 					<input type="text" id="separator" className="form-control border" value={formState.separator}
-						onChange={e => setFormState(prevState => ({ ...prevState, separator: e.target.value }))} />
+						required onChange={e => setFormState(prevState => ({ ...prevState, separator: e.target.value }))} />
 				</div>
 
 				<div className="form-outline mb-2">
-					<label className="form-label" htmlFor="encoding">Encoding</label>
+					<label className="form-label" htmlFor="encoding">Encoding of CSV file(s)</label>
 					<input type="text" id="encoding" className="form-control border" value={formState.encoding}
-						onChange={e => setFormState(prevState => ({ ...prevState, encoding: e.target.value }))} />
+						required onChange={e => setFormState(prevState => ({ ...prevState, encoding: e.target.value }))} />
 				</div>
 
 				<div className="text-center mt-3">
-					<button type="submit" className="btn btn-primary" disabled={formState.csvFiles.length == 0 || isUploading}>Submit</button>
+					<button type="submit" className="btn btn-primary"
+						disabled={formState.csvFiles.length == 0 || isUploading}>Submit</button>
 				</div>
 			</form>
 		</>
@@ -69,8 +72,8 @@ function CreateNewDataset() {
 		const emptyFormState: DatasetFormState = {
 			csvFiles: [],
 			schemaFile: null,
-			separator: ",",
-			encoding: "utf-8",
+			separator: defaultSeparatorValue,
+			encoding: defaultEncodingValue,
 		};
 
 		return emptyFormState
