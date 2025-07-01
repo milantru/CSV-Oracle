@@ -10,6 +10,7 @@ import { DatasetKnowledge } from "./types";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css";
 import "./chats.tsx.css";
+import sound from "./../../assets/pop-1.mp3";
 
 function Chats() {
 	const { datasetId } = useParams();
@@ -211,6 +212,10 @@ function Chats() {
 		);
 	}
 
+	function playSound() {
+		new Audio(sound).play();
+	}
+
 	async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
 		e.preventDefault();
 
@@ -239,6 +244,7 @@ function Chats() {
 				 * and also to imitate that the assistant is not typing anymore */
 				messages: newMessages.slice(0, -2)
 			});
+			playSound();
 			setIsSubmitting(false);
 			return;
 		}
@@ -246,6 +252,7 @@ function Chats() {
 		setNewMessage("");
 		updateChats(chat!);
 		setSelectedChat(chat);
+		playSound();
 		setIsSubmitting(false);
 	}
 
