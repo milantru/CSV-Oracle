@@ -43,6 +43,15 @@ namespace CSVOracle.Server.Controllers
 			this.tokenHelper = tokenHelper;
 		}
 
+		/// <summary>
+		/// Retrieves all chats associated with the specified dataset for the authorized user.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="datasetId">ID of the dataset whose chats are to be fetched.</param>
+		/// <returns>
+		/// A list of chats for the dataset if the user is authorized and owns the dataset; 
+		/// otherwise, an appropriate error response.
+		/// </returns>
 		[HttpGet("{datasetId:int}"), Authorize]
 		public async Task<IActionResult> GetDatasetChatsAsync([FromHeader] string authorization, int datasetId)
 		{
@@ -77,6 +86,15 @@ namespace CSVOracle.Server.Controllers
 			return Ok(dataset.Chats.Select(ChatDto.From));
 		}
 
+		/// <summary>
+		/// Retrieves the current dataset knowledge JSON for a given chat, if the chat belongs to the authorized user.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="chatId">ID of the chat whose dataset knowledge is requested.</param>
+		/// <returns>
+		/// A dataset knowledge (JSON string) if the user is authorized and owns the chat; 
+		/// otherwise, an appropriate error response.
+		/// </returns>
 		[HttpGet("dataset-knowledge/{chatId:int}"), Authorize]
 		public async Task<IActionResult> GetDatasetKnowledgeAsync([FromHeader] string authorization, int chatId)
 		{
@@ -111,6 +129,16 @@ namespace CSVOracle.Server.Controllers
 			return Ok(chat.CurrentDatasetKnowledgeJson);
 		}
 
+		/// <summary>
+		/// Creates a new chat associated with a processed dataset.
+		/// Optionally uses the provided user view to try to generate a starting assistant message.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="request">Request object.</param>
+		/// <returns>
+		/// An Ok result if the chat is successfully created; 
+		/// otherwise, an appropriate error response indicating the failure reason.
+		/// </returns>
 		[HttpPost, Authorize]
 		public async Task<IActionResult> AddChatAsync([FromHeader] string authorization, [FromForm] AddChatRequest request)
 		{
@@ -209,6 +237,16 @@ namespace CSVOracle.Server.Controllers
 			return Ok();
 		}
 
+		/// <summary>
+		/// Generates an assistant response to a user's new message within the context of a specific chat, 
+		/// updating chat history and if new version of dataset knowledge exists, updating also dataset knowledge.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="request">Request object.</param>
+		/// <returns>
+		/// An updated chat object containing the new assistant response if successful; 
+		/// otherwise, an appropriate error response.
+		/// </returns>
 		[HttpPost("generate-answer"), Authorize]
 		public async Task<IActionResult> GenerateAnswerAsync([FromHeader] string authorization,
 			[FromForm] GenerateAnswerRequest request)
@@ -272,6 +310,15 @@ namespace CSVOracle.Server.Controllers
 			return Ok(ChatDto.From(chat));
 		}
 
+		/// <summary>
+		/// Updates existing chat.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="chat">Chat DTO containing new version of data.</param>
+		/// <returns>
+		/// An Ok result if the chat is updated successfully; 
+		/// otherwise, an appropriate error response.
+		/// </returns>
 		[HttpPut, Authorize]
 		public async Task<IActionResult> UpdateChatAsync([FromHeader] string authorization, ChatDto chat)
 		{
@@ -302,6 +349,15 @@ namespace CSVOracle.Server.Controllers
 			return Ok();
 		}
 
+		/// <summary>
+		/// Deletes an existing chat if it belongs to the authorized user.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="chatId">ID of the chat to delete.</param>
+		/// <returns>
+		/// An Ok result if the chat is deleted successfully; 
+		/// otherwise, an appropriate error response.
+		/// </returns>
 		[HttpDelete("{chatId:int}"), Authorize]
 		public async Task<IActionResult> DeleteChatAsync([FromHeader] string authorization, int chatId)
 		{

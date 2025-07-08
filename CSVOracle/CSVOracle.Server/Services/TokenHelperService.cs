@@ -20,6 +20,13 @@ namespace CSVOracle.Server.Services
 			this.userRepository = userRepository;
 		}
 
+		/// <summary>
+		/// Extracts the user associated with the given authorization token.
+		/// </summary>
+		/// <param name="authorizationHeader">Authorization header containing the JWT token.</param>
+		/// <returns>
+		/// The corresponding <see cref="User"/> object if the token is valid and the user exists; otherwise, <c>null</c>.
+		/// </returns>
 		public async Task<User?> GetUserAsync(string authorizationHeader)
 		{
 			var email = GetUserEmail(authorizationHeader);

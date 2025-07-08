@@ -43,6 +43,11 @@ namespace CSVOracle.Server.Controllers
 			this.tokenHelper = tokenHelper;
 		}
 
+		/// <summary>
+		/// Retrieves all datasets belonging to the authenticated user.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <returns>A list of datasets for the user, or an appropriate error response.</returns>
 		[HttpGet, Authorize]
 		public async Task<IActionResult> GetUserDatasetsAsync([FromHeader] string authorization)
 		{
@@ -60,6 +65,12 @@ namespace CSVOracle.Server.Controllers
 			return Ok(userDatasets.Select(DatasetDto.From));
 		}
 
+		/// <summary>
+		/// Retrieves the processing status of a specific dataset owned by the authenticated user.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="datasetId">ID of the dataset whose status is requested.</param>
+		/// <returns>The status of the dataset, or an appropriate error response.</returns>
 		[HttpGet("status/{datasetId:int}"), Authorize]
 		public async Task<IActionResult> GetDatasetStatusAsync([FromHeader] string authorization, int datasetId)
 		{
@@ -85,6 +96,14 @@ namespace CSVOracle.Server.Controllers
 			return Ok(status);
 		}
 
+		/// <summary>
+		/// Validates and stores dataset files, enqueues the dataset for processing, and updates its status.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="csvFiles">List of uploaded CSV files.</param>
+		/// <param name="schemaFile">Optional schema file in JSON format.</param>
+		/// <param name="metadata">Metadata describing the dataset (e.g., separator, encoding).</param>
+		/// <returns>The ID of the enqueued dataset, or an appropriate error response.</returns>
 		[HttpPost, Authorize]
 		public async Task<IActionResult> EnqueueDatasetForProcessingAsync(
 			[FromHeader] string authorization,
@@ -153,6 +172,12 @@ namespace CSVOracle.Server.Controllers
 			return Ok(dataset.Id);
 		}
 
+		/// <summary>
+		/// Updates already processed dataset.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="dataset">Updated dataset information in DTO format.</param>
+		/// <returns>Ok result if update is successful; otherwise, an error response.</returns>
 		[HttpPut, Authorize]
 		public async Task<IActionResult> UpdateDatasetAsync([FromHeader] string authorization, DatasetDto dataset)
 		{
@@ -197,6 +222,12 @@ namespace CSVOracle.Server.Controllers
 			return Ok();
 		}
 
+		/// <summary>
+		/// Deletes the specified dataset (along with its associated index collections) if the authenticated user is the owner.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="datasetId">ID of the dataset to delete.</param>
+		/// <returns>Ok result if deletion is successful; otherwise, an error response.</returns>
 		[HttpDelete("{datasetId:int}"), Authorize]
 		public async Task<IActionResult> DeleteDatasetAsync([FromHeader] string authorization, int datasetId)
 		{

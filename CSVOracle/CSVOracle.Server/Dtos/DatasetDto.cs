@@ -13,6 +13,11 @@ namespace CSVOracle.Server.Dtos
 		public bool IsSchemaProvided { get; set; }
 		public List<DatasetFileDto> DatasetFiles { get; set; } = new();
 
+		/// <summary>
+		/// Creates a <see cref="DatasetDto"/> instance from a given <see cref="Dataset"/> entity.
+		/// </summary>
+		/// <param name="dataset">The dataset entity to map from.</param>
+		/// <returns>A new <see cref="DatasetDto"/> instance.</returns>
 		public static DatasetDto From(Dataset dataset)
 		{
 			return new DatasetDto

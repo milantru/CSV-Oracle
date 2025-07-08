@@ -41,15 +41,44 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			this.pythonExecutor = pythonExecutor;
 		}
 
+		/// <summary>
+		/// Returns the name of the ChromaDB collection used to store CSV files index for a given user and dataset.
+		/// </summary>
+		/// <param name="userId">The ID of the user who owns the dataset.</param>
+		/// <param name="datasetId">The ID of the dataset.</param>
+		/// <returns>Name of the collection for CSV files index.</returns>
 		public static string GetChromaDbCollectionNameForCsvFiles(int userId, int datasetId) => $"{userId}-{datasetId}-csvFiles";
+
+		/// <summary>
+		/// Returns the name of the ChromaDB collection used to store data profiling reports index for a given user and dataset.
+		/// </summary>
+		/// <param name="userId">The ID of the user who owns the dataset.</param>
+		/// <param name="datasetId">The ID of the dataset.</param>
+		/// <returns>Name of the collection for data profiling reports index.</returns>
 		public static string GetChromaDbCollectionNameForReports(int userId, int datasetId) => $"{userId}-{datasetId}-reports";
+
+		/// <summary>
+		/// Returns the name of the ChromaDB collection used to store the CSVW schema index for a given user and dataset.
+		/// </summary>
+		/// <param name="userId">The ID of the user who owns the dataset.</param>
+		/// <param name="datasetId">The ID of the dataset.</param>
+		/// <returns>Name of the collection for CSVW schema index.</returns>
 		public static string GetChromaDbCollectionNameForSchema(int userId, int datasetId) => $"{userId}-{datasetId}-schema";
 
+		/// <summary>
+		/// Adds a dataset ID to the processing queue.
+		/// </summary>
+		/// <param name="datasetId">The ID of the dataset to enqueue for processing.</param>
 		public static void EnqueueDatasetId(int datasetId)
 		{
 			DatasetIdsQueue.Enqueue(datasetId);
 		}
 
+		/// <summary>
+		/// The main background execution loop of the service, processing datasets from the queue.
+		/// </summary>
+		/// <param name="stoppingToken">A cancellation token to stop the service gracefully.</param>
+		/// <returns>A task representing the background execution.</returns>
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 		{
 			while (!stoppingToken.IsCancellationRequested)

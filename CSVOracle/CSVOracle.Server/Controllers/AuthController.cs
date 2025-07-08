@@ -24,6 +24,11 @@ namespace CSVOracle.Server.Controllers
 			this.tokenPhrase = config.GetRequiredSection("AppSettings:Token").Value!;
 		}
 
+		/// <summary>
+		/// Registers a new user by hashing the password, storing the user, and returning a JWT token.
+		/// </summary>
+		/// <param name="user">The user object containing registration details, including raw password.</param>
+		/// <returns>A JWT token if registration is successful; otherwise, a BadRequest result.</returns>
 		[HttpPost("register")]
 		public async Task<IActionResult> RegisterAsync(User user)
 		{
@@ -49,6 +54,11 @@ namespace CSVOracle.Server.Controllers
 			return Ok(token);
 		}
 
+		/// <summary>
+		/// Authenticates a user by verifying the provided credentials and returns a JWT token if valid.
+		/// </summary>
+		/// <param name="loginCredentials">The user's login credentials.</param>
+		/// <returns>A JWT token if login is successful; otherwise, a BadRequest result.</returns>
 		[HttpPost("login")]
 		public async Task<IActionResult> LoginAsync(LoginCredentials loginCredentials)
 		{
@@ -77,6 +87,12 @@ namespace CSVOracle.Server.Controllers
 			return Ok(token);
 		}
 
+		/// <summary>
+		/// Generates a JWT token for the specified user using the given secret phrase.
+		/// </summary>
+		/// <param name="user">The user for whom the token is to be generated.</param>
+		/// <param name="tokenPhrase">The secret key used to sign the token.</param>
+		/// <returns>A signed JWT token string.</returns>
 		public static string CreateToken(User user, string tokenPhrase)
 		{
 			var claims = new List<Claim>

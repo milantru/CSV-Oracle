@@ -22,8 +22,8 @@ namespace CSVOracle.Server.Controllers
 		private readonly TokenHelperService tokenHelper;
 
 		public UserController(
-			ILogger<UserController> logger, 
-			IConfiguration config, 
+			ILogger<UserController> logger,
+			IConfiguration config,
 			IUserRepository userRepository,
 			TokenHelperService tokenHelper
 		)
@@ -34,6 +34,13 @@ namespace CSVOracle.Server.Controllers
 			this.tokenHelper = tokenHelper;
 		}
 
+		/// <summary>
+		/// Retrieves the currently logged-in user's data based on the provided authorization token.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <returns>
+		/// A result with user data or an appropriate error message.
+		/// </returns>
 		[HttpGet, Authorize]
 		public async Task<IActionResult> GetCurrentlyLoggedInUserAsync([FromHeader] string authorization)
 		{
@@ -50,9 +57,19 @@ namespace CSVOracle.Server.Controllers
 			return Ok(UserDto.From(user));
 		}
 
+		/// <summary>
+		/// Updates the logged-in user's email and/or password, if valid. 
+		/// Returns a new JWT token if the update is successful.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="updateUserRequest">The request body containing updated user information and optional password change.</param>
+		/// <returns>
+		/// An Ok result with new JWT token if the chat is updated successfully; 
+		/// otherwise, an appropriate error response.
+		/// </returns>
 		[HttpPut, Authorize]
 		public async Task<IActionResult> UpdateUserAsync(
-			[FromHeader] string authorization, 
+			[FromHeader] string authorization,
 			[FromBody] UpdateUserRequest updateUserRequest
 		)
 		{
