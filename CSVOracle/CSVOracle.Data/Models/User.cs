@@ -12,8 +12,12 @@ namespace CSVOracle.Data.Models
 	{
 		public int Id { get; set; }
 
-		// MaxLength is set according to:
-		// https://stackoverflow.com/questions/386294/what-is-the-maximum-length-of-a-valid-email-address
+		/// <summary>
+		/// Gets or sets the user's email address.
+		/// Must be a valid email format and no longer than 254 characters,
+		/// based on the commonly accepted maximum length for email addresses
+		/// (<see href="https://stackoverflow.com/questions/386294/what-is-the-maximum-length-of-a-valid-email-address" />).
+		/// </summary>
 		[Required, EmailAddress, MaxLength(254)]
 		public string Email { get; set; } = string.Empty;
 

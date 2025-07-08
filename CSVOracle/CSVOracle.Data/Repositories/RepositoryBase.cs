@@ -41,21 +41,6 @@ namespace CSVOracle.Data.Repositories
 			return entity;
 		}
 
-		public virtual async Task<IEnumerable<TEntity>> GetAsync(Func<TEntity, bool> predicate)
-		{
-			var entities = dbContext.Set<TEntity>().AsNoTracking().Where(predicate);
-
-			await Task.CompletedTask;
-			return entities;
-		}
-
-		public virtual async Task<IEnumerable<TEntity>> GetAsync()
-		{
-			var entities = await dbContext.Set<TEntity>().AsNoTracking().ToListAsync();
-
-			return entities;
-		}
-
 		public async Task RemoveAsync(TEntity entity)
 		{
 			dbContext.Set<TEntity>().Remove(entity);
