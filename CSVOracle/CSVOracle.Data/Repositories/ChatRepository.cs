@@ -38,7 +38,7 @@ namespace CSVOracle.Data.Repositories
 
 		public override async Task UpdateAsync(Chat chat)
 		{
-			var storedChat = CsvOracleDbContext.Chats.First(c => c.Id == chat.Id);
+			var storedChat = await CsvOracleDbContext.Chats.FirstAsync(c => c.Id == chat.Id);
 
 			storedChat.Name = chat.Name;
 			storedChat.UserView = chat.UserView;

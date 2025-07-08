@@ -63,33 +63,30 @@ namespace CSVOracle.Data.Repositories
 
 		public override async Task<Dataset> GetAsync(int datasetId)
 		{
-			await Task.CompletedTask;
-			return CsvOracleDbContext.Datasets.AsNoTracking()
+			return await CsvOracleDbContext.Datasets.AsNoTracking()
 				.Include(d => d.DatasetFiles)
 				.Include(d => d.User)
 				.Include(d => d.Chats)
-				.First(d => d.Id == datasetId);
+				.FirstAsync(d => d.Id == datasetId);
 		}
 
 		public async Task<Dataset?> TryGetAsync(int datasetId)
 		{
-			await Task.CompletedTask;
-			return CsvOracleDbContext.Datasets.AsNoTracking()
+			return await CsvOracleDbContext.Datasets.AsNoTracking()
 				.Include(d => d.DatasetFiles)
 				.Include(d => d.User)
 				.Include(d => d.Chats)
-				.FirstOrDefault(d => d.Id == datasetId);
+				.FirstOrDefaultAsync(d => d.Id == datasetId);
 		}
 
 		public async Task<List<Dataset>> GetDatasetsByUserIdAsync(int userId)
 		{
-			await Task.CompletedTask;
-			return CsvOracleDbContext.Datasets.AsNoTracking()
+			return await CsvOracleDbContext.Datasets.AsNoTracking()
 				.Include(d => d.DatasetFiles)
 				.Include(d => d.User)
 				.Include(d => d.Chats)
 				.Where(d => d.User.Id == userId)
-				.ToList();
+				.ToListAsync();
 		}
 
 		private void UpdateDatasetChats(Dataset storedDataset, Dataset dataset)
