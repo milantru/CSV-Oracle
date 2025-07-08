@@ -9,7 +9,7 @@ import { BeatLoader } from "react-spinners";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css";
 
-const POLLING_INTERVAL = 1000 * 0.5; // every second
+const POLLING_INTERVAL = 1000 * 0.5; // every half a second
 
 type Props = {
 	dataset: Dataset;
