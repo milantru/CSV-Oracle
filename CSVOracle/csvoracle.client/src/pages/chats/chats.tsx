@@ -172,7 +172,7 @@ function Chats() {
 	}
 
 	async function deleteChat(chatId: number) {
-		const { errorMessages: errMsgs } = await deleteChatAPI(chatId);
+		const errMsgs = await deleteChatAPI(chatId);
 		if (errMsgs.length > 0) {
 			for (const errMsg of errMsgs) {
 				toast.warn(errMsg);

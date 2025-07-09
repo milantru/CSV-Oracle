@@ -4,6 +4,11 @@ import { getErrorMessages } from "../helperFunctions/ErrorHandler";
 import { Chat } from "../types/Chat";
 import { DatasetKnowledge } from "../../pages/chats/types";
 
+/**
+ * Retrieves all chats associated with a specific dataset.
+ * @param datasetId - The ID of the dataset.
+ * @returns An object with a list of chats and error messages if any.
+ */
 export const getDatasetChatsAPI = async (datasetId: number): Promise<{ chats: Chat[], errorMessages: string[] }> => {
 	const token = localStorage.getItem("token");
 	if (!token) {
@@ -24,6 +29,11 @@ export const getDatasetChatsAPI = async (datasetId: number): Promise<{ chats: Ch
 	}
 };
 
+/**
+ * Retrieves dataset knowledge for a specific chat by chat ID.
+ * @param chatId - The ID of the chat.
+ * @returns A dataset knowledge object and empty array, or null and error messages if any.
+ */
 export const getDatasetKnowledgeAPI = async (chatId: number): Promise<{ datasetKnowledge: DatasetKnowledge | null, errorMessages: string[] }> => {
 	const token = localStorage.getItem("token");
 	if (!token) {
@@ -44,6 +54,13 @@ export const getDatasetKnowledgeAPI = async (chatId: number): Promise<{ datasetK
 	}
 };
 
+/**
+ * Creates a new chat with the provided name and user view, related to the dataset specified by the dataset ID.
+ * @param chatName - The name of the chat.
+ * @param userView - The user view.
+ * @param datasetId - The ID of the dataset to which chat should relate to.
+ * @returns An array of error messages if creation fails; otherwise, an empty array.
+ */
 export const createNewChatAPI = async (chatName: string, userView: string, datasetId: string) => {
 	const token = localStorage.getItem("token");
 	if (!token) {
@@ -69,6 +86,12 @@ export const createNewChatAPI = async (chatName: string, userView: string, datas
 	}
 };
 
+/**
+ * Sends a message to generate an answer to it, in a specific chat.
+ * @param message - The message to send.
+ * @param chatId - The chat ID.
+ * @returns An object containing the updated chat or null if failed, plus error messages.
+ */
 export const generateAnswerAPI = async (message: string, chatId: number)
 	: Promise<{ chat: Chat | null, errorMessages: string[] }> => {
 	const token = localStorage.getItem("token");
@@ -95,10 +118,15 @@ export const generateAnswerAPI = async (message: string, chatId: number)
 	}
 };
 
-export const deleteChatAPI = async (chatId: number): Promise<{ errorMessages: string[] }> => {
+/**
+ * Deletes a chat identified by the given chat ID.
+ * @param chatId - The ID of the chat to delete.
+ * @returns An array with error messages if deletion fails; otherwise, an empty array.
+ */
+export const deleteChatAPI = async (chatId: number): Promise<string[]> => {
 	const token = localStorage.getItem("token");
 	if (!token) {
-		return { errorMessages: ["Please log in."] };
+		return ["Please log in."];
 	}
 
 	try {
@@ -108,8 +136,8 @@ export const deleteChatAPI = async (chatId: number): Promise<{ errorMessages: st
 			}
 		});
 
-		return { errorMessages: [] };
+		return [];
 	} catch (error) {
-		return { errorMessages: getErrorMessages(error) };
+		return getErrorMessages(error);
 	}
 };

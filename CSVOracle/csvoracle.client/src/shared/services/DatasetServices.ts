@@ -3,6 +3,10 @@ import { apiBaseUrl } from "../Constants";
 import { getErrorMessages } from "../helperFunctions/ErrorHandler";
 import { Dataset, DatasetStatus } from "../types/Dataset";
 
+/**
+ * Retrieves all datasets belonging to the currently logged-in user.
+ * @returns An object containing the user's datasets (empty in case of error) and error messages if any.
+ */
 export const getUserDatasetsAPI = async (): Promise<{ userDatasets: Dataset[], errorMessages: string[] }> => {
 	const token = localStorage.getItem("token");
 	if (!token) {
@@ -23,6 +27,11 @@ export const getUserDatasetsAPI = async (): Promise<{ userDatasets: Dataset[], e
 	}
 };
 
+/**
+ * Fetches the status of a specific dataset by its ID.
+ * @param datasetId - The ID of the dataset.
+ * @returns An object containing the dataset status (null in case of error) and error messages if any.
+ */
 export const getUserDatasetStatusAPI = async (datasetId: number): Promise<{ status: DatasetStatus | null, errorMessages: string[] }> => {
 	const token = localStorage.getItem("token");
 	if (!token) {
@@ -43,6 +52,16 @@ export const getUserDatasetStatusAPI = async (datasetId: number): Promise<{ stat
 	}
 };
 
+/**
+ * Uploads CSV files for processing, with optional schema, separator, and encoding.
+ * Reports upload progress through the provided callback.
+ * @param csvFiles - Array of CSV files to upload.
+ * @param schemaFile - Optional schema file.
+ * @param separator - Optional CSV separator, e.g. ",".
+ * @param encoding - Optional file encoding, e.g. "utf-8".
+ * @param setUploadProgress - Callback to update upload progress percentage.
+ * @returns An object containing the uploaded dataset ID (null in case of error) and error messages if any.
+ */
 export const uploadDatasetForProcessingAPI = async (
 	csvFiles: File[],
 	schemaFile: File | null,
@@ -86,10 +105,15 @@ export const uploadDatasetForProcessingAPI = async (
 	}
 };
 
-export const deleteDatasetAPI = async (datasetId: number): Promise<{ errorMessages: string[] }> => {
+/**
+ * Deletes a dataset by ID.
+ * @param datasetId - The ID of the dataset to delete.
+ * @returns An array with error messages if deletion fails; otherwise, an empty array.
+ */
+export const deleteDatasetAPI = async (datasetId: number): Promise<string[]> => {
 	const token = localStorage.getItem("token");
 	if (!token) {
-		return { errorMessages: ["Please log in."] };
+		return ["Please log in."];
 	}
 
 	try {
@@ -99,8 +123,8 @@ export const deleteDatasetAPI = async (datasetId: number): Promise<{ errorMessag
 			}
 		});
 
-		return { errorMessages: [] };
+		return [];
 	} catch (error) {
-		return { errorMessages: getErrorMessages(error) };
+		return getErrorMessages(error);
 	}
 };

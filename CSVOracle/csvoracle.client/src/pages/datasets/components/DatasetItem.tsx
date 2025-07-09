@@ -154,7 +154,7 @@ function DatasetItem({ dataset, isSelected, onSelect, onStatusUpdate, onDelete }
 	}
 
 	async function deleteDataset(datasetId: number) {
-		const { errorMessages: errMsgs } = await deleteDatasetAPI(datasetId);
+		const errMsgs = await deleteDatasetAPI(datasetId);
 		if (errMsgs.length > 0) {
 			for (const errMsg of errMsgs) {
 				toast.warn(errMsg);
