@@ -4,8 +4,18 @@ from pathlib import Path
 from shared_helpers import DatasetKnowledge, TableKnowledge, ColumnKnowledge, CorrelationExplanation, Row
 
 parser = argparse.ArgumentParser(description="Script for generating prompting phase question prompts for the LLM.")
-parser.add_argument("-i", "--input_reports_folder_path", type=str, required=True, help="Path to the folder containing reports generated from the csv files of the dataset.")
-parser.add_argument("-o", "--output_file_path", type=str, required=True, help="Path to the file where the question prompts should be written. It is a json following DatasetKnowledge class structure. The new file will be created, or overwritten if already exists.")
+parser.add_argument(
+    "-i", "--input_reports_folder_path", type=str, required=True, 
+    help="Path to the folder containing reports generated from the csv files of the dataset."
+)
+parser.add_argument(
+    "-o", "--output_file_path", type=str, required=True, 
+    help=(
+        "Path to the file where the question prompts should be written. "
+        "It is a json following DatasetKnowledge class structure. "
+        "The new file will be created, or overwritten if already exists."
+    )
+)
 
 def to_percentage(num):
     return round(num * 100, 2)
@@ -155,7 +165,13 @@ def add_column_prompts(table_knowledge: TableKnowledge, csv_file_name: str, colu
                 
                 table_knowledge.correlation_explanations.append(correlation_explanation)
 
-def main(args):
+def main(args: argparse.Namespace):
+    """
+    Generate prompting phase question prompts (using data profiling report JSON files) and save them as a DatasetKnowledge JSON.
+
+    Args:
+        args (argparse.Namespace): Command-line arguments.
+    """
     reports_files_paths = list(Path(args.input_reports_folder_path).glob("*.json"))
     csv_files_names = [report_file_path.stem.removesuffix("_report") for report_file_path in reports_files_paths]
 

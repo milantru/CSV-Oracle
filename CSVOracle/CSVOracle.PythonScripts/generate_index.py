@@ -1,5 +1,4 @@
 import argparse
-import json
 from pathlib import Path
 from llama_index.core import VectorStoreIndex
 from llama_index.readers.file import CSVReader
@@ -8,9 +7,18 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import StorageContext
 from shared_helpers import get_embedding_model, get_chroma_db_client
 
-parser = argparse.ArgumentParser(description="Script for creating and storing index in Chroma DB collection either from .txt, .csv, or .json file(s). If input is a folder, it cannot be empty and all files must share the same extension.")
-parser.add_argument("-i", "--input_path", type=str, required=True, help="Path to the input file or non-empty folder containing input files sharing the same extension.")
-parser.add_argument("-c", "--collection_name", type=str, required=True, help="Name of the ChromaDB collection where index will be stored.")
+parser = argparse.ArgumentParser(description=(
+    "Script for creating and storing index in Chroma DB collection either from .txt, .csv, or .json file(s). "
+    "If input is a folder, it cannot be empty and all files must share the same extension."
+))
+parser.add_argument(
+    "-i", "--input_path", type=str, required=True, 
+    help="Path to the input file or non-empty folder containing input files sharing the same extension."
+)
+parser.add_argument(
+    "-c", "--collection_name", type=str, required=True, 
+    help="Name of the ChromaDB collection where index will be stored."
+)
 
 def get_file_paths(folder_path):
     return [file_path for file_path in folder_path.iterdir() if file_path.is_file()]
@@ -44,7 +52,13 @@ def get_documents(files_paths: list[Path]):
     
     return documents
 
-def main(args):
+def main(args: argparse.Namespace):
+    """
+    Create and store a vector index in a ChromaDB collection from input file(s).
+
+    Args:
+        args (argparse.Namespace): Command-line arguments.
+    """
     # Setup
     input_path = Path(args.input_path)
     files_paths = [input_path] if input_path.is_file() else get_file_paths(input_path)

@@ -2,8 +2,17 @@ import argparse
 from pathlib import Path
 
 parser = argparse.ArgumentParser(description="Script for generating prompting phase instructions prompt.")
-parser.add_argument("-i", "--input_csv_files_folder_path", type=str, required=True, help="Path to the folder containing csv files of the dataset.")
-parser.add_argument("-o", "--output_file_path", type=str, required=True, help="Path to the file where the instructions should be written. The new file will be created, or overwritten if already exists.")
+parser.add_argument(
+    "-i", "--input_csv_files_folder_path", type=str, required=True, 
+    help="Path to the folder containing csv files of the dataset."
+)
+parser.add_argument(
+    "-o", "--output_file_path", type=str, required=True, 
+    help=(
+        "Path to the file where the instructions should be written. "
+        "The new file will be created, or overwritten if already exists."
+    )
+)
 
 def create_instructions_prompt(csv_files_names):
     def get_string(csv_files_names):
@@ -26,7 +35,13 @@ INSTRUCTIONS:
 - You must only use the information provided. Do not make up any facts. If the information is missing or unclear, answer best you can, but do not hallucinate.
 '''
 
-def main(args):
+def main(args: argparse.Namespace):
+    """
+    Generate and save a prompting phase instructions prompt based on CSV files in a folder.
+
+    Args:
+        args (argparse.Namespace): Command-line arguments.
+    """
     csv_files_folder_path = Path(args.input_csv_files_folder_path)
     csv_files_paths = list(csv_files_folder_path.glob("*.csv"))
     csv_files_names = [csv_file_path.name for csv_file_path in csv_files_paths]

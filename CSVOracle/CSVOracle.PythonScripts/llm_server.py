@@ -11,6 +11,13 @@ app = Flask(__name__)
 
 @app.route("/generate-answer", methods=["POST"])
 def generate_answer():
+    """
+    Endpoint to generate an answer for the user message.
+    Calling this endpoint executes the main function of the generate_answer.py script.
+    The JSON payload expected from this endpoint matches the arguments for the generate_answer.py script.
+
+    Returns HTTP 200 on success, or HTTP 500 on failure.
+    """
     data = request.get_json()
 
     args = Args(**{
@@ -33,6 +40,13 @@ def generate_answer():
 
 @app.route("/delete-collections", methods=["POST"])
 def delete_collections():
+    """
+    Endpoint to delete specified collections.
+    Calling this endpoint executes the main function of the delete_collections.py script.
+    The JSON payload expected from this endpoint matches the arguments for the delete_collections.py script.
+
+    Returns HTTP 200 on success, or HTTP 500 on failure.
+    """
     data = request.get_json()
 
     args = Args(**{

@@ -4,19 +4,57 @@ from llama_index.core.tools import QueryEngineTool, ToolMetadata, FunctionTool
 from llama_index.core.agent import ReActAgent
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.llms import ChatMessage, MessageRole
-from shared_helpers import read_file, get_model, DatasetKnowledge, get_embedding_model, create_individual_query_engine_tools, create_sub_question_query_engine, get_chroma_db_client
+from shared_helpers import (
+    read_file,
+    get_model,
+    get_embedding_model,
+    create_individual_query_engine_tools,
+    create_sub_question_query_engine,
+    get_chroma_db_client,
+    DatasetKnowledge
+)
 from concurrent.futures import ThreadPoolExecutor
 
 parser = argparse.ArgumentParser(description="Script for chat managing (answering messages in a chat fashion).")
-parser.add_argument("-c", "--collection_names", type=str, required=True, help="JSON string containing list of ChromaDb collection names (for retrieving indices).")
-parser.add_argument("-d", "--dataset_knowledge_path", type=str, required=True, help="Path to the file containing dataset knowledge.")
+parser.add_argument(
+    "-c", "--collection_names", type=str, required=True, 
+    help="JSON string containing list of ChromaDb collection names (for retrieving indices)."
+)
+parser.add_argument(
+    "-d", "--dataset_knowledge_path", type=str, required=True, 
+    help="Path to the file containing dataset knowledge."
+)
 parser.add_argument("-u", "--user_view_path", type=str, default=None, help="(Optional) Path to the file containing user view.")
-parser.add_argument("-r", "--chat_history_path", type=str, default=None, help="(Optional) Path to the file containing chat history. If not provided, the new chat is started creating a new chat history.")
-parser.add_argument("-m", "--message_path", type=str, required=True, help="Path to the file containing the new message sent by the user to the chat.")
-parser.add_argument("-s", "--updated_chat_history_path", type=str, required=True, help="Path to the file where the updated chat history should be stored. The new file will be created, or overwritten if already exists.")
-parser.add_argument("-t", "--updated_dataset_knowledge_path", type=str, required=True, help="Path to the file where the updated dataset knowledge should be stored. The new file will be created, or overwritten if already exists.")
+parser.add_argument(
+    "-r", "--chat_history_path", type=str, default=None, 
+    help=(
+        "(Optional) Path to the file containing chat history. "
+        "If not provided, the new chat is started creating a new chat history."
+    )
+)
+parser.add_argument(
+    "-m", "--message_path", type=str, required=True, 
+    help="Path to the file containing the new message sent by the user to the chat."
+)
+parser.add_argument(
+    "-s", "--updated_chat_history_path", type=str, required=True, 
+    help=(
+        "Path to the file where the updated chat history should be stored. "
+        "The new file will be created, or overwritten if already exists."
+    )
+)
+parser.add_argument(
+    "-t", "--updated_dataset_knowledge_path", type=str, required=True, 
+    help=(
+        "Path to the file where the updated dataset knowledge should be stored. "
+        "The new file will be created, or overwritten if already exists."
+    )
+)
 # if model requires api key, following argument can be used to retrieve the key and one can pass it to get_model later in code
-parser.add_argument("-k", "--api_keys", type=json.loads, required=True, help="A dictionary as a JSON string containing api keys as values. Currently supported keys are GROQ_API_KEY")
+parser.add_argument(
+    "-k", "--api_keys", type=json.loads, required=True, 
+    help="A dictionary as a JSON string containing api keys as values. Currently supported keys are GROQ_API_KEY"
+)
 
 GLOBALS = {
     "dataset_knowledge": None
@@ -362,7 +400,17 @@ def save_chat_history(output_file_path, chat_history):
     with open(output_file_path, 'w') as output_file:
         json.dump(chat_history_dicts, output_file)
 
-def main(args):
+def main(args: argparse.Namespace):
+    """
+    Executes a chat-based interaction for analyzing CSV datasets (generates answer for the message specified via args).
+
+    Loads dataset knowledge, user message, and optional chat history and user view. Initializes the LLM agent 
+    with tools for querying data and updating knowledge. Processes the user message, updates the 
+    chat history and possibly also dataset knowledge, and writes them to specified output files.
+
+    Args:
+        args (argparse.Namespace): Command-line arguments.
+    """
     # Load
     user_view = read_file(args.user_view_path) if args.user_view_path else None
     GLOBALS["dataset_knowledge"] = DatasetKnowledge.from_dict(read_file(args.dataset_knowledge_path, load_as_json=True))

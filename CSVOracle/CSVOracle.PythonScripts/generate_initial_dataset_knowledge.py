@@ -1,12 +1,35 @@
 import argparse
 import json
-from shared_helpers import read_file, get_model, DatasetKnowledge, get_embedding_model, create_individual_query_engine_tools, create_sub_question_query_engine, get_chroma_db_client
+from shared_helpers import (
+    read_file,
+    get_model,
+    DatasetKnowledge,
+    get_embedding_model,
+    create_individual_query_engine_tools,
+    create_sub_question_query_engine,
+    get_chroma_db_client
+)
 
 parser = argparse.ArgumentParser(description="Script for generating an initial dataset knowledge representation.")
-parser.add_argument("-c", "--collection_names", type=str, required=True, help="JSON string containing list of ChromaDb collection names (for retrieving indices).")
-parser.add_argument("-p", "--prompting_phase_prompts_path", type=str, required=True, help="Path to the input file containing prompting phase prompts.")
-parser.add_argument("-r", "--prompting_phase_instructions_path", type=str, required=True, help="Path to the input file containing prompting phase instructions.")
-parser.add_argument("-o", "--output_file_path", type=str, required=True, help="Path to the file where the initial dataset knowledge representation should be stored. The new file will be created, or overwritten if already exists.")
+parser.add_argument(
+    "-c", "--collection_names", type=str, required=True, 
+    help="JSON string containing list of ChromaDb collection names (for retrieving indices)."
+)
+parser.add_argument(
+    "-p", "--prompting_phase_prompts_path", type=str, required=True, 
+    help="Path to the input file containing prompting phase prompts."
+)
+parser.add_argument(
+    "-r", "--prompting_phase_instructions_path", type=str, required=True, 
+    help="Path to the input file containing prompting phase instructions."
+)
+parser.add_argument(
+    "-o", "--output_file_path", type=str, required=True, 
+    help=(
+        "Path to the file where the initial dataset knowledge representation should be stored. "
+        "The new file will be created, or overwritten if already exists."
+    )
+)
 
 def generate_answer(query_engine, question, max_attempts_count = 3):
     answer = ""
@@ -56,7 +79,13 @@ def create_initial_dataset_knowledge(prompting_phase_prompts: DatasetKnowledge, 
 
     return prompting_phase_prompts
 
-def main(args):
+def main(args: argparse.Namespace):
+    """
+    Generate an initial dataset knowledge representation by answering questions using query engines.
+
+    Args:
+        args (argparse.Namespace): Command-line arguments.
+    """
     llm = get_model(
         model = "llama3.2:latest", 
         system_prompt = read_file(args.prompting_phase_instructions_path)
