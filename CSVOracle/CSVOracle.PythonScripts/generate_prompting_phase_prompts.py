@@ -85,7 +85,7 @@ def add_columns_info(dataset_info_from_report, report):
                 if i == j:
                     col_i_name = col_j_name
                     continue
-                if corr_value > corr_threshold:
+                if abs(corr_value) > corr_threshold:
                     cols_correlated_with_col_i.append([col_j_name, round(corr_value, 2)])
             processed_columns_data[col_i_name]["Is correlated with columns"] = cols_correlated_with_col_i
     
