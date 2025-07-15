@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { isNumber } from "../../shared/helperFunctions/TypeChecker";
 import { createNewChatAPI } from "../../shared/services/ChatServices";
 import ErrorsDisplay from "../../shared/components/ErrorsDisplay";
+import BackButton from "../../shared/components/BackButton";
 
 type ChatFormState = {
 	name: string;
@@ -25,6 +26,9 @@ function CreateNewChat() {
 	return (
 		<>
 			<h1 className="text-center py-4">Create new chat</h1>
+			<div className="position-absolute top-0 start-0 m-3">
+				<BackButton label="Back to chats" />
+			</div>
 
 			<form onSubmit={handleSubmit} className="mx-auto p-4 border rounded shadow" style={{ maxWidth: "720px" }}>
 				<ErrorsDisplay errorMessages={errorMessages} />
