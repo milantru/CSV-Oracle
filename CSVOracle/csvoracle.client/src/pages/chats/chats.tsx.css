@@ -10,8 +10,8 @@
 	margin-left: 2px;
 }
 
-/* Applies styles when the viewport width is smaller than 1346px */
-@media (max-width: 1346px) {
+/* Applies styles when the viewport width is smaller than 1468px */
+@media (max-width: 1468px) {
 	.new-chat-btn {
 		margin-left: initial;
 	}
