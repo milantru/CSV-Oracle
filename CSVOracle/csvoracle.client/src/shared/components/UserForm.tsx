@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { registerAPI } from "../services/AuthServices";
 import { useNavigate } from "react-router-dom";
 import ErrorsDisplay from "./ErrorsDisplay";
+import { FadeLoader } from "react-spinners";
 
 type UserFormState = User & {
 	oldPassword: string;
@@ -45,9 +46,12 @@ function UserForm() {
 	}, [])
 
 	return formState === null ? (
-		<div>Loading...</div>
+		<div className="d-flex flex-column w-100">
+			<div className="mx-auto"><FadeLoader /></div>
+			<div className="mt-2 mx-auto">Loading...</div>
+		</div>
 	) : (
-			<form onSubmit={handleSubmit} className="mx-auto p-4 border rounded shadow" style={{ maxWidth: "500px" }}>
+		<form onSubmit={handleSubmit} className="mx-auto p-4 border rounded shadow" style={{ maxWidth: "500px" }}>
 			<ErrorsDisplay errorMessages={errorMessages} />
 
 			<div className="form-outline">
