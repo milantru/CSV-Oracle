@@ -91,4 +91,5 @@ app.MapControllers();
 
 app.MapFallbackToFile("/index.html");
 
+Console.WriteLine("Application server starting");
 app.Run();
