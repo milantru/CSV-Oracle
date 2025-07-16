@@ -30,6 +30,11 @@ parser.add_argument(
         "The new file will be created, or overwritten if already exists."
     )
 )
+# if model requires api key, following argument can be used to retrieve the key and one can pass it to get_model later in code
+parser.add_argument(
+    "-k", "--api_keys", type=str, required=True, 
+    help="A dictionary as a JSON string which can contain api keys as values."
+)
 
 def generate_answer(query_engine, question, max_attempts_count = 3):
     answer = ""

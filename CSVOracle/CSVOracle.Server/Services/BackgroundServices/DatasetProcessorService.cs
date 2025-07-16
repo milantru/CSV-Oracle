@@ -25,6 +25,7 @@ namespace CSVOracle.Server.Services.BackgroundServices
 		private readonly IServiceScopeFactory scopeFactory;
 		private readonly PythonExecutorService pythonExecutor;
 		private readonly string dataFolderPath;
+		private readonly Dictionary<string, string> apiKeys;
 
 		private static ConcurrentQueue<int> DatasetIdsQueue { get; } = new();
 
@@ -37,6 +38,7 @@ namespace CSVOracle.Server.Services.BackgroundServices
 		{
 			this.logger = logger;
 			this.dataFolderPath = config.GetRequiredSection("AppSettings:DataFolderPath").Value!;
+			this.apiKeys = config.GetSection("AppSettings:ApiKeys").Get<Dictionary<string, string>>() ?? new();
 			this.scopeFactory = scopeFactory;
 			this.pythonExecutor = pythonExecutor;
 		}
@@ -278,9 +280,10 @@ namespace CSVOracle.Server.Services.BackgroundServices
 			var options = new JsonSerializerOptions { WriteIndented = false };
 			// Replace must be used to correctly escape the quotes, otherwise json.loads in Python will fail
 			string collectionNamesJson = JsonSerializer.Serialize(collectionNames, options).Replace("\"", "\\\"");
+			string apiKeysJson = JsonSerializer.Serialize(this.apiKeys, options);
 
 			var args = $"-c \"{collectionNamesJson}\" -p \"{promptingPhasePromptsPath}\" " +
-				$"-r \"{promptingPhaseInstructionsPath}\" -o \"{outputFilePath}\"";
+				$"-r \"{promptingPhaseInstructionsPath}\" -o \"{outputFilePath}\" -k \"{apiKeysJson}\"";
 
 			var task = pythonExecutor.ExecutePythonScriptAsync("generate_initial_dataset_knowledge.py", args);
 

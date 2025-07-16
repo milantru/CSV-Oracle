@@ -53,7 +53,7 @@ parser.add_argument(
 # if model requires api key, following argument can be used to retrieve the key and one can pass it to get_model later in code
 parser.add_argument(
     "-k", "--api_keys", type=json.loads, required=True, 
-    help="A dictionary as a JSON string containing api keys as values. Currently supported keys are GROQ_API_KEY"
+    help="A dictionary as a JSON string which can contain api keys as values."
 )
 
 GLOBALS = {
