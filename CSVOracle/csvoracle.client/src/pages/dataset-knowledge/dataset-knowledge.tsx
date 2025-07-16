@@ -15,8 +15,8 @@ function DatasetKnowledge() {
         async function loadChat(chatId: number) {
             const { datasetKnowledge: datasetKnowledgeTmp, errorMessages } = await getDatasetKnowledgeAPI(chatId);
             if (errorMessages.length > 0) {
-                for (let i = 0; i < errorMessages.length; i++) {
-                    toast.warn(errorMessages[i]);
+                for (const errMsg of errorMessages) {
+                    toast.warn(errMsg);
                 }
                 return;
             }

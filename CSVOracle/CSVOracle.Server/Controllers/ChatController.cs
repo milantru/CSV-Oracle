@@ -36,7 +36,7 @@ namespace CSVOracle.Server.Controllers
 		{
 			this.logger = logger;
 			this.dataFolderPath = config.GetRequiredSection("AppSettings:DataFolderPath").Value!;
-			this.apiKeys = config.GetRequiredSection("AppSettings:ApiKeys").Get<Dictionary<string, string>>()!;
+			this.apiKeys = config.GetSection("AppSettings:ApiKeys").Get<Dictionary<string, string>>() ?? new();
 			this.llmServerUrlForGeneratingAnswer = config.GetRequiredSection("AppSettings:LlmServerUrlForGeneratingAnswer").Value!;
 			this.chatRepository = chatRepository;
 			this.datasetRepository = datasetRepository;
@@ -84,6 +84,49 @@ namespace CSVOracle.Server.Controllers
 
 			this.logger.LogInformation("Returning dataset chats.");
 			return Ok(dataset.Chats.Select(ChatDto.From));
+		}
+
+		/// <summary>
+		/// Retrieves the chat by the id for the authorized user.
+		/// </summary>
+		/// <param name="authorization">Authorization header containing the JWT token.</param>
+		/// <param name="chatId">ID of the requested chat.</param>
+		/// <returns>
+		/// A requested chat if the user is authorized and owns the chat; 
+		/// otherwise, an appropriate error response.
+		/// </returns>
+		[HttpGet("chat/{chatId:int}"), Authorize]
+		public async Task<IActionResult> GetChatAsync([FromHeader] string authorization, int chatId)
+		{
+			var user = await this.tokenHelper.GetUserAsync(authorization);
+			if (user is null)
+			{
+				var message = "Cannot retrieve the chat for a non-existing user.";
+				this.logger.LogInformation(message);
+				return StatusCode(StatusCodes.Status401Unauthorized, message);
+			}
+
+			Chat chat;
+			try
+			{
+				chat = await this.chatRepository.GetAsync(chatId);
+			}
+			catch
+			{
+				var message = "Cannot retrieve the chat, it does not exist.";
+				this.logger.LogInformation(message);
+				return StatusCode(StatusCodes.Status404NotFound, message);
+			}
+
+			if (!user.Datasets.Select(d => d.Id).Contains(chat.Dataset.Id))
+			{
+				var message = "Cannot retrieve the dataset knowledge, it does not belong to the user.";
+				this.logger.LogInformation(message);
+				return StatusCode(StatusCodes.Status403Forbidden, message);
+			}
+
+			this.logger.LogInformation("Returning chat.");
+			return Ok(ChatDto.From(chat));
 		}
 
 		/// <summary>
@@ -398,7 +441,8 @@ namespace CSVOracle.Server.Controllers
 		private static void UpdateChatWithDtoData(Chat chat, ChatDto chatDto)
 		{
 			chat.Name = chatDto.Name;
-			chat.UserView = chatDto.UserView;
+
+			// UserView is not updated here intentionally
 
 			/* ChatHistoryJson and CurrentDatasetKnowledgeJson are not being updated here, 
 			 * because they can be updated only when chatting. */

@@ -8,10 +8,10 @@ import { PropagateLoader, SyncLoader } from "react-spinners";
 import DatasetKnowledgeDisplay from "./components/DatasetKnowledgeDisplay";
 import { DatasetKnowledge } from "./types";
 import { confirmAlert } from "react-confirm-alert";
+import BackButton from "../../shared/components/BackButton";
+import sound from "./../../assets/pop-1.mp3";
 import "react-confirm-alert/src/react-confirm-alert.css";
 import "./chats.tsx.css";
-import sound from "./../../assets/pop-1.mp3";
-import BackButton from "../../shared/components/BackButton";
 
 function Chats() {
 	const { datasetId } = useParams();
@@ -29,8 +29,8 @@ function Chats() {
 			setIsLoadingChats(true);
 			const { chats, errorMessages } = await getDatasetChatsAPI(datasetId);
 			if (errorMessages.length > 0) {
-				for (let i = 0; i < errorMessages.length; i++) {
-					toast.warn(errorMessages[i]);
+				for (const errMsg of errorMessages) {
+					toast.warn(errMsg);
 				}
 				setIsLoadingChats(false);
 				return;
@@ -77,8 +77,27 @@ function Chats() {
 								}}
 								onClick={() => selectChat(chat.id)}>
 								<span>{chat.name}</span>
-								<span
-									className="position-absolute text-danger"
+
+								{/*The i (info) button*/}
+								<span className="position-absolute text-primary"
+									style={{
+										cursor: "pointer",
+										zIndex: 1,
+										fontSize: "1.2rem",
+										top: "50%",
+										right: "2.5rem", // Leave space between info and X buttons
+										transform: "translateY(-50%)",
+									}}
+									title="Go to chat detail"
+									onClick={(e) => {
+										e.stopPropagation();
+										navigate(`/chats/${datasetId}/detail/${chat.id}`);
+									}}>
+									<i className="bi bi-info-circle-fill"></i>
+								</span>
+
+								{/*The X button*/}
+								<span className="position-absolute text-danger"
 									style={{
 										cursor: "pointer",
 										zIndex: 1,
@@ -87,6 +106,7 @@ function Chats() {
 										right: "1rem",
 										transform: "translateY(-50%)", // vertically center
 									}}
+									title="Delete chat"
 									onClick={e => {
 										e.stopPropagation(); // prevent triggering button's onClick
 										handleDelete(chat.id);
@@ -237,8 +257,8 @@ function Chats() {
 		setSelectedChat({ ...selectedChat, messages: newMessages });
 		const { chat, errorMessages } = await generateAnswerAPI(tmp, selectedChat.id);
 		if (errorMessages.length > 0) {
-			for (let i = 0; i < errorMessages.length; i++) {
-				toast.warn(errorMessages[i]);
+			for (const errMsg of errorMessages) {
+				toast.warn(errMsg);
 			}
 			setNewMessage("");
 			setSelectedChat({

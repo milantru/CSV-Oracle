@@ -9,25 +9,27 @@ import CreateNewDataset from "../../pages/create-new-dataset/CreateNewDataset";
 import Chats from "../../pages/chats/chats";
 import CreateNewChat from "../../pages/create-new-chat/CreateNewChat";
 import DatasetKnowledge from "../../pages/dataset-knowledge/dataset-knowledge";
+import ChatDetail from "../../pages/chat-detail/ChatDetail";
 
 function CsvOracleRoutes() {
-    return (
-        <>
-            <Routes>
-                <Route path="/" element={<ProtectedRoute><Datasets /></ProtectedRoute>} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/datasets" element={<ProtectedRoute><Datasets /></ProtectedRoute>} />
-                <Route path="/datasets/new" element={<ProtectedRoute><CreateNewDataset /></ProtectedRoute>} />
-                <Route path="/chats/:datasetId" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
-                <Route path="/chats/:datasetId/new" element={<ProtectedRoute><CreateNewChat /></ProtectedRoute>} />
-                <Route path="/dataset-knowledge/:chatId" element={<ProtectedRoute><DatasetKnowledge /></ProtectedRoute>} />
-                <Route path="not-found" element={<NotFound />} />
-                <Route path="*" element={<NotFound />} />
-            </Routes>
-        </>
-    );
+	return (
+		<>
+			<Routes>
+				<Route path="/" element={<ProtectedRoute><Datasets /></ProtectedRoute>} />
+				<Route path="/register" element={<Register />} />
+				<Route path="/login" element={<Login />} />
+				<Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+				<Route path="/datasets" element={<ProtectedRoute><Datasets /></ProtectedRoute>} />
+				<Route path="/datasets/new" element={<ProtectedRoute><CreateNewDataset /></ProtectedRoute>} />
+				<Route path="/chats/:datasetId" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
+				<Route path="/chats/:datasetId/new" element={<ProtectedRoute><CreateNewChat /></ProtectedRoute>} />
+				<Route path="/chats/:datasetId/detail/:chatId" element={<ProtectedRoute><ChatDetail /></ProtectedRoute>} />
+				<Route path="/dataset-knowledge/:chatId" element={<ProtectedRoute><DatasetKnowledge /></ProtectedRoute>} />
+				<Route path="not-found" element={<NotFound />} />
+				<Route path="*" element={<NotFound />} />
+			</Routes>
+		</>
+	);
 }
 
 export default CsvOracleRoutes;

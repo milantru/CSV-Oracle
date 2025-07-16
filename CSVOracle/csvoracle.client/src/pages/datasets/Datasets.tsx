@@ -22,8 +22,8 @@ function Datasets() {
 			setIsLoadingDatasets(true);
 			const { userDatasets, errorMessages } = await getUserDatasetsAPI()
 			if (errorMessages.length > 0) {
-				for (let i = 0; i < errorMessages.length; i++) {
-					toast.warning(errorMessages[i]);
+				for (const errMsg of errorMessages) {
+					toast.warning(errMsg);
 				}
 
 				setIsLoadingDatasets(false);

@@ -30,6 +30,31 @@ export const getDatasetChatsAPI = async (datasetId: number): Promise<{ chats: Ch
 };
 
 /**
+ * Retrieves a chat by the provided id.
+ * @param chatId - The ID of the requested chat.
+ * @returns A chat and empty array, or null and error messages if any.
+ */
+export const getChatAPI = async (chatId: number): Promise<{ chat: Chat | null, errorMessages: string[] }> => {
+	const token = localStorage.getItem("token");
+	if (!token) {
+		return { chat: null, errorMessages: ["Please log in."] };
+	}
+
+	try {
+		const response = await axios.get<Chat>(apiBaseUrl + `/Chat/chat/${chatId}`, {
+			headers: {
+				Authorization: "bearer " + token
+			}
+		});
+
+		const chat = response.data;
+		return { chat: chat, errorMessages: [] };
+	} catch (error) {
+		return { chat: null, errorMessages: getErrorMessages(error) };
+	}
+};
+
+/**
  * Retrieves dataset knowledge for a specific chat by chat ID.
  * @param chatId - The ID of the chat.
  * @returns A dataset knowledge object and empty array, or null and error messages if any.
@@ -61,7 +86,7 @@ export const getDatasetKnowledgeAPI = async (chatId: number): Promise<{ datasetK
  * @param datasetId - The ID of the dataset to which chat should relate to.
  * @returns An array of error messages if creation fails; otherwise, an empty array.
  */
-export const createNewChatAPI = async (chatName: string, userView: string, datasetId: string) => {
+export const createNewChatAPI = async (chatName: string, userView: string, datasetId: number) => {
 	const token = localStorage.getItem("token");
 	if (!token) {
 		return ["Please log in."];
@@ -70,13 +95,36 @@ export const createNewChatAPI = async (chatName: string, userView: string, datas
 	const formData = new FormData();
 	formData.append("name", chatName);
 	formData.append("userView", userView);
-	formData.append("datasetId", datasetId);
+	formData.append("datasetId", datasetId.toString());
 
 	try {
 		await axios.post(apiBaseUrl + "/Chat", formData, {
 			headers: {
 				"Authorization": "bearer " + token,
 				"Content-Type": "multipart/form-data"
+			}
+		});
+
+		return [];
+	} catch (error) {
+		return getErrorMessages(error);
+	}
+};
+
+/**
+ * Updates the existing chat.
+ * @param chat - The updated chat.
+ * @returns An array of error messages if the update fails; otherwise, an empty array.
+ */
+export const updateChatAPI = async (chat: Chat) => {
+	const token = localStorage.getItem("token");
+
+	try {
+		await axios.put<string>(apiBaseUrl + "/Chat", {
+			...chat
+		}, {
+			headers: {
+				Authorization: "bearer " + token
 			}
 		});
 
